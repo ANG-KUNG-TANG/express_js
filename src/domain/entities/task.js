@@ -18,13 +18,13 @@ export class Task{
     }){
         if (!title || title.length < 3) throw new Error("Name required");
         if (!userid) throw new Error("Task must belong to a user");
-        if (!Object.values(TaskStatus).includes(status)) throw new Error('Invalid task status');
-        if (!Object.values(TaskPriority).includes(priority)) throw new Error('Invalid taskpriority')
+        if (!status) throw new Error('Invalid task status');
+        if (!status) throw new Error('Invalid taskpriority')
         this._id = id ?? UniqueId.generator()
         this._title= title
         this._description= description
         this._status= status 
-        this._priotiry= priority 
+        this._priority= priority 
         this._dueDate = dueDate
         this._userid= userid
         this._createdAt = createdAt
@@ -36,11 +36,16 @@ export class Task{
             throw new Error("Only pending tasks can start")
         }
         this._status = TaskStatus.IN_PROGRESS
+        this._updatedAt = new Date()
     }
     complete(){
+        if (this._status !== TaskStatus.IN_PROGRESS) throw Error('Only in progress task can be completed')
         this._status = TaskStatus.COMPLETED
     }
     get id(){
         return this._id
+    }
+    get status(){
+        return this._status
     }
 }
