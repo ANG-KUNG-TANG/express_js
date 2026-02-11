@@ -3,13 +3,13 @@ import { TaskStatus, TaskPriority } from "../base/task_enums"
 
 export class Task{
     constructor(props){
-        this._initilize(props)
+        this._initialize(props)
     }
-    _initilize({
+    _initialize({
         id, 
         title,
         description ="", 
-        status = TaskStaus.PENDING, 
+        status = TaskStatus.PENDING, 
         priority = TaskPriority.MEDIUM, 
         dueDate, 
         userid,
@@ -20,14 +20,14 @@ export class Task{
         this._validateStatue(status);
         this._validatePriority(priority);
         this._validateUserId(userid);
-        this._valdiateDueDate(dueDate);
+        if (dueDate != null) this._valdiateDueDate(dueDate);
 
-        this._id = id ?? UniqueId.generator()
+        this._id = id;
         this._title= title;
         this._description= description;
         this._status= status ;
         this._priority= priority ;
-        this._dueDate = dueDate ?? new Date(dueDate);
+        this._dueDate = dueDate ? new Date(dueDate): null;
         this._userid= userid; 
         this._createdAt = createdAt;
         this._updatedAt = updatedAt;

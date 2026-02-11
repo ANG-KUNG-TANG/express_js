@@ -20,11 +20,11 @@ export class User{
         this._validatePassword(password);
         this._vllidateRole(role);
 
-        this._id=id ?? UniqueId.generator()
-        this._name = name
-        this._email = email
-        this._password = password
-        this._role = role ?? UserRole.ADMIN
+        this._id=id;
+        this._name = name;
+        this._email = email;
+        this._password = password;
+        this._role = role;
         this._createdAt = createdAt
         this._updatedAt  = updatedAt
     }
