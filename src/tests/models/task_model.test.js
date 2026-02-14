@@ -3,17 +3,21 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { TaskStatus, TaskPriority } from '../../domain/base/task_enums';
 import TaskModel from '../../domain/models/task_model';
 
+let mongoServer; // <-- added declaration
 
 beforeAll(async () => {
-    await mongoose.connect(global.__MONGO_URI__);
-},30000);
+  mongoServer = await MongoMemoryServer.create();
+  const uri = mongoServer.getUri();
+  await mongoose.connect(uri);
+}, 60000);
 
 afterAll(async () => {
   await mongoose.disconnect();
+  await mongoServer.stop();
 });
 
-afterEach(async () => {
-  await TaskModel.deleteMany({});
+beforeEach(async () => {
+  await TaskModel.deleteMany({}); // <-- was UserModel, now correct
 });
 
 describe('Task Model', () => {
@@ -23,7 +27,7 @@ describe('Task Model', () => {
     status: TaskStatus.PENDING,
     priority: TaskPriority.HIGH,
     dueDate: new Date('2025-12-31'),
-    userId: new mongoose.Types.ObjectId(), // simulate a user ID
+    userId: new mongoose.Types.ObjectId(),
   };
 
   test('should create and save a task successfully', async () => {

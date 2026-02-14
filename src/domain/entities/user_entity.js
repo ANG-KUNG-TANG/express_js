@@ -50,6 +50,9 @@ export class User{
         this._role = UserRole.ADMIN
         this._updatedAt = new Date();
     }
+    get name(){
+        return this._name
+    }
     get id(){
         return this._id
     }

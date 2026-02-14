@@ -35,3 +35,15 @@ export class InternaslServerErrror extends AppError{
         super(message, 500, "INTERNAL_ERROR")
     }
 }
+
+export class NotFoundError extends AppError {
+    constructor(message = "Resource not found", details = null) {
+        super(message, 404, "NOT_FOUND", details);
+    }
+}
+
+export class UnauthorizedError extends AppError {
+    constructor(message = "Unauthorized", details = null) {
+        super(message, 401, "UNAUTHORIZED", details);
+    }
+}
