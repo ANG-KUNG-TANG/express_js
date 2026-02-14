@@ -1,4 +1,4 @@
-import { User } from "../../domain/entities/user";
+import { User } from "../../domain/entities/user_entity";
 import { UserRole } from "../../domain/base/user_enums";
 
 describe("User Entity", () => {

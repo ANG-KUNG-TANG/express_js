@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { TaskStatus, TaskPriority} from './base/task_enums'
+import {TaskStatus, TaskPriority} from "../../domain/base/task_enums.js"
 
 const TaskSchema = new mongoose.Schema(
     {
@@ -30,7 +30,7 @@ const TaskSchema = new mongoose.Schema(
             type:Date,
             required: false
         },
-        userid:{
+        userId:{
             type: mongoose.Schema.Types.ObjectId,
             ref:'User',
             required: true
@@ -42,7 +42,7 @@ const TaskSchema = new mongoose.Schema(
     }
 );
 
-TaskSchema.index({userid: 1, status: 1});
+TaskSchema.index({userId: 1, status: 1});
 
 const TaskModel = mongoose.model('Task', TaskSchema);
 export default TaskModel;

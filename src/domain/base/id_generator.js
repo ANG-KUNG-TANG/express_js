@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 
-export default class UniqueId{
+export class UniqueId{
     generator(){
         const timestamp= Date.now().toString(36);
         const randomPart= crypto.randomBytes(4).toString("hex");

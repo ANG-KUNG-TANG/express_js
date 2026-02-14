@@ -1,5 +1,5 @@
-import { Task } from "../../domain/entities/task";
-import { TaskStatus, TaskPriority } from "../../domain/base/task_enums";
+import { Task } from "../../domain/entities/task_entity";
+import { TaskStatus,TaskPriority } from "../../domain/base/task_enums";
 
 describe("Task Entity", () => {
 
