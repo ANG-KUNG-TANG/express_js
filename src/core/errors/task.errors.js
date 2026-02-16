@@ -161,3 +161,17 @@ export class TaskDuplicateTitleError extends ConflictError {
         this.code = 'TASK_DUPLICATE_TITLE';
     }
 }
+
+export class TaskInvalidIdError extends Error{
+    constructor(message = 'Invalid task ID'){
+        super(message);
+        this.code = "Invalid task Error"
+    }
+}
+
+export class TaskInvalidStatusError extends Error{
+    constructor(message="Invalid task Id or status"){
+        super(message);
+        this.name = "TaskInvalidIdStatusEror"
+    }
+}
