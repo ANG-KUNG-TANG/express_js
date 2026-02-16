@@ -161,21 +161,21 @@ describe('Task Repository', () => {
     await taskRepo.createTask(data);
     const results = await taskRepo.searchTasksByTitle('special');
     expect(results).toHaveLength(1);
-    expect(results[0]._title).toBe('Special Project');   // changed from .title
+    expect(results[0]._title).toBe('Special Project');   
   });
-});
+});Z
 
   describe('getUserTaskStats', () => {
   it('should return correct stats', async () => {
     await taskRepo.createTask({
       ...getValidTaskData(),
-      title: 'Task 1',                 // unique title
+      title: 'Task 1',                 
       status: TaskStatus.PENDING,
       priority: TaskPriority.HIGH,
     });
     await taskRepo.createTask({
       ...getValidTaskData(),
-      title: 'Task 2',                 // unique title
+      title: 'Task 2',                 
       status: TaskStatus.COMPLETED,
       priority: TaskPriority.LOW,
     });
