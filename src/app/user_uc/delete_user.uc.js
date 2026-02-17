@@ -5,6 +5,6 @@ import { validateRequired } from '../validators/user_validator';
 export const deleteUserUc = async (id) =>{
     validateRequired(id, 'id');
     await userRepo.findUserById(id);
-    await userRepo.deleteUserUc(id);
+    await userRepo.deleteUser(id);
     return {deleted: true, id};
 }

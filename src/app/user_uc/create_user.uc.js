@@ -16,8 +16,8 @@ const PASSWORD_MIN = 8;
 
 export const validateCreateInput = ({name, email, password, role}) =>{
     validateRequired(name, 'name');
-    validateStringLength(name, 'name', NAME_MIN, NAME_MIN);
-    validateRequired(eamiel, 'email');
+    validateStringLength(name, 'name', NAME_MIN, NAME_MAX);
+    validateRequired(email, 'email');
     validateEmail(email);
     validateRequired(password, 'password');
     validatePassword(password, PASSWORD_MIN);

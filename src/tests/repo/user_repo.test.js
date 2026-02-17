@@ -92,7 +92,7 @@ describe('User Repository', () => {
 
     it('should throw invalid credentials for wrong password', async () => {
       await userRepo.createUser(validUserData);
-      await expect(userRepo.authenticateUser(validUserData.email, 'wrongpass')).rejects.toThrow('Invalid email or password');
+      await expect(userRepo.authenticateUser(validUserData.email, 'wrongpass')).rejects.toThrow('Invalid credentials');
     });
   });
 

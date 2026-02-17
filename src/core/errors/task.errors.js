@@ -169,9 +169,3 @@ export class TaskInvalidIdError extends Error{
     }
 }
 
-export class TaskInvalidStatusError extends Error{
-    constructor(message="Invalid task Id or status"){
-        super(message);
-        this.name = "TaskInvalidIdStatusEror"
-    }
-}

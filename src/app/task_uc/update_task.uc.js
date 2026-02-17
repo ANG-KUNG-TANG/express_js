@@ -3,7 +3,7 @@ import {
     validateStringLength,
     validateEnum,
     validateDate
-} from '../validators/task_validator';
+} from '../../app/validators/task_validator';
 import { TaskStatus, TaskPriority } from '../../domain/base/task_enums';
 
 export const updateTask = async (taskId, updates, userId) => {

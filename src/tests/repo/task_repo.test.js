@@ -163,7 +163,7 @@ describe('Task Repository', () => {
     expect(results).toHaveLength(1);
     expect(results[0]._title).toBe('Special Project');   
   });
-});Z
+});
 
   describe('getUserTaskStats', () => {
   it('should return correct stats', async () => {

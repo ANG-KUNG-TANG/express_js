@@ -4,22 +4,24 @@ import {
     UserNameTooShortError,
     UserNameTooLongError,
     UserInvalidEmailError,
-    UserPasswordTooWEakError,
+    UserPasswordTooWeakError,
     UserInvalidRoleError
 } from '../../core/errors/user.errors';
 import { UserRole } from '../../domain/base/user_enums';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export const validateRequired = (value, fileName) => {
-    if (value === undefined || value === null || value === ''){
-        if (fileName == 'name') throw new UserNameRequiredError();
-        throw new UserValidationError(`${fieldName} is rquired`);
+export const validateRequired = (value, fieldName) => {
+    if (value === undefined || value === null || value === '') {
+        if (fieldName == 'name') throw new UserNameRequiredError();
+        if (fieldName == 'email') throw new UserInvalidEmailError(value);   // ← add this
+        if (fieldName == 'password') throw new UserPasswordTooWeakError();  // ← add this
+        throw new UserValidationError(`${fieldName} is required`);          // ← fix typo too
     }
     return value;
 };
 
-export const validateStringLength = (value, fieldName, max=Infinity) =>{
+export const validateStringLength = (value, fieldName,min = 3, max=Infinity) =>{
     if (typeof value !== 'string'){
         throw new UserValidationError(`${fieldName} must be a string`)
     }
@@ -40,7 +42,7 @@ export const validateEmail =(value) =>{
 
 export const validatePassword = (value, min=8) => {
     if (!value || typeof value !== 'string' || value.length < min){
-        throw new UserPasswordTooWEakError(min);
+        throw new UserPasswordTooWeakError(min);
     }
     return value;
 }

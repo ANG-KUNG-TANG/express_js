@@ -108,7 +108,7 @@ export class UserEmailAlreadyExistsError extends ConflictError {
 // ------------------------------------------------------------------
 export class InvalidCredentialsError extends UnauthorizedError {
     constructor() {
-        super('Invalid email or password');
+        super('Invalid credentials');   
         this.code = 'INVALID_CREDENTIALS';
     }
 }

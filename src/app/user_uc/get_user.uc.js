@@ -9,5 +9,5 @@ export const getUseByIdUc = async (id) =>{
 export const getUserByEamilUc =async (email) => {
     validateRequired(email, 'email');
     validateEmail(email);
-    return await userRepo.findUserByEmail(email.toLoserCase());
+    return await userRepo.findUserByEmail(email.toLowerCase());
 }

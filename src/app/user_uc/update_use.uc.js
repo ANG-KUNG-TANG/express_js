@@ -1,6 +1,6 @@
 import { findUserById, updateUser } from '../../infrastructure/repositories/user_repo.js';
 import { UserValidationError } from '../../core/errors/user.errors.js';
-import { hashPassword } from '../../core/utils/hash_password.js';
+import { hashPassword } from '../validators/password_hash.js';  // fixed path
 import {
     validateRequired,
     validateStringLength,
@@ -36,7 +36,6 @@ export const updateUserUseCase = async (id, updates) => {
     const sanitized = sanitizeUpdates(updates);
     validateUpdateInput(sanitized);
 
-    // Load entity so we're always working from a valid domain object
     const user = await findUserById(id);
 
     if (sanitized.name !== undefined) user._name = sanitized.name.trim();

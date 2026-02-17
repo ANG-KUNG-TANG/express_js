@@ -120,7 +120,7 @@ describe('updateTask use case', () => {
     const otherTask = createFakeTask({ id: taskId, userId: wrongUser });
     mockFindTaskByID.mockResolvedValue(otherTask);
 
-    await expect(updateTask(taskId, {}, wrongUser)).rejects.toThrow(/does not own task/);
+    await expect(updateTask(taskId, {}, userId)).rejects.toThrow(/does not own task/);
     expect(mockUpdateTask).not.toHaveBeenCalled();
   });
 

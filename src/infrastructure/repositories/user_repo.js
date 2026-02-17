@@ -107,3 +107,10 @@ export const promoteToAdmin = async (id) => {
     user.promoteToAdmin(); 
     return await updateUser(id, { role: user._role, updatedAt: new Date() });
 };
+
+
+export const deleteUser = async (id) =>{
+    const user = await findUserById(id);
+    user.deleteUser(id);
+    return {deleted: true}
+}
