@@ -20,7 +20,7 @@ describe("User Entity", () => {
   test("should reject short name", () => {
     expect(() => {
       new User({ ...validProps, name: "Jo" });
-    }).toThrow("Name must be at least 3 characters long");
+    }).toThrow("Name must be at least 3 characters");
   });
 
   test("should reject invalid email", () => {
@@ -57,7 +57,7 @@ describe("User Entity", () => {
 
     expect(() => {
       user.promoteToAdmin();
-    }).toThrow("User is already admin");
+    }).toThrow("User is already an admin");
   });
 
 });
