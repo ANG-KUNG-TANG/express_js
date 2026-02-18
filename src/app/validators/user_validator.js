@@ -6,8 +6,8 @@ import {
     UserInvalidEmailError,
     UserPasswordTooWeakError,
     UserInvalidRoleError
-} from '../../core/errors/user.errors';
-import { UserRole } from '../../domain/base/user_enums';
+} from '../../core/errors/user.errors.js';
+import { UserRole } from '../../domain/base/user_enums.js';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

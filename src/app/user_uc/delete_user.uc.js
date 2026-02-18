@@ -1,5 +1,5 @@
-import * as userRepo from '../../infrastructure/repositories/user_repo';
-import { validateRequired } from '../validators/user_validator';
+import * as userRepo from '../../infrastructure/repositories/user_repo.js';
+import { validateRequired } from '../validators/user_validator.js';
 
 
 export const deleteUserUc = async (id) =>{

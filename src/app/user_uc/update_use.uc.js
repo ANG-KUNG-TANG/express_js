@@ -1,6 +1,6 @@
 import { findUserById, updateUser } from '../../infrastructure/repositories/user_repo.js';
 import { UserValidationError } from '../../core/errors/user.errors.js';
-import { hashPassword } from '../validators/password_hash.js';  // fixed path
+import { hashPassword } from '../validators/password_hash.js';  
 import {
     validateRequired,
     validateStringLength,

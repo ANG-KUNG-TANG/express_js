@@ -1,5 +1,14 @@
-import { UniqueId } from "../base/id_generator";
-import { UserRole } from "../base/user_enums";
+import { UniqueId } from "../base/id_generator.js";
+import { UserRole } from "../base/user_enums.js";
+import {
+    UserNameRequiredError,
+    UserNameTooShortError,
+    UserNameTooLongError,
+    UserInvalidEmailError,
+    UserPasswordTooWeakError,
+    UserInvalidRoleError,
+    UserAlreadyAdminError,
+} from "../../core/errors/user.errors.js";
 
 export class User{
     constructor(props){
@@ -19,47 +28,45 @@ export class User{
         this._validatePassword(password);
         this._validateRole(role);
 
-        this._id=id || new UniqueId().generator();
+        this._id = id || new UniqueId().generator();
         this._name = name;
         this._email = email;
         this._password = password;
         this._role = role;
         this._createdAt = createdAt;
-        this._updatedAt  = updatedAt;
+        this._updatedAt = updatedAt;
     }
-    
+
     _validateName(name){
-        if (!name || name.trim().length < 3 ) {throw new Error("Name must be at least 3 characters long")};
+        if (!name) throw new UserNameRequiredError();
+        if (name.trim().length < 3) throw new UserNameTooShortError(3);
+        if (name.trim().length > 100) throw new UserNameTooLongError(100);
     }
+
     _validateEmail(email){
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email || !emailPattern.test(email)) {throw new Error("Invalid email format")};
+        if (!email || !emailPattern.test(email)) throw new UserInvalidEmailError(email);
     }
 
     _validatePassword(password){
-        if (!password || password.length< 8) {throw new Error("Password must be at least 8 characters")};
+        if (!password || password.length < 8) throw new UserPasswordTooWeakError(8);
+    }
 
-    }
     _validateRole(role){
-        if (!Object.values(UserRole).includes(role)) {throw new Error("Invalid user role")}
+        if (!Object.values(UserRole).includes(role)) throw new UserInvalidRoleError(role);
     }
+
     promoteToAdmin(){
-        if(this._role === UserRole.ADMIN){
-            {throw new Error("User is already admin")}
-        }
-        this._role = UserRole.ADMIN
+        if(this._role === UserRole.ADMIN) throw new UserAlreadyAdminError();
+        this._role = UserRole.ADMIN;
         this._updatedAt = new Date();
     }
-    get name(){
-        return this._name
-    }
-    get id(){
-        return this._id
-    }
-    get role(){
-        return this._role
-    }
-    get email(){
-        return this._email
-    }
+
+    get id(){ return this._id }
+    get name(){ return this._name }
+    get email(){ return this._email }
+    get role(){ return this._role }
+    get password(){ return this._password }
+    get createdAt(){ return this._createdAt }
+    get updatedAt(){ return this._updatedAt }
 }

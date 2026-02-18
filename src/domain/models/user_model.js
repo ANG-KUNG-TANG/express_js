@@ -1,5 +1,5 @@
 import mongoose from "mongoose"
-import {UserRole} from "../../domain/base/user_enums"
+import { UserRole } from "../../domain/base/user_enums.js"
 
 const userSchema = new mongoose.Schema(
     {
@@ -35,7 +35,6 @@ const userSchema = new mongoose.Schema(
     }
 );
 
-userSchema.index({email:1});
-const UserModel = mongoose.model('User', userSchema)
+const UserModel = mongoose.model('User', userSchema);
 
 export default UserModel;

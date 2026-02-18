@@ -1,5 +1,5 @@
-import * as userRepo from '../../infrastructure/repositories/user_repo';
-import { validateRequired, validateEmail } from '../validators/user_validator';
+import * as userRepo from '../../infrastructure/repositories/user_repo.js';
+import { validateRequired, validateEmail } from '../validators/user_validator.js';
 
 export const getUseByIdUc = async (id) =>{
     validateRequired(id, 'id');

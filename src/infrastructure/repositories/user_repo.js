@@ -1,6 +1,6 @@
-import UserModel from "../../domain/models/user_model";
-import { User } from "../../domain/entities/user_entity";
-import { UserRole } from "../../domain/base/user_enums";
+import UserModel from "../../domain/models/user_model.js";
+import { User } from "../../domain/entities/user_entity.js";
+import { UserRole } from "../../domain/base/user_enums.js";
 import mongoose from 'mongoose';
 import { UserValidationError, UserEmailNotFoundError, UserEmailAlreadyExistsError, 
     InvalidCredentialsError, UserNotFoundError} from '../../core/errors/user.errors.js';
@@ -109,8 +109,11 @@ export const promoteToAdmin = async (id) => {
 };
 
 
-export const deleteUser = async (id) =>{
-    const user = await findUserById(id);
-    user.deleteUser(id);
-    return {deleted: true}
-}
+export const deleteUser = async (id) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new UserValidationError('invalid user id format');
+    }
+    const doc = await UserModel.findByIdAndDelete(id).lean();
+    if (!doc) throw new UserNotFoundError(id);
+    return { deleted: true };
+};

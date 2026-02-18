@@ -1,14 +1,14 @@
-import * as userRepo from '../../infrastructure/repositories/user_repo';
-import { User } from '../../domain/entities/user_entity';
-import { UserRole } from '../../domain/base/user_enums';
-import { hashPassword } from '../validators/password_hash';
+import * as userRepo from '../../infrastructure/repositories/user_repo.js';
+import { User } from '../../domain/entities/user_entity.js';
+import { UserRole } from '../../domain/base/user_enums.js';
+import { hashPassword } from '../validators/password_hash.js';
 import {
     validateRequired,
     validateStringLength,
     validateEmail,
     validatePassword,
     validateRole
-} from '../validators/user_validator';
+} from '../validators/user_validator.js';
 
 const NAME_MIN = 3;
 const NAME_MAX = 100;
