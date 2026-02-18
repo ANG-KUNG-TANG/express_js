@@ -6,7 +6,7 @@ import { deleteUserUc } from "../../app/user_uc/delete_user.uc.js";
 import { promoteUserToAdminUseCase } from "../../app/user_uc/promote_user.uc.js";
 import {sendSuccess} from '../response_formatter.js'
 import { HTTP_STATUS } from '../http_status.js'
-import { sanitizeCreateInput, sanitizeUpdateInput, sanitizeAuthInput } from "./input_sanitizer.js";
+import { sanitizeCreateInput, sanitizeUpdateInput, sanitizeAuthInput } from "./user.input_sanitizer.js";
 
 
 export const createUser = async (req, res) => {
