@@ -1,8 +1,9 @@
-import TaskModel from "../../domain/models/task_model";
-import { Task } from "../../domain/entities/task_entity";
-import { TaskStatus, TaskPriority } from "../../domain/base/task_enums";
+import TaskModel from "../../domain/models/task_model.js";
+import { Task } from "../../domain/entities/task_entity.js";
+import { TaskStatus, TaskPriority } from "../../domain/base/task_enums.js";
 import mongoose from 'mongoose';
 import {
+  TaskInvalidIdError,
   TaskInvalidUserIdError,
   TaskNotFoundError,
   TaskDuplicateTitleError,
@@ -46,10 +47,10 @@ const toPersistence = (task) => {
 
 export const findTaskByID = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new TaskInvalidUserIdError('TaskInvalidIdError');
+    throw new TaskInvalidIdError(id);
   }
   const doc = await TaskModel.findById(id).lean();
-  if (!doc) throw new TaskNotFoundError('TaskNotFoundError');
+  if (!doc) throw new TaskNotFoundError(id);
   return toDomain(doc);
 };
 
@@ -65,7 +66,11 @@ export const findTasks = async (filter = {}, options = {}) => {
     dueDateAfter,
   } = options;
 
-  const query = { ...filter };
+  const query = {};
+
+  // Spread only non-userId filter fields to avoid conflicts with options.userId
+  const { userId: filterUserId, ...restFilter } = filter;
+  Object.assign(query, restFilter);
 
   if (status) query.status = status;
   if (priority) query.priority = priority;
@@ -96,7 +101,7 @@ export const createTask = async (taskData) => {
     userId: task._userId,
   }).lean();
   if (existing) {
-    throw new TaskDuplicateTitleError('TaskDuplicateTitleError');
+    throw new TaskDuplicateTitleError(task._title);
   }
   const persistence = toPersistence(task);
   try {
@@ -116,10 +121,10 @@ export const createTask = async (taskData) => {
 
 export const updateTask = async (id, updates) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new TaskInvalidUserIdError(id);
+    throw new TaskInvalidIdError(id);
   }
   const existing = await TaskModel.findById(id);
-  if (!existing) throw new TaskNotFoundError('TaskNotFoundError');
+  if (!existing) throw new TaskNotFoundError(id);
 
   const task = toDomain(existing);
   if (updates.title !== undefined) {
@@ -148,12 +153,14 @@ export const updateTask = async (id, updates) => {
   const doc = await TaskModel.findByIdAndUpdate(
     id,
     {
-      title: task._title,
-      description: task._description,
-      status: task._status,
-      priority: task._priority,
-      dueDate: task._dueDate,
-      updatedAt: task._updatedAt,
+      $set: {
+        title: task._title,
+        description: task._description,
+        status: task._status,
+        priority: task._priority,
+        dueDate: task._dueDate,
+        updatedAt: task._updatedAt,
+      },
     },
     {
       returnDocument: 'after',
@@ -167,7 +174,7 @@ export const updateTask = async (id, updates) => {
 
 export const deleteTask = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new TaskInvalidUserIdError(id);
+    throw new TaskInvalidIdError(id);
   }
   const result = await TaskModel.findByIdAndDelete(id);
   if (!result) throw new TaskNotFoundError(id);
@@ -181,17 +188,17 @@ export const countTasks = async (filters = {}) => {
 export const startTask = async (id) => {
   const task = await findTaskByID(id);
   task.start();
-  return await updateTask(id, { status: task._status, updatedAt: new Date() });
+  return await updateTask(id, { status: task._status });
 };
 
 export const completeTask = async (id) => {
   const task = await findTaskByID(id);
   task.complete();
-  return await updateTask(id, { status: task._status, updatedAt: new Date() });
+  return await updateTask(id, { status: task._status });
 };
 
 export const findTaskByUser = (userId, options = {}) =>
-  findTasks({ userId }, options);
+  findTasks({}, { ...options, userId });
 
 export const findTaskByStatus = (status, options = {}) =>
   findTasks({ status }, options);

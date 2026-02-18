@@ -1,4 +1,4 @@
-import * as taskRepo from "../../infrastructure/repositories/task_repo";
+import * as taskRepo from "../../infrastructure/repositories/task_repo.js";
 
 export const listTasks = async (filters = {}, options = {}, userId = null) => {
     const finalOptions = { ...options };

@@ -1,5 +1,5 @@
-import { UniqueId } from "../base/id_generator";
-import { TaskStatus, TaskPriority } from "../base/task_enums"
+import { UniqueId } from "../base/id_generator.js";
+import { TaskStatus, TaskPriority } from "../base/task_enums.js"
 
 export class Task{
     constructor(props){

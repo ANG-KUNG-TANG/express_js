@@ -2,7 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import { connectDB } from './infrastructure/repositories/db.js';
 import userRouter from './interfaces/table/user.router.js';
-import {errorHandler} from './middleware/error.handler.js'
+import taskRouter from './interfaces/table/task.router.js';
+import {errorHandler} from './middleware/error.handler.js';
 import { sendFailure } from './interfaces/response_formatter.js';
 import { HTTP_STATUS } from './interfaces/http_status.js';
 
@@ -10,6 +11,7 @@ const app = express();
 app.use(express.json());
 
 app.use('/api', userRouter);
+app.use('/api/tasks', taskRouter);
 
 app.get('/', (req, res) => {
     return res.json({
@@ -27,8 +29,18 @@ app.get('/', (req, res) => {
                 update: 'PUT /api/users/:id',
                 delete: 'DELETE /api/users/:id',
                 promote: 'PATCH /api/users/:id/promote'
-            }
-        
+            },
+            tasks: {
+                create:   'POST /api/tasks',
+                getById:  'GET /api/tasks/:id',
+                listAll:  'GET /api/tasks',
+                search:   'GET /api/tasks/search?q=',
+                update:   'PATCH /api/tasks/:id',
+                delete:   'DELETE /api/tasks/:id',
+                start:    'PATCH /api/tasks/:id/start',
+                complete: 'PATCH /api/tasks/:id/complete',
+                transfer: 'POST /api/tasks/transfer',
+            },
         },
     });
 });

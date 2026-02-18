@@ -1,10 +1,10 @@
-import * as taskRepo from '../../infrastructure/repositories/task_repo';
+import * as taskRepo from '../../infrastructure/repositories/task_repo.js';
 import {
     validateStringLength,
     validateEnum,
     validateDate
-} from '../../app/validators/task_validator';
-import { TaskStatus, TaskPriority } from '../../domain/base/task_enums';
+} from '../../app/validators/task_validator.js';
+import { TaskStatus, TaskPriority } from '../../domain/base/task_enums.js';
 
 export const updateTask = async (taskId, updates, userId) => {
     const existing = await taskRepo.findTaskByID(taskId);

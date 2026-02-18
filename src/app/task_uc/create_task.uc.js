@@ -1,11 +1,11 @@
-import * as taskRepo from "../../infrastructure/repositories/task_repo";
+import * as taskRepo from '../../infrastructure/repositories/task_repo.js';
 import {
     validateRequired,
     validateStringLength,
     validateEnum,
     validateDate
-} from '../../app/validators/task_validator';
-import { TaskPriority, TaskStatus } from "../../domain/base/task_enums";
+} from '../../app/validators/task_validator.js';
+import { TaskPriority, TaskStatus } from '../../domain/base/task_enums.js';
 
 
 export const createTask = async (userId, data) => {
