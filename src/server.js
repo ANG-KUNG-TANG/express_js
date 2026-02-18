@@ -2,10 +2,9 @@ import 'dotenv/config';
 import express from 'express';
 import { connectDB } from './infrastructure/repositories/db.js';
 import userRouter from './interfaces/table/user.router.js';
-import { errorHandler } from './interfaces/error_handler.js';
+import {errorHandler} from './middleware/error.handler.js'
 import { sendFailure } from './interfaces/response_formatter.js';
 import { HTTP_STATUS } from './interfaces/http_status.js';
-import { getUserByEamil } from './interfaces/table/user.controller.js';
 
 const app = express();
 app.use(express.json());
@@ -24,7 +23,7 @@ app.get('/', (req, res) => {
             users:{
                 create: 'POST /api/users',
                 getById: 'GET /api/users/:id',
-                getUserByEamil: 'GET /api/users/email/:email',
+                getByEmail: 'GET /api/users/email/:email',
                 update: 'PUT /api/users/:id',
                 delete: 'DELETE /api/users/:id',
                 promote: 'PATCH /api/users/:id/promote'

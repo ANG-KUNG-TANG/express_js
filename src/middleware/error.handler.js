@@ -1,4 +1,4 @@
-import { AppError } from "../errors&exceptions/base.errors.js";
+import { AppError } from "../core/errors/base.errors.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
