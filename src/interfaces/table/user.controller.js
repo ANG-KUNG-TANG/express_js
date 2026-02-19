@@ -28,6 +28,7 @@ export const getUserById = async (req, res) => {
     return sendSuccess(res, user, HTTP_STATUS.OK);
 };
 
+
 export const getUserByEamil = async(req, res) =>{
     const {email} = req.params;
     const user = await getUserByEamilUc(email);

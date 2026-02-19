@@ -55,7 +55,7 @@ beforeEach(() => jest.clearAllMocks());
 // ---------------------------------------------------------------------------
 
 const { sanitizeCreateInput, sanitizeUpdateInput, sanitizeAuthInput } =
-    await import('../../interfaces/table/input_sanitizer.js');
+    await import('../../interfaces/table/user.input_sanitizer.js');
 
 describe('sanitizeCreateInput', () => {
     it('keeps only allowed create fields', () => {

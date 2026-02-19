@@ -63,6 +63,9 @@ export const findUserByEmail = async (email) => {
     return toDomain(doc);
 };
 
+// export const lisAllUser = async(id) =>{
+//     const doc = await UserModel.()
+// }
 export const createUser = async (userData) => {
     const existing = await UserModel.findOne({email: userData.email.toLowerCase()});
     if (existing) throw new UserEmailAlreadyExistsError("UserEmailAlreadyExistsError")

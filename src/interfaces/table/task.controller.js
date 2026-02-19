@@ -26,7 +26,11 @@ export const getTaskByIdController = async (req, res) => {
 
 export const listTaskController = async (req, res) => {
     const { status, priority, page, limit, sortBy, sortOrder } = req.query;
-    const filters = { status, priority };
+    
+    const filters = {};
+    if (status) filters.status = status;
+    if (priority) filters.priority = priority;
+
     const options = { page, limit, sortBy, sortOrder };
     const tasks = await listTasks(filters, options, req.user.id);
     return sendSuccess(res, tasks, HTTP_STATUS.OK);

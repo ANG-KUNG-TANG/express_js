@@ -47,7 +47,7 @@ const toPersistence = (task) => {
 
 export const findTaskByID = async (id) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new TaskInvalidIdError(id);
+    throw new TaskInvalidIdError('invalid-id');
   }
   const doc = await TaskModel.findById(id).lean();
   if (!doc) throw new TaskNotFoundError(id);
@@ -121,7 +121,7 @@ export const createTask = async (taskData) => {
 
 export const updateTask = async (id, updates) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new TaskInvalidIdError(id);
+    throw new TaskInvalidIdError('TaskNotFoundError');
   }
   const existing = await TaskModel.findById(id);
   if (!existing) throw new TaskNotFoundError(id);

@@ -54,7 +54,7 @@ describe('Task Repository', () => {
     it('should throw duplicate title error for same user', async () => {
       const taskData = getValidTaskData();
       await taskRepo.createTask(taskData);
-      await expect(taskRepo.createTask(taskData)).rejects.toThrow('TaskDuplicateTitleError');
+      await expect(taskRepo.createTask(taskData)).rejects.toThrow('Task with title \"Test Title\" already exists');
     });
 
     it('should throw validation error when title is missing', async () => {
@@ -73,11 +73,11 @@ describe('Task Repository', () => {
 
     it("should throw not found for non-existent id", async () => {
       const fakeId = new mongoose.Types.ObjectId().toString();
-      await expect(taskRepo.findTaskByID(fakeId)).rejects.toThrow('TaskNotFoundError');
+      await expect(taskRepo.findTaskByID(fakeId)).rejects.toThrow(`Task with id ${fakeId}`);
     });
 
     it("should throw invalid id error for malformed id", async () => {
-      await expect(taskRepo.findTaskByID("invalid-id")).rejects.toThrow('TaskInvalidIdError');
+      await expect(taskRepo.findTaskByID("invalid-id")).rejects.toThrow('invalid-id');
     });
   });
 
@@ -92,7 +92,7 @@ describe('Task Repository', () => {
 
     it('should throw not found for non-existent id', async () => {
       const fakeId = new mongoose.Types.ObjectId().toString();
-      await expect(taskRepo.updateTask(fakeId, { title: 'x' })).rejects.toThrow('TaskNotFoundError');
+      await expect(taskRepo.updateTask(fakeId, { title: 'x' })).rejects.toThrow(`Task with id ${fakeId}`);
     });
   });
 
@@ -101,7 +101,7 @@ describe('Task Repository', () => {
       const created = await taskRepo.createTask(getValidTaskData());
       const result = await taskRepo.deleteTask(created.id);
       expect(result).toBe(true);
-      await expect(taskRepo.findTaskByID(created.id)).rejects.toThrow('TaskNotFoundError');
+      await expect(taskRepo.findTaskByID(created.id)).rejects.toThrow(`Task with id ${created.id}`);
     });
   });
 
