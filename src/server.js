@@ -1,17 +1,24 @@
 import 'dotenv/config';
 import express from 'express';
+import { initPassport } from './config/passport.config.js.js';
 import { connectDB } from './infrastructure/repositories/db.js';
 import userRouter from './interfaces/table/user.router.js';
 import taskRouter from './interfaces/table/task.router.js';
+import authRouter from './interfaces/table/auth.router.js'
 import {errorHandler} from './middleware/error.handler.js';
 import { sendFailure } from './interfaces/response_formatter.js';
 import { HTTP_STATUS } from './interfaces/http_status.js';
+
+
+
 
 const app = express();
 app.use(express.json());
 
 app.use('/api', userRouter);
 app.use('/api/tasks', taskRouter);
+app.use('/auth', authRouter);
+
 
 app.get('/', (req, res) => {
     return res.json({
@@ -20,7 +27,12 @@ app.get('/', (req, res) => {
         version: '1.0.0',
         endpoints: {
             auth: {
-                login: 'POST /api/auth/login',
+                loginEmail: 'POST /api/auth/login',
+                loginGitHub: 'GET /auth/google',
+                googleCallback: 'GET /auth/google/callback',
+                githubCallback: 'GET /auth/github/callback',
+                refresh: 'POST /auth/refresh',
+                logout: 'POST /auth/logout'
             },
             users:{
                 create: 'POST /api/users',
