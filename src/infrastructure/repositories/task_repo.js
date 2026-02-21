@@ -279,3 +279,22 @@ export const transferTasks = async (fromUserId, toUserId, session = null) => {
   const result = await TaskModel.updateMany(filter, { $set: update }, options);
   return { transferred: result.modifiedCount };
 };
+
+export const transferSingleTask = async (taskId, fromUserId, toUserId, session = null) => {
+  if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
+  if (!mongoose.Types.ObjectId.isValid(fromUserId)) throw new TaskInvalidUserIdError(fromUserId);
+  if (!mongoose.Types.ObjectId.isValid(toUserId)) throw new TaskInvalidUserIdError(toUserId);
+
+  const options = session ? { session } : {};
+  const doc = await TaskModel.findOneAndUpdate(
+    {
+      _id: new mongoose.Types.ObjectId(taskId),
+      userId: new mongoose.Types.ObjectId(fromUserId), // ensures ownership
+    },
+    { $set: { userId: new mongoose.Types.ObjectId(toUserId), updatedAt: new Date() } },
+    { returnDocument: 'after', runValidators: true, ...options }
+  ).lean();
+
+  if (!doc) throw new TaskNotFoundError(taskId); // task not found OR not owned by fromUser
+  return toDomain(doc);
+};

@@ -49,6 +49,7 @@ export class User{
     }
 
     _validatePassword(password){
+        if (password === null || password === undefined) return;
         if (!password || password.length < 8) throw new UserPasswordTooWeakError(8);
     }
 

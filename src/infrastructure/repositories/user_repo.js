@@ -13,6 +13,7 @@ const toDomain = (doc) =>{
         name: doc.name,
         email: doc.email,
         password: doc.password,
+        role: doc.role,
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt
     });
@@ -52,20 +53,28 @@ export const findUserById = async (id) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new UserValidationError('invalid user id format');
     }
-    const doc = await UserModel.findById(id).lean();
-    if (!doc) throw new UserNotFoundError("UserNotFoundError");  
+    const doc = await UserModel.findById(id).select('-password').lean();
+    if (!doc) throw new UserNotFoundError('User with id UserNotFoundError');
     return toDomain(doc);
 };
 
 export const findUserByEmail = async (email) => {
+    const doc = await UserModel.findOne({ email: email.toLowerCase() }).select('-password').lean();
+    if (!doc) throw new UserEmailNotFoundError(email);
+    return toDomain(doc);
+};
+
+export const findUserByEmailWithPassword = async (email) => {
     const doc = await UserModel.findOne({ email: email.toLowerCase() }).lean();
     if (!doc) throw new UserEmailNotFoundError(email);
     return toDomain(doc);
 };
 
-// export const lisAllUser = async(id) =>{
-//     const doc = await UserModel.()
-// }
+export const lisAllUsers = async () => {
+    const docs = await UserModel.find().select('-password').lean();
+    return docs.map(toDomain);
+};
+
 export const createUser = async (userData) => {
     const existing = await UserModel.findOne({email: userData.email.toLowerCase()});
     if (existing) throw new UserEmailAlreadyExistsError("UserEmailAlreadyExistsError")
@@ -79,8 +88,7 @@ export const updateUser = async (id, updates) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new UserValidationError('invalid user id format');
     }
-    const user = await findUserById(id); // domain object
-    // Apply updates to domain object
+    const user = await findUserById(id); 
     if (updates.name !== undefined) user._name = updates.name;
     if (updates.email !== undefined) user._email = updates.email.toLowerCase();
     if (updates.password !== undefined) user._password = updates.password;
@@ -91,24 +99,24 @@ export const updateUser = async (id, updates) => {
     const doc = await UserModel.findByIdAndUpdate(
         id,
         persistence,
-        { new: true, runValidators: true }
+        { returenDocument: 'after', runValidators: true}
     ).lean();
     if (!doc) throw new UserNotFoundError(id);
     return toDomain(doc);
 };
 
-export const authenticateUser = async(email,password) =>{
-    const user = await findUserByEmail(email);
-    if (user._password != password){
-        throw new InvalidCredentialsError();
-    }
-    return sanitizeUser(user);
-}
+export const authenticateUser = async (email, password) => {
+    const doc = await UserModel.findOne({ email: email.toLowerCase() }).lean();
+    if (!doc) throw new UserEmailNotFoundError(email);
+    if (doc.password !== password) throw new InvalidCredentialsError();
+    return sanitizeUser(toDomain(doc));
+};
 
 export const promoteToAdmin = async (id) => {
     const user = await findUserById(id);
-    user.promoteToAdmin(); 
-    return await updateUser(id, { role: user._role, updatedAt: new Date() });
+    user.promoteToAdmin();
+    console.log('promoting with:', { role: user._role }); // ← add this
+    return await updateUser(id, { role: user._role });
 };
 
 

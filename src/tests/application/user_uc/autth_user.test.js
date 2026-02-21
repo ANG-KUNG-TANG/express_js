@@ -1,7 +1,8 @@
 import { jest } from '@jest/globals';
 
 jest.unstable_mockModule('../../../infrastructure/repositories/user_repo.js', () => ({
-    findUserByEmail: jest.fn(),
+    findUserByEmailWithPassword: jest.fn(),
+    findUserByEmail: jest.fn(), 
     sanitizeUser: jest.fn(),
 }));
 
@@ -37,7 +38,7 @@ describe('authenticateUserUseCase', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        userRepo.findUserByEmail.mockResolvedValue(mockUser);
+        userRepo.findUserByEmailWithPassword.mockResolvedValue(mockUser);
         userRepo.sanitizeUser.mockReturnValue(mockSanitized);
         hashUtil.verifyPassword.mockReturnValue(true);
     });
@@ -50,7 +51,7 @@ describe('authenticateUserUseCase', () => {
 
     it('should lowercase email before querying repo', async () => {
         await authenticateUserUseCase({ email: 'JOHN@EXAMPLE.COM', password: 'secure123' });
-        expect(userRepo.findUserByEmail).toHaveBeenCalledWith('john@example.com');
+        expect(userRepo.findUserByEmailWithPassword).toHaveBeenCalledWith('john@example.com');
     });
 
     it('should call verifyPassword with plain text and stored hash', async () => {

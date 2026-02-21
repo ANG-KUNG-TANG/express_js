@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-import { initPassport } from './config/passport.config.js.js';
+import { initPassport } from './config/passport.config.js';
 import { connectDB } from './infrastructure/repositories/db.js';
 import userRouter from './interfaces/table/user.router.js';
 import taskRouter from './interfaces/table/task.router.js';
@@ -38,6 +38,7 @@ app.get('/', (req, res) => {
                 create: 'POST /api/users',
                 getById: 'GET /api/users/:id',
                 getByEmail: 'GET /api/users/email/:email',
+                list: 'GET /api/list_users',
                 update: 'PUT /api/users/:id',
                 delete: 'DELETE /api/users/:id',
                 promote: 'PATCH /api/users/:id/promote'

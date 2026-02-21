@@ -81,8 +81,14 @@ export const completeTaskController = async (req, res) => {
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
-export const transferTaskController = async (req, res) => {
-    const { fromUserId, toUserId } = req.body;
-    const result = await transferTasks(fromUserId, toUserId);
-    return sendSuccess(res, result, HTTP_STATUS.OK);
+export const transferTaskController = async (req, res, next) => {
+    try {
+        const { fromUserId, toUserId } = req.body;
+        const result = await transferTasks(fromUserId, toUserId);
+        return sendSuccess(res, result, HTTP_STATUS.OK);
+    } catch (err) {
+        next(err);
+    }
 };
+
+

@@ -1,7 +1,7 @@
-import { findUserByEmail, sanitizeUser } from '../../infrastructure/repositories/user_repo.js';
 import { InvalidCredentialsError } from '../../core/errors/user.errors.js';
 import { verifyPassword } from '../validators/password_hash.js';  
 import { validateRequired, validateEmail } from '../validators/user_validator.js';
+import { findUserByEmail, findUserByEmailWithPassword, sanitizeUser } from '../../infrastructure/repositories/user_repo.js';
 
 const validateAuthInput = ({ email, password }) => {
     validateRequired(email, 'email');
@@ -12,9 +12,10 @@ const validateAuthInput = ({ email, password }) => {
 export const authenticateUserUseCase = async ({ email, password }) => {
     validateAuthInput({ email, password });
 
-    const user = await findUserByEmail(email.toLowerCase());
+    const user = await findUserByEmailWithPassword(email.toLowerCase());
 
-    if (!verifyPassword(password, user._password)) {
+    console.log("User found :", user);
+    if (!user || !verifyPassword(password, user._password)) {
         throw new InvalidCredentialsError();
     }
 

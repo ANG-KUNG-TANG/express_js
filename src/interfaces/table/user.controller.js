@@ -9,6 +9,7 @@ import { HTTP_STATUS } from '../http_status.js';
 import { sanitizeCreateInput, sanitizeUpdateInput, sanitizeAuthInput } from "./user.input_sanitizer.js";
 import { generateTokenPair, verifyRefreshToken } from '../../core/services/jwt.service.js';
 import { saveRefreshToken } from '../../core/services/token_store.service.js';
+import { listAllUsersUseCase } from "../../app/user_uc/list_user.uc.js";
 
 const REFRESH_COOKIE_OPTIONS = {
     httpOnly: true,
@@ -55,6 +56,11 @@ export const getUserByEamil = async(req, res) =>{
     const {email} = req.params;
     const user = await getUserByEamilUc(email);
     return sendSuccess(res, user, HTTP_STATUS.OK);
+}
+
+export const listUsers = async (req,res) =>{
+    const users = await listAllUsersUseCase();
+    return sendSuccess(res, users, HTTP_STATUS.OK);
 }
 
 export const updateUser = async (req, res) =>{

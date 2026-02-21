@@ -8,12 +8,14 @@ import {
     updateUser,
     deleteUser,
     promoteUser,
+    listUsers,
 } from "./user.controller.js";
 
 const router = Router();
 
 router.post('/auth/login',              asyncHandler(loginUser));
 router.post('/users',                   asyncHandler(createUser));
+router.get('/list_users',              asyncHandler(listUsers));
 router.get('/users/email/:email',       asyncHandler(getUserByEamil));
 router.get('/users/:id',                asyncHandler(getUserById));
 router.patch('/users/:id/promote',      asyncHandler(promoteUser));

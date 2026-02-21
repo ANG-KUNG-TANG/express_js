@@ -62,7 +62,7 @@ describe('User Repository', () => {
 
     it('should throw not found for non-existent id', async () => {
       const fakeId = new mongoose.Types.ObjectId().toString();
-      await expect(userRepo.findUserById(fakeId)).rejects.toThrow('UserNotFoundError');
+      await expect(userRepo.findUserById(fakeId)).rejects.toThrow('User with id');
     });
 
     it('should throw validation error for invalid id', async () => {
