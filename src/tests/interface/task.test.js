@@ -1,9 +1,4 @@
 import { jest, beforeEach, describe, it, expect } from "@jest/globals";
-
-// ---------------------------------------------------------------------------
-// ESM mocks — must use jest.unstable_mockModule BEFORE dynamic imports
-// ---------------------------------------------------------------------------
-
 jest.unstable_mockModule('../../app/task_uc/create_task.uc.js',   () => ({ createTask:    jest.fn() }));
 jest.unstable_mockModule('../../app/task_uc/get_task.uc.js',      () => ({ getTaskById:   jest.fn() }));
 jest.unstable_mockModule('../../app/task_uc/list_task.uc.js',     () => ({ listTasks:     jest.fn() }));

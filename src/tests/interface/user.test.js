@@ -4,24 +4,41 @@ import { jest, beforeEach, describe, it, expect } from "@jest/globals";
 // ESM mocks — must use jest.unstable_mockModule BEFORE dynamic imports
 // ---------------------------------------------------------------------------
 
-jest.unstable_mockModule('../../app/user_uc/create_user.uc.js',  () => ({ createUserUsecase:            jest.fn() }));
-jest.unstable_mockModule('../../app/user_uc/auth_User.uc.js',    () => ({ authenticateUserUseCase:       jest.fn() }));
-jest.unstable_mockModule('../../app/user_uc/get_user.uc.js',     () => ({ getUseByIdUc:                 jest.fn(), getUserByEamilUc: jest.fn() }));
-jest.unstable_mockModule('../../app/user_uc/update_use.uc.js',   () => ({ updateUserUseCase:             jest.fn() }));
-jest.unstable_mockModule('../../app/user_uc/delete_user.uc.js',  () => ({ deleteUserUc:                 jest.fn() }));
-jest.unstable_mockModule('../../app/user_uc/promote_user.uc.js', () => ({ promoteUserToAdminUseCase:    jest.fn() }));
+// ── user use-case mocks ──────────────────────────────────────────────────────
+jest.unstable_mockModule('../../app/user_uc/create_user.uc.js',  () => ({ createUserUsecase:           jest.fn() }));
+jest.unstable_mockModule('../../app/user_uc/auth_User.uc.js',    () => ({ authenticateUserUseCase:      jest.fn() }));
+jest.unstable_mockModule('../../app/user_uc/get_user.uc.js',     () => ({ getUseByIdUc:                jest.fn(), getUserByEamilUc: jest.fn() }));
+jest.unstable_mockModule('../../app/user_uc/update_use.uc.js',   () => ({ updateUserUseCase:            jest.fn() }));
+jest.unstable_mockModule('../../app/user_uc/delete_user.uc.js',  () => ({ deleteUserUc:                jest.fn() }));
+jest.unstable_mockModule('../../app/user_uc/promote_user.uc.js', () => ({ promoteUserToAdminUseCase:   jest.fn() }));
+
+// ── jwt / token mocks — REQUIRED: user.controller.js imports these at the
+//    top level; without mocks here the real module throws on missing env vars.
+jest.unstable_mockModule('../../core/services/jwt.service.js', () => ({
+    generateTokenPair:  jest.fn(() => ({ accessToken: 'mock-access', refreshToken: 'mock-refresh' })),
+    verifyRefreshToken: jest.fn(() => ({ jti: 'mock-jti', id: 'user-1' })),
+}));
+jest.unstable_mockModule('../../core/services/token_store.service.js', () => ({
+    saveRefreshToken:    jest.fn(),
+    revokeRefreshToken:  jest.fn(),
+    isRefreshTokenValid: jest.fn(),
+    revokeAllForUser:    jest.fn(),
+}));
 
 // ---------------------------------------------------------------------------
 // Dynamic imports AFTER mocks are registered
 // ---------------------------------------------------------------------------
 
-const { createUserUsecase }          = await import('../../app/user_uc/create_user.uc.js');
-const { authenticateUserUseCase }    = await import('../../app/user_uc/auth_User.uc.js');
+const { createUserUsecase }         = await import('../../app/user_uc/create_user.uc.js');
+const { authenticateUserUseCase }   = await import('../../app/user_uc/auth_User.uc.js');
 const { getUseByIdUc,
-        getUserByEamilUc }           = await import('../../app/user_uc/get_user.uc.js');
-const { updateUserUseCase }          = await import('../../app/user_uc/update_use.uc.js');
-const { deleteUserUc }               = await import('../../app/user_uc/delete_user.uc.js');
-const { promoteUserToAdminUseCase }  = await import('../../app/user_uc/promote_user.uc.js');
+        getUserByEamilUc }          = await import('../../app/user_uc/get_user.uc.js');
+const { updateUserUseCase }         = await import('../../app/user_uc/update_use.uc.js');
+const { deleteUserUc }              = await import('../../app/user_uc/delete_user.uc.js');
+const { promoteUserToAdminUseCase } = await import('../../app/user_uc/promote_user.uc.js');
+const { generateTokenPair,
+        verifyRefreshToken }        = await import('../../core/services/jwt.service.js');
+const { saveRefreshToken }          = await import('../../core/services/token_store.service.js');
 
 const {
     createUser,
@@ -41,6 +58,7 @@ const mockRes = () => {
     const res = {};
     res.status = jest.fn().mockReturnValue(res);
     res.json   = jest.fn().mockReturnValue(res);
+    res.cookie = jest.fn().mockReturnValue(res);
     return res;
 };
 
@@ -151,24 +169,54 @@ describe('createUser', () => {
 
 describe('loginUser', () => {
     it('passes sanitized body to authenticateUserUseCase', async () => {
-        authenticateUserUseCase.mockResolvedValue({ token: 'abc' });
+        authenticateUserUseCase.mockResolvedValue({ id: 'u1', email: 'a@b.com', role: 'user' });
         await loginUser(mockReq({ email: 'a@b.com', password: 'pass', extra: 'x' }), mockRes());
         expect(authenticateUserUseCase).toHaveBeenCalledWith({ email: 'a@b.com', password: 'pass' });
     });
 
     it('strips non-auth fields', async () => {
-        authenticateUserUseCase.mockResolvedValue({});
+        authenticateUserUseCase.mockResolvedValue({ id: 'u1', email: 'a@b.com', role: 'user' });
         await loginUser(mockReq({ email: 'a@b.com', password: 'pass', name: 'Alice' }), mockRes());
         expect(authenticateUserUseCase.mock.calls[0][0]).not.toHaveProperty('name');
     });
 
-    it('responds 200 with the token payload', async () => {
-        const payload = { token: 'abc' };
-        authenticateUserUseCase.mockResolvedValue(payload);
+    it('calls generateTokenPair with user payload', async () => {
+        const user = { id: 'u1', email: 'a@b.com', role: 'user' };
+        authenticateUserUseCase.mockResolvedValue(user);
+        await loginUser(mockReq({ email: 'a@b.com', password: 'pass' }), mockRes());
+        expect(generateTokenPair).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'u1', email: 'a@b.com', role: 'user' })
+        );
+    });
+
+    it('saves the refresh token jti to the store', async () => {
+        const user = { id: 'u1', email: 'a@b.com', role: 'user' };
+        authenticateUserUseCase.mockResolvedValue(user);
+        verifyRefreshToken.mockReturnValue({ jti: 'test-jti', id: 'u1' });
+        await loginUser(mockReq({ email: 'a@b.com', password: 'pass' }), mockRes());
+        expect(saveRefreshToken).toHaveBeenCalledWith('test-jti', 'u1');
+    });
+
+    it('responds 200 with the access token', async () => {
+        const user = { id: 'u1', email: 'a@b.com', role: 'user' };
+        authenticateUserUseCase.mockResolvedValue(user);
+        generateTokenPair.mockReturnValue({ accessToken: 'my-access', refreshToken: 'my-refresh' });
         const res = mockRes();
         await loginUser(mockReq({ email: 'a@b.com', password: 'pass' }), res);
         expect(getStatus(res)).toBe(200);
-        expect(getBody(res)).toEqual({ success: true, data: payload });
+        expect(getBody(res).data).toHaveProperty('accessToken', 'my-access');
+    });
+
+    it('sets the refreshToken as an httpOnly cookie', async () => {
+        authenticateUserUseCase.mockResolvedValue({ id: 'u1', email: 'a@b.com', role: 'user' });
+        generateTokenPair.mockReturnValue({ accessToken: 'a', refreshToken: 'r' });
+        const res = mockRes();
+        await loginUser(mockReq({ email: 'a@b.com', password: 'pass' }), res);
+        expect(res.cookie).toHaveBeenCalledWith(
+            'refreshToken',
+            'r',
+            expect.objectContaining({ httpOnly: true })
+        );
     });
 });
 
