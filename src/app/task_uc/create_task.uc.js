@@ -9,6 +9,7 @@ import { TaskPriority, TaskStatus } from '../../domain/base/task_enums.js';
 
 
 export const createTask = async (userId, data) => {
+    console.log('[DEBUG] createTask UC data:', data);
     validateRequired(userId, 'userId');
     const title = validateStringLength(data.title, 'title', 3, 100);
     const description = data.description || '';

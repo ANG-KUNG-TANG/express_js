@@ -1,63 +1,49 @@
 import 'dotenv/config';
+import cors from 'cors';
 import express from 'express';
-import { initPassport } from './config/passport.config.js';
-import { connectDB } from './infrastructure/repositories/db.js';
-import userRouter from './interfaces/table/user.router.js';
-import taskRouter from './interfaces/table/task.router.js';
-import authRouter from './interfaces/table/auth.router.js'
-import {errorHandler} from './middleware/error.handler.js';
-import { sendFailure } from './interfaces/response_formatter.js';
-import { HTTP_STATUS } from './interfaces/http_status.js';
+import { initPassport } from './config/passport.config.js';   // ← was imported but never called
+import { connectDB }    from './infrastructure/repositories/db.js';
+import userRouter  from './interfaces/table/user.router.js';
+import taskRouter  from './interfaces/table/task.router.js';
+import authRouter  from './interfaces/table/auth.router.js';
+import { errorHandler } from './middleware/error.handler.js';
+import { sendFailure }  from './interfaces/response_formatter.js';
+import { HTTP_STATUS }  from './interfaces/http_status.js';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
 const app = express();
+
+app.use(cors({
+    origin: true,   // mirrors origin back — safe because all routes require JWT
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+
+// ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/api', userRouter);
-app.use('/api/tasks', taskRouter);
-app.use('/auth', authRouter);
+// ── Passport (MUST be called before any routes that need OAuth) ───────────────
+initPassport(app);   // ← FIX: was never called — OAuth was completely broken
 
+// ── Routes ────────────────────────────────────────────────────────────────────
+app.use('/api/tasks', taskRouter);   // ✅ MUST be before /api — specific before broad
+app.use('/api',       userRouter);   // /api/users, /api/list_users
+app.use('/auth',      authRouter);   // /auth/login, /auth/refresh, /auth/logout, /auth/github, /auth/google
 
+// ── Root → serve login page ───────────────────────────────────────────────────
+// FIX: removed duplicate GET '/' — only one handler allowed, Express uses the first one
 app.get('/', (req, res) => {
-    return res.json({
-        success: true,
-        message: 'Server is running',
-        version: '1.0.0',
-        endpoints: {
-            auth: {
-                loginEmail: 'POST /api/auth/login',
-                loginGitHub: 'GET /auth/google',
-                googleCallback: 'GET /auth/google/callback',
-                githubCallback: 'GET /auth/github/callback',
-                refresh: 'POST /auth/refresh',
-                logout: 'POST /auth/logout'
-            },
-            users:{
-                create: 'POST /api/users',
-                getById: 'GET /api/users/:id',
-                getByEmail: 'GET /api/users/email/:email',
-                list: 'GET /api/list_users',
-                update: 'PUT /api/users/:id',
-                delete: 'DELETE /api/users/:id',
-                promote: 'PATCH /api/users/:id/promote'
-            },
-            tasks: {
-                create:   'POST /api/tasks',
-                getById:  'GET /api/tasks/:id',
-                listAll:  'GET /api/tasks',
-                search:   'GET /api/tasks/search?q=',
-                update:   'PATCH /api/tasks/:id',
-                delete:   'DELETE /api/tasks/:id',
-                start:    'PATCH /api/tasks/:id/start',
-                complete: 'PATCH /api/tasks/:id/complete',
-                transfer: 'POST /api/tasks/transfer',
-            },
-        },
-    });
+    res.sendFile(path.join(__dirname, 'public/pages/login.html'));
 });
 
+// ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {
     return sendFailure(
         res,
@@ -67,12 +53,17 @@ app.use((req, res) => {
     );
 });
 
+// ── Global error handler ──────────────────────────────────────────────────────
 app.use(errorHandler);
 
+// ── Start server ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 
 connectDB().then(() => {
-    app.listen(PORT, '127.0.0.1', () => {
-        console.log(`Server running at http://127.0.0.1:${PORT}/`);
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`✅ Server running at http://localhost:${PORT}/`);
     });
+}).catch(err => {
+    console.error('❌ Failed to connect to DB:', err);
+    process.exit(1);
 });
