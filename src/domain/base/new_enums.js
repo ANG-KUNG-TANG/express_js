@@ -1,0 +1,20 @@
+// NewsData.io supports these 17 categories on the free plan
+export const NewsCategory = Object.freeze({
+    BUSINESS:       'business',
+    CRIME:          'crime',
+    DOMESTIC:       'domestic',
+    EDUCATION:      'education',
+    ENTERTAINMENT:  'entertainment',
+    ENVIRONMENT:    'environment',
+    FOOD:           'food',
+    HEALTH:         'health',
+    LIFESTYLE:      'lifestyle',
+    OTHER:          'other',
+    POLITICS:       'politics',
+    SCIENCE:        'science',
+    SPORTS:         'sports',
+    TECHNOLOGY:     'technology',
+    TOP:            'top',
+    TOURISM:        'tourism',
+    WORLD:          'world',
+});

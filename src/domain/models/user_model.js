@@ -1,5 +1,6 @@
 import mongoose from "mongoose"
 import { UserRole } from "../../domain/base/user_enums.js"
+import { NewsCategory } from "../base/new_enums.js";
 
 const userSchema = new mongoose.Schema(
     {
@@ -27,6 +28,15 @@ const userSchema = new mongoose.Schema(
             type: String,
             enum: Object.values(UserRole),
             default: UserRole.USER
+        },
+        interests: {
+            type: [String],
+            enum: Object.values(NewsCategory),
+            default: [],
+            validate: {
+                validator: (arr) => arr.length <= 5,
+                message: "you can select up to 5 interest categories",
+            }
         }
     },
     {
