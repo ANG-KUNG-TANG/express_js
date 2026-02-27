@@ -1,11 +1,11 @@
 /**
- * Task Input Sanitizer
- * Whitelists only task-related fields before they reach the use case layer.
+ * WritingTask Input Sanitizer
+ * Whitelists only writing-task-related fields before they reach the use case layer.
  */
 
 const ALLOWED_FIELDS = {
-    create: ['title', 'description', 'status', 'priority', 'dueDate'],
-    update: ['title', 'description', 'status', 'priority', 'dueDate'],
+    create: ['title', 'description', 'taskType', 'examType', 'questionPrompt'],
+    update: ['title', 'description', 'questionPrompt', 'taskType', 'examType'],
 };
 
 const pickAllowed = (body, allowedKeys) => {

@@ -1,11 +1,17 @@
-export const TaskStatus = Object.freeze({
-    PENDING: "PENDING",
-    IN_PROGRESS: "IN_PROGRESS",
-    COMPLETED: 'COMPLETED'
-})
+export const WritingStatus = Object.freeze({
+    ASSIGNED:  'ASSIGNED',
+    WRITING:   'WRITING',
+    SUBMITTED: 'SUBMITTED',
+    REVIEWED:  'REVIEWED',
+    SCORED:    'SCORED',
+});
 
-export const TaskPriority = Object.freeze({
-    LOW:'LOW',
-    MEDIUM:'MEDIUM',
-    HIGH:'HIGH',
-})
+export const TaskType = Object.freeze({
+    TASK_1: 'TASK_1',
+    TASK_2: 'TASK_2',
+});
+
+export const ExamType = Object.freeze({
+    ACADEMIC: 'ACADEMIC',
+    GENERAL:  'GENERAL',
+});

@@ -1,74 +1,166 @@
 import { UniqueId } from "../base/id_generator.js";
-import { TaskStatus, TaskPriority } from "../base/task_enums.js"
+import { WritingStatus, TaskType, ExamType } from "../base/task_enums.js";
 
-export class Task{
-    constructor(props){
-        this._initialize(props)
+export class WritingTask {
+    constructor(props) {
+        this._initialize(props);
     }
+
     _initialize({
-        id, 
+        id,
         title,
-        description ="", 
-        status = TaskStatus.PENDING, 
-        priority = TaskPriority.MEDIUM, 
-        dueDate, 
+        description = "",
+        status = WritingStatus.ASSIGNED,
+        taskType,
+        examType,
+        questionPrompt,
+        submissionText = "",
+        wordCount = 0,
+        bandScore = null,
+        feedback = "",
         userId,
-        createdAt = new Date(), 
-        updatedAt = new Date()
-    }){
+        submittedAt = null,
+        reviewedAt = null,
+        createdAt = new Date(),
+        updatedAt = new Date(),
+    }) {
         this._validateTitle(title);
         this._validateStatus(status);
-        this._validatePriority(priority);
+        this._validateTaskType(taskType);
+        this._validateExamType(examType);
         this._validateUserId(userId);
-        if (dueDate != null) this._validateDueDate(dueDate);
+        if (bandScore !== null && bandScore !== undefined) this._validateBandScore(bandScore);
 
-        this._id = id || new UniqueId().generator();
-        this._title= title;
-        this._description= description;
-        this._status= status ;
-        this._priority= priority ;
-        this._dueDate = dueDate ? new Date(dueDate): null;
-        this._userId= userId; 
-        this._createdAt = createdAt;
-        this._updatedAt = updatedAt;
-
-    }
-    _validateTitle(title){
-            if (!title || title.trim().length < 3) {throw new Error("Title must be at least 3 characters long")};
-    }
-    _validateUserId(userId){
-        if (!userId) {throw new Error("Task must belong to a user")};
-    }
-    _validateStatus(status){
-        if (!Object.values(TaskStatus).includes(status)) {throw new Error("Invalid task status")}
-    }
-    _validatePriority(priority){
-        if (!Object.values(TaskPriority).includes(priority)) {throw new Error("Invalid task priority")}
-    }
-    _validateDueDate(dueDate){
-        const date = new Date(dueDate);
-        if (isNaN(date.getTime())) {throw new Error("invalid due date")}
+        this._id             = id || new UniqueId().generator();
+        this._title          = title;
+        this._description    = description;
+        this._status         = status;
+        this._taskType       = taskType;
+        this._examType       = examType;
+        this._questionPrompt = questionPrompt || "";
+        this._submissionText = submissionText;
+        this._wordCount      = wordCount;
+        this._bandScore      = bandScore;
+        this._feedback       = feedback;
+        this._userId         = userId;
+        this._submittedAt    = submittedAt ? new Date(submittedAt) : null;
+        this._reviewedAt     = reviewedAt  ? new Date(reviewedAt)  : null;
+        this._createdAt      = createdAt;
+        this._updatedAt      = updatedAt;
     }
 
-    start(){
-        if (this._status !== TaskStatus.PENDING){
-            {throw new Error("Only pending tasks can start")}
+    // -------------------------------------------------------------------------
+    // Validators
+    // -------------------------------------------------------------------------
+
+    _validateTitle(title) {
+        if (!title || title.trim().length < 3) {
+            throw new Error("Title must be at least 3 characters long");
         }
-        this._status = TaskStatus.IN_PROGRESS
+    }
+
+    _validateUserId(userId) {
+        if (!userId) throw new Error("WritingTask must belong to a user");
+    }
+
+    _validateStatus(status) {
+        if (!Object.values(WritingStatus).includes(status)) {
+            throw new Error("Invalid writing task status");
+        }
+    }
+
+    _validateTaskType(taskType) {
+        if (!Object.values(TaskType).includes(taskType)) {
+            throw new Error("Invalid task type — must be TASK_1 or TASK_2");
+        }
+    }
+
+    _validateExamType(examType) {
+        if (!Object.values(ExamType).includes(examType)) {
+            throw new Error("Invalid exam type — must be ACADEMIC or GENERAL");
+        }
+    }
+
+    _validateBandScore(score) {
+        const n = Number(score);
+        if (isNaN(n) || n < 0 || n > 9) {
+            throw new Error("Band score must be between 0 and 9");
+        }
+    }
+
+    _getMinWordCount() {
+        return this._taskType === TaskType.TASK_1 ? 150 : 250;
+    }
+
+    _countWords(text) {
+        if (!text || typeof text !== 'string') return 0;
+        return text.trim().split(/\s+/).filter(Boolean).length;
+    }
+
+    // -------------------------------------------------------------------------
+    // State-transition methods
+    // -------------------------------------------------------------------------
+
+    startWriting() {
+        if (this._status !== WritingStatus.ASSIGNED) {
+            throw new Error("Only assigned tasks can be started");
+        }
+        this._status    = WritingStatus.WRITING;
         this._updatedAt = new Date();
     }
-    complete(){
-        if (this._status !== TaskStatus.IN_PROGRESS) {throw Error('Only in-progress tasks can be completed')}
-        this._status = TaskStatus.COMPLETED
+
+    submit(text) {
+        if (this._status !== WritingStatus.WRITING) {
+            throw new Error("Only tasks in WRITING status can be submitted");
+        }
+        if (!text || typeof text !== 'string' || !text.trim()) {
+            throw new Error("Submission text is required");
+        }
+        const wc  = this._countWords(text);
+        const min = this._getMinWordCount();
+        if (wc < min) {
+            throw new Error(
+                `Submission too short. ${this._taskType} requires at least ${min} words (got ${wc})`
+            );
+        }
+        this._submissionText = text;
+        this._wordCount      = wc;
+        this._status         = WritingStatus.SUBMITTED;
+        this._submittedAt    = new Date();
+        this._updatedAt      = new Date();
     }
 
-    get id(){
-        return this._id;
+    review(feedback) {
+        if (this._status !== WritingStatus.SUBMITTED) {
+            throw new Error("Only submitted tasks can be reviewed");
+        }
+        if (!feedback || typeof feedback !== 'string' || !feedback.trim()) {
+            throw new Error("Feedback is required for review");
+        }
+        this._feedback   = feedback;
+        this._status     = WritingStatus.REVIEWED;
+        this._reviewedAt = new Date();
+        this._updatedAt  = new Date();
     }
-    get status(){
-        return this._status;
+
+    score(bandScore) {
+        if (this._status !== WritingStatus.REVIEWED) {
+            throw new Error("Only reviewed tasks can be scored");
+        }
+        this._validateBandScore(bandScore);
+        this._bandScore = Number(bandScore);
+        this._status    = WritingStatus.SCORED;
+        this._updatedAt = new Date();
     }
-    get priority(){
-        return this._priority;
-    }
+
+    // -------------------------------------------------------------------------
+    // Getters
+    // -------------------------------------------------------------------------
+
+    get id()             { return this._id; }
+    get status()         { return this._status; }
+    get taskType()       { return this._taskType; }
+    get examType()       { return this._examType; }
+    get wordCount()      { return this._wordCount; }
+    get bandScore()      { return this._bandScore; }
 }

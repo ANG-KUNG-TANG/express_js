@@ -1,94 +1,144 @@
-import { createTask } from '../../app/task_uc/create_task.uc.js';
-import { getTaskById } from '../../app/task_uc/get_task.uc.js';
-import { listTasks } from '../../app/task_uc/list_task.uc.js';
-import { searchTasks } from '../../app/task_uc/search_task.uc.js';
-import { updateTask } from '../../app/task_uc/update_task.uc.js';
-import { deleteTask } from '../../app/task_uc/delete_task.uc.js';
-import { startTask } from '../../app/task_uc/start_task.uc.js';
-import { completeTask } from '../../app/task_uc/complete_task.uc.js';
-import { transferTasks } from '../../app/task_uc/transfer_task.uc.js';
-import { sendSuccess } from '../response_formatter.js';
-import { HTTP_STATUS } from '../http_status.js';
+import { createWritingTask } from '../../app/task_uc/create_task.uc.js';
+import { getWritingTaskById } from '../../app/task_uc/get_task.uc.js';
+import { listWritingTasks } from '../../app/task_uc/list_task.uc.js'; 
+import { searchWritingTasks } from '../../app/task_uc/search_task.uc.js';
+import { updateWritingTask } from '../../app/task_uc/update_task.uc.js';
+import { deleteWritingTask } from '../../app/task_uc/delete_task.uc.js';
+import { startWritingTask } from '../../infrastructure/repositories/task_repo.js';
+import { submitTask } from '../../infrastructure/repositories/task_repo.js';
+import { reviewTask } from '../../infrastructure/repositories/task_repo.js';
+import { scoreTask } from '../../infrastructure/repositories/task_repo.js';
+import { transferWritingTasks } from '../../app/task_uc/transfer_task.uc.js';
+import { sendSuccess }           from '../response_formatter.js';
+import { HTTP_STATUS }           from '../http_status.js';
 import { sanitizeCreateInput, sanitizeUpdateInput } from './task.input_sanitizer.js';
+import logger from '../../core/logger/logger.js';
+import auditLogger from '../../core/logger/audit.logger.js'
 
-// ---------------------------------------------------------------------------
-// Helper — pulls userId from the JWT payload set by authenticate middleware
-// Supports both { id } and { _id } shapes just in case
-// ---------------------------------------------------------------------------
+
 const getUserId = (req) => req.user?.id ?? req.user?._id;
 
-export const createTaskController = async (req, res) => {
+// POST /writing-tasks
+export const createWritingTaskController = async (req, res) => {
     const userId = getUserId(req);
     const input  = sanitizeCreateInput(req.body);
-    const task   = await createTask(userId, input);
+    logger.debug('writingTask.create called', { requestId: req.id, userId, title: input.title });
+    const task = await createWritingTask(userId, input);
+    auditLogger.log('writingTask.created', { taskId: task.id, title: task._title, userId }, req);
     return sendSuccess(res, task, HTTP_STATUS.CREATED);
 };
 
-export const getTaskByIdController = async (req, res) => {
+// GET /writing-tasks/:id
+export const getWritingTaskByIdController = async (req, res) => {
     const { id } = req.params;
     const userId = getUserId(req);
-    const task   = await getTaskById(id, userId);
+    logger.debug('writingTask.getById called', { requestId: req.id, taskId: id, userId });
+    const task = await getWritingTaskById(id, userId);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
-export const listTaskController = async (req, res) => {
-    const { status, priority, page, limit, sortBy, sortOrder } = req.query;
+// GET /writing-tasks
+export const listWritingTaskController = async (req, res) => {
+    const { status, taskType, examType, page, limit, sortBy, sortOrder } = req.query;
     const userId = getUserId(req);
-
     const filters = {};
     if (status)   filters.status   = status;
-    if (priority) filters.priority = priority;
-
+    if (taskType) filters.taskType = taskType;
+    if (examType) filters.examType = examType;
     const options = { page, limit, sortBy, sortOrder };
-    const tasks   = await listTasks(filters, options, userId);
+    logger.debug('writingTask.list called', { requestId: req.id, userId, filters });
+    const tasks = await listWritingTasks(filters, options, userId);
     return sendSuccess(res, tasks, HTTP_STATUS.OK);
 };
 
-export const searchTaskController = async (req, res) => {
+// GET /writing-tasks/search?q=
+export const searchWritingTaskController = async (req, res) => {
     const { q, page, limit, sortBy, sortOrder } = req.query;
     const userId  = getUserId(req);
     const options = { page, limit, sortBy, sortOrder };
-    const tasks   = await searchTasks(q, options, userId);
+    logger.debug('writingTask.search called', { requestId: req.id, userId, query: q });
+    const tasks = await searchWritingTasks(q, options, userId);
     return sendSuccess(res, tasks, HTTP_STATUS.OK);
 };
 
-export const updateTaskController = async (req, res) => {
+// PATCH /writing-tasks/:id
+export const updateWritingTaskController = async (req, res) => {
     const { id } = req.params;
     const userId  = getUserId(req);
     const updates = sanitizeUpdateInput(req.body);
-    const task    = await updateTask(id, updates, userId);
+    logger.debug('writingTask.update called', { requestId: req.id, taskId: id, userId });
+    const task = await updateWritingTask(id, updates, userId);
+    auditLogger.log('writingTask.updated', { taskId: id, userId, updatedFields: Object.keys(updates) }, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
-export const deleteTaskController = async (req, res) => {
+// DELETE /writing-tasks/:id
+export const deleteWritingTaskController = async (req, res) => {
     const { id } = req.params;
-    const userId = getUserId(req);
-    const result = await deleteTask(id, userId);
+    const userId  = getUserId(req);
+    logger.debug('writingTask.delete called', { requestId: req.id, taskId: id, userId });
+    const result = await deleteWritingTask(id, userId);
+    auditLogger.log('writingTask.deleted', { taskId: id, userId }, req);
     return sendSuccess(res, result, HTTP_STATUS.OK);
 };
 
-export const startTaskController = async (req, res) => {
+// PATCH /writing-tasks/:id/start
+export const startWritingTaskController = async (req, res) => {
     const { id } = req.params;
-    const userId = getUserId(req);
-    const task   = await startTask(id, userId);
+    const userId  = getUserId(req);
+    logger.debug('writingTask.startWriting called', { requestId: req.id, taskId: id, userId });
+    const task = await startWritingTask(id, userId);
+    auditLogger.log('writingTask.started', { taskId: id, userId }, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
-export const completeTaskController = async (req, res) => {
-    const { id } = req.params;
-    const userId = getUserId(req);
-    const task   = await completeTask(id, userId);
+// PATCH /writing-tasks/:id/submit
+export const submitTaskController = async (req, res) => {
+    const { id }           = req.params;
+    const userId           = getUserId(req);
+    const { submissionText } = req.body;
+    logger.debug('writingTask.submit called', { requestId: req.id, taskId: id, userId });
+    const task = await submitTask(id, userId, submissionText);
+    auditLogger.log('writingTask.submitted', { taskId: id, userId, wordCount: task._wordCount }, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
-export const transferTaskController = async (req, res, next) => {
+// PATCH /writing-tasks/:id/review
+export const reviewTaskController = async (req, res) => {
+    const { id }     = req.params;
+    const reviewerId = getUserId(req);
+    const { feedback } = req.body;
+    logger.debug('writingTask.review called', { requestId: req.id, taskId: id, reviewerId });
+    const task = await reviewTask(id, reviewerId, feedback);
+    auditLogger.log('writingTask.reviewed', { taskId: id, reviewerId }, req);
+    return sendSuccess(res, task, HTTP_STATUS.OK);
+};
+
+// PATCH /writing-tasks/:id/score
+export const scoreTaskController = async (req, res) => {
+    const { id }      = req.params;
+    const scorerId    = getUserId(req);
+    const { bandScore } = req.body;
+    logger.debug('writingTask.score called', { requestId: req.id, taskId: id, scorerId });
+    const task = await scoreTask(id, scorerId, bandScore);
+    auditLogger.log('writingTask.scored', { taskId: id, scorerId, bandScore: task._bandScore }, req);
+    return sendSuccess(res, task, HTTP_STATUS.OK);
+};
+
+// POST /writing-tasks/transfer
+export const transferWritingTaskController = async (req, res, next) => {
     try {
         const { fromUserId, toUserId } = req.body;
-        const result = await transferTasks(fromUserId, toUserId);
+        logger.debug('writingTask.transfer called', { requestId: req.id, fromUserId, toUserId });
+        const result = await transferWritingTasks(fromUserId, toUserId);
+        auditLogger.log('writingTask.transferred', {
+            fromUserId,
+            toUserId,
+            transferredCount: result.transferred,
+            requesterId: req.user?.id ?? null,
+        }, req);
         return sendSuccess(res, result, HTTP_STATUS.OK);
     } catch (err) {
         next(err);
     }
 };
-
-

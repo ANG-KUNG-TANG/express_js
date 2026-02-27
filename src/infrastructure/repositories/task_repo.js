@@ -1,300 +1,326 @@
-import TaskModel from "../../domain/models/task_model.js";
-import { Task } from "../../domain/entities/task_entity.js";
-import { TaskStatus, TaskPriority } from "../../domain/base/task_enums.js";
+import WritingTaskModel from "../../domain/models/task_model.js";
+import { WritingTask } from "../../domain/entities/task_entity.js";
+import { WritingStatus } from "../../domain/base/task_enums.js";
 import mongoose from 'mongoose';
 import {
-  TaskInvalidIdError,
-  TaskInvalidUserIdError,
-  TaskNotFoundError,
-  TaskDuplicateTitleError,
-  TaskValidationError,
-  TaskOwnershipError,
+    TaskInvalidIdError,
+    TaskInvalidUserIdError,
+    TaskNotFoundError,
+    TaskDuplicateTitleError,
+    TaskValidationError,
+    TaskOwnershipError,
 } from '../../core/errors/task.errors.js';
+import logger from '../../core/logger/logger.js';
+
+// ---------------------------------------------------------------------------
+// Mappers
+// ---------------------------------------------------------------------------
 
 const toDomain = (doc) => {
-  if (!doc) return null;
-  return new Task({
-    id: doc._id.toString(),
-    title: doc.title,                
-    description: doc.description,
-    status: doc.status,               
-    priority: doc.priority,           
-    dueDate: doc.dueDate,             
-    userId: doc.userId? doc.userId.toString(): undefined,    
-    createdAt: doc.createdAt,          
-    updatedAt: doc.updatedAt,
-  });
+    if (!doc) return null;
+    return new WritingTask({
+        id:             doc._id.toString(),
+        title:          doc.title,
+        description:    doc.description,
+        status:         doc.status,
+        taskType:       doc.taskType,
+        examType:       doc.examType,
+        questionPrompt: doc.questionPrompt,
+        submissionText: doc.submissionText,
+        wordCount:      doc.wordCount,
+        bandScore:      doc.bandScore,
+        feedback:       doc.feedback,
+        userId:         doc.userId ? doc.userId.toString() : undefined,
+        submittedAt:    doc.submittedAt,
+        reviewedAt:     doc.reviewedAt,
+        createdAt:      doc.createdAt,
+        updatedAt:      doc.updatedAt,
+    });
 };
 
 const toDomainList = (docs) => docs.map(toDomain).filter((t) => t !== null);
 
 const toPersistence = (task) => {
-  if (!task) return null;
-  return {
-    ...(task._id && mongoose.Types.ObjectId.isValid(task._id) && {
-      _id: new mongoose.Types.ObjectId(task._id)
-    }),
-    title: task._title,
-    description: task._description,
-    status: task._status,
-    priority: task._priority,
-    dueDate: task._dueDate,
-    userId: task._userId ? new mongoose.Types.ObjectId(task._userId) : undefined,
-    createdAt: task._createdAt,
-    updatedAt: task._updatedAt,
-  };
+    if (!task) return null;
+    return {
+        ...(task._id && mongoose.Types.ObjectId.isValid(task._id) && {
+            _id: new mongoose.Types.ObjectId(task._id),
+        }),
+        title:          task._title,
+        description:    task._description,
+        status:         task._status,
+        taskType:       task._taskType,
+        examType:       task._examType,
+        questionPrompt: task._questionPrompt,
+        submissionText: task._submissionText,
+        wordCount:      task._wordCount,
+        bandScore:      task._bandScore,
+        feedback:       task._feedback,
+        userId:         task._userId ? new mongoose.Types.ObjectId(task._userId) : undefined,
+        submittedAt:    task._submittedAt,
+        reviewedAt:     task._reviewedAt,
+        createdAt:      task._createdAt,
+        updatedAt:      task._updatedAt,
+    };
 };
 
+// ---------------------------------------------------------------------------
+// Queries
+// ---------------------------------------------------------------------------
+
 export const findTaskByID = async (id) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new TaskInvalidIdError('invalid-id');
-  }
-  const doc = await TaskModel.findById(id).lean();
-  if (!doc) throw new TaskNotFoundError(id);
-  return toDomain(doc);
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError('invalid-id');
+    logger.debug('writingTaskRepo.findTaskByID', { id });
+    const doc = await WritingTaskModel.findById(id).lean();
+    if (!doc) throw new TaskNotFoundError(id);
+    return toDomain(doc);
 };
 
 export const findTasks = async (filter = {}, options = {}) => {
-  const {
-    skip = 0,
-    limit = 100,
-    sort = { createdAt: -1 },
-    status,
-    priority,
-    userId,
-    dueDateBefore,
-    dueDateAfter,
-  } = options;
+    const {
+        skip = 0,
+        limit = 100,
+        sort = { createdAt: -1 },
+        status,
+        taskType,
+        examType,
+        userId,
+    } = options;
 
-  const query = {};
+    const query = {};
+    const { userId: filterUserId, ...restFilter } = filter;
+    Object.assign(query, restFilter);
 
-  // Spread only non-userId filter fields to avoid conflicts with options.userId
-  const { userId: filterUserId, ...restFilter } = filter;
-  Object.assign(query, restFilter);
-
-  if (status) query.status = status;
-  if (priority) query.priority = priority;
-  if (userId) {
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      throw new TaskInvalidUserIdError(userId);
+    if (status)   query.status   = status;
+    if (taskType) query.taskType = taskType;
+    if (examType) query.examType = examType;
+    if (userId) {
+        if (!mongoose.Types.ObjectId.isValid(userId)) throw new TaskInvalidUserIdError(userId);
+        query.userId = new mongoose.Types.ObjectId(userId);
     }
-    query.userId = new mongoose.Types.ObjectId(userId);
-  }
-  if (dueDateBefore || dueDateAfter) {
-    query.dueDate = {};
-    if (dueDateBefore) query.dueDate.$lte = dueDateBefore;
-    if (dueDateAfter) query.dueDate.$gte = dueDateAfter;
-  }
 
-  const docs = await TaskModel.find(query)
-    .skip(skip)
-    .limit(limit)
-    .sort(sort)
-    .lean();
-  return toDomainList(docs);
+    logger.debug('writingTaskRepo.findTasks', { query, skip, limit });
+    const docs = await WritingTaskModel.find(query).skip(skip).limit(limit).sort(sort).lean();
+    logger.debug('writingTaskRepo.findTasks: result', { count: docs.length });
+    return toDomainList(docs);
 };
 
+// ---------------------------------------------------------------------------
+// Writes
+// ---------------------------------------------------------------------------
+
 export const createTask = async (taskData) => {
-  const task = new Task(taskData);
-  const existing = await TaskModel.findOne({
-    title: task._title,
-    userId: task._userId,
-  }).lean();
-  if (existing) {
-    throw new TaskDuplicateTitleError(task._title);
-  }
-  const persistence = toPersistence(task);
-  try {
-    const [doc] = await TaskModel.create([persistence]);
-    return toDomain(doc);
-  } catch (err) {
-    if (err.name === "ValidationError") {
-      const message = Object.values(err.errors).map((e) => e.message).join(', ');
-      throw new TaskValidationError(message);
+    const task = new WritingTask(taskData);
+    logger.debug('writingTaskRepo.createTask', { title: task._title, userId: task._userId });
+
+    const existing = await WritingTaskModel.findOne({ title: task._title, userId: task._userId }).lean();
+    if (existing) {
+        logger.warn('writingTaskRepo.createTask: duplicate title for user', { title: task._title });
+        throw new TaskDuplicateTitleError(task._title);
     }
-    if (err.code === 11000) {
-      throw new TaskDuplicateTitleError(task._title);
+
+    const persistence = toPersistence(task);
+    try {
+        const [doc] = await WritingTaskModel.create([persistence]);
+        logger.debug('writingTaskRepo.createTask: saved', { id: doc._id });
+        return toDomain(doc);
+    } catch (err) {
+        if (err.name === 'ValidationError') {
+            const message = Object.values(err.errors).map((e) => e.message).join(', ');
+            throw new TaskValidationError(message);
+        }
+        if (err.code === 11000) throw new TaskDuplicateTitleError(task._title);
+        logger.error('writingTaskRepo.createTask: unexpected error', { error: err.message });
+        throw err;
     }
-    throw err;
-  }
 };
 
 export const updateTask = async (id, updates) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new TaskInvalidIdError('TaskNotFoundError');
-  }
-  const existing = await TaskModel.findById(id);
-  if (!existing) throw new TaskNotFoundError(id);
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError('TaskNotFoundError');
+    logger.debug('writingTaskRepo.updateTask', { id, fields: Object.keys(updates) });
 
-  const task = toDomain(existing);
-  if (updates.title !== undefined) {
-    task._validateTitle(updates.title);
-    task._title = updates.title;
-  }
-  if (updates.description !== undefined) {
-    task._description = updates.description;
-  }
-  if (updates.status !== undefined) {
-    task._status = updates.status;
-  }
-  if (updates.priority !== undefined) {
-    task._priority = updates.priority;
-  }
-  if (updates.dueDate !== undefined) {
-    if (updates.dueDate) {
-      task._validateDueDate(updates.dueDate);
-      task._dueDate = new Date(updates.dueDate);
-    } else {
-      task._dueDate = null;
-    }
-  }
-  task._updatedAt = new Date();
+    const existing = await WritingTaskModel.findById(id);
+    if (!existing) throw new TaskNotFoundError(id);
 
-  const doc = await TaskModel.findByIdAndUpdate(
-    id,
-    {
-      $set: {
-        title: task._title,
-        description: task._description,
-        status: task._status,
-        priority: task._priority,
-        dueDate: task._dueDate,
-        updatedAt: task._updatedAt,
-      },
-    },
-    {
-      returnDocument: 'after',
-      runValidators: true,
-    }
-  ).lean();
+    const task = toDomain(existing);
+    if (updates.title          !== undefined) { task._validateTitle(updates.title); task._title = updates.title; }
+    if (updates.description    !== undefined) task._description    = updates.description;
+    if (updates.status         !== undefined) task._status         = updates.status;
+    if (updates.taskType       !== undefined) task._taskType       = updates.taskType;
+    if (updates.examType       !== undefined) task._examType       = updates.examType;
+    if (updates.questionPrompt !== undefined) task._questionPrompt = updates.questionPrompt;
+    if (updates.submissionText !== undefined) task._submissionText = updates.submissionText;
+    if (updates.wordCount      !== undefined) task._wordCount      = updates.wordCount;
+    if (updates.bandScore      !== undefined) task._bandScore      = updates.bandScore;
+    if (updates.feedback       !== undefined) task._feedback       = updates.feedback;
+    if (updates.submittedAt    !== undefined) task._submittedAt    = updates.submittedAt;
+    if (updates.reviewedAt     !== undefined) task._reviewedAt     = updates.reviewedAt;
+    task._updatedAt = new Date();
 
-  if (!doc) throw new TaskNotFoundError(id);
-  return toDomain(doc);
+    const doc = await WritingTaskModel.findByIdAndUpdate(
+        id,
+        { $set: {
+            title:          task._title,
+            description:    task._description,
+            status:         task._status,
+            taskType:       task._taskType,
+            examType:       task._examType,
+            questionPrompt: task._questionPrompt,
+            submissionText: task._submissionText,
+            wordCount:      task._wordCount,
+            bandScore:      task._bandScore,
+            feedback:       task._feedback,
+            submittedAt:    task._submittedAt,
+            reviewedAt:     task._reviewedAt,
+            updatedAt:      task._updatedAt,
+        }},
+        { returnDocument: 'after', runValidators: true }
+    ).lean();
+
+    if (!doc) throw new TaskNotFoundError(id);
+    logger.debug('writingTaskRepo.updateTask: updated', { id });
+    return toDomain(doc);
 };
 
 export const deleteTask = async (id) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new TaskInvalidIdError(id);
-  }
-  const result = await TaskModel.findByIdAndDelete(id);
-  if (!result) throw new TaskNotFoundError(id);
-  return true;
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError(id);
+    logger.debug('writingTaskRepo.deleteTask', { id });
+    const result = await WritingTaskModel.findByIdAndDelete(id);
+    if (!result) throw new TaskNotFoundError(id);
+    logger.debug('writingTaskRepo.deleteTask: deleted', { id });
+    return true;
 };
 
 export const countTasks = async (filters = {}) => {
-  return await TaskModel.countDocuments(filters);
+    return await WritingTaskModel.countDocuments(filters);
 };
 
-export const startTask = async (id) => {
-  const task = await findTaskByID(id);
-  task.start();
-  return await updateTask(id, { status: task._status });
+// ---------------------------------------------------------------------------
+// Status-transition helpers
+// ---------------------------------------------------------------------------
+
+export const startWritingTask = async (id) => {
+    logger.debug('writingTaskRepo.startWritingTask', { id });
+    const task = await findTaskByID(id);
+    task.startWriting();
+    return await updateTask(id, { status: task._status });
 };
 
-export const completeTask = async (id) => {
-  const task = await findTaskByID(id);
-  task.complete();
-  return await updateTask(id, { status: task._status });
+export const submitTask = async (id, text) => {
+    logger.debug('writingTaskRepo.submitTask', { id });
+    const task = await findTaskByID(id);
+    task.submit(text);
+    return await updateTask(id, {
+        status:         task._status,
+        submissionText: task._submissionText,
+        wordCount:      task._wordCount,
+        submittedAt:    task._submittedAt,
+    });
 };
 
-export const findTaskByUser = (userId, options = {}) =>
-  findTasks({}, { ...options, userId });
+export const reviewTask = async (id, feedback) => {
+    logger.debug('writingTaskRepo.reviewTask', { id });
+    const task = await findTaskByID(id);
+    task.review(feedback);
+    return await updateTask(id, {
+        status:     task._status,
+        feedback:   task._feedback,
+        reviewedAt: task._reviewedAt,
+    });
+};
 
-export const findTaskByStatus = (status, options = {}) =>
-  findTasks({ status }, options);
+export const scoreTask = async (id, bandScore) => {
+    logger.debug('writingTaskRepo.scoreTask', { id });
+    const task = await findTaskByID(id);
+    task.score(bandScore);
+    return await updateTask(id, {
+        status:    task._status,
+        bandScore: task._bandScore,
+    });
+};
 
-export const findTasksByPriority = (priority, options = {}) =>
-  findTasks({ priority }, options);
+// ---------------------------------------------------------------------------
+// Convenience finders
+// ---------------------------------------------------------------------------
 
-export const findOverdueTasks = (options = {}) =>
-  findTasks(
-    {
-      dueDate: { $lt: new Date() },
-      status: { $ne: TaskStatus.COMPLETED },
-    },
-    options
-  );
+export const findTaskByUser   = (userId, options = {}) => findTasks({}, { ...options, userId });
+export const findTaskByStatus = (status, options = {}) => findTasks({ status }, options);
+export const findTasksByType  = (taskType, options = {}) => findTasks({ taskType }, options);
 
 export const searchTasksByTitle = async (searchTerm, options = {}) => {
-  const { skip = 0, limit = 20, sort = { createdAt: -1 } } = options;
-  const docs = await TaskModel.find({ title: { $regex: searchTerm, $options: 'i' } })
-    .skip(skip)
-    .limit(limit)
-    .sort(sort)
-    .lean();
-  return toDomainList(docs);
+    const { skip = 0, limit = 20, sort = { createdAt: -1 } } = options;
+    logger.debug('writingTaskRepo.searchTasksByTitle', { searchTerm });
+    const docs = await WritingTaskModel.find({ title: { $regex: searchTerm, $options: 'i' } })
+        .skip(skip).limit(limit).sort(sort).lean();
+    logger.debug('writingTaskRepo.searchTasksByTitle: result', { count: docs.length });
+    return toDomainList(docs);
 };
 
+// ---------------------------------------------------------------------------
+// Stats & ownership
+// ---------------------------------------------------------------------------
+
 export const getUserTaskStats = async (userId) => {
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    throw new TaskInvalidUserIdError(userId);
-  }
-  const stats = await TaskModel.aggregate([
-    { $match: { userId: new mongoose.Types.ObjectId(userId) } },
-    {
-      $facet: {
-        total: [{ $count: "count" }],
-        byStatus: [{ $group: { _id: "$status", count: { $sum: 1 } } }],
-        byPriority: [{ $group: { _id: "$priority", count: { $sum: 1 } } }],
-        overdue: [
-          {
-            $match: {
-              dueDate: { $lt: new Date() },
-              status: { $ne: TaskStatus.COMPLETED },
-            },
-          },
-          { $count: "count" },
-        ],
-      },
-    },
-  ]);
-  const result = stats[0] || {};
-  return {
-    total: result.total[0]?.count || 0,
-    byStatus: Object.fromEntries(result.byStatus?.map((s) => [s._id, s.count]) || []),
-    byPriority: Object.fromEntries(result.byPriority?.map((p) => [p._id, p.count]) || []),
-    overdue: result.overdue[0]?.count || 0,
-  };
+    if (!mongoose.Types.ObjectId.isValid(userId)) throw new TaskInvalidUserIdError(userId);
+    logger.debug('writingTaskRepo.getUserTaskStats', { userId });
+    const stats = await WritingTaskModel.aggregate([
+        { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+        { $facet: {
+            total:      [{ $count: 'count' }],
+            byStatus:   [{ $group: { _id: '$status',   count: { $sum: 1 } } }],
+            byTaskType: [{ $group: { _id: '$taskType', count: { $sum: 1 } } }],
+            byExamType: [{ $group: { _id: '$examType', count: { $sum: 1 } } }],
+            avgBandScore: [
+                { $match: { bandScore: { $ne: null } } },
+                { $group: { _id: null, avg: { $avg: '$bandScore' } } },
+            ],
+        }},
+    ]);
+    const result = stats[0] || {};
+    return {
+        total:        result.total[0]?.count || 0,
+        byStatus:     Object.fromEntries(result.byStatus?.map((s) => [s._id, s.count]) || []),
+        byTaskType:   Object.fromEntries(result.byTaskType?.map((t) => [t._id, t.count]) || []),
+        byExamType:   Object.fromEntries(result.byExamType?.map((e) => [e._id, e.count]) || []),
+        avgBandScore: result.avgBandScore[0]?.avg ?? null,
+    };
 };
 
 export const ensureTaskOwnership = (task, userId) => {
-  if (task._userId.toString() !== userId) {
-    throw new TaskOwnershipError(userId, task.id);
-  }
+    if (task._userId.toString() !== userId) {
+        logger.warn('writingTaskRepo.ensureTaskOwnership: ownership violation', { taskId: task.id, userId });
+        throw new TaskOwnershipError(userId, task.id);
+    }
 };
 
+// ---------------------------------------------------------------------------
+// Transfers
+// ---------------------------------------------------------------------------
+
 export const transferTasks = async (fromUserId, toUserId, session = null) => {
-  if (!mongoose.Types.ObjectId.isValid(fromUserId)) {
-    throw new TaskInvalidUserIdError(fromUserId);
-  }
-  if (!mongoose.Types.ObjectId.isValid(toUserId)) {
-    throw new TaskInvalidUserIdError(toUserId);
-  }
-  const filter = { userId: new mongoose.Types.ObjectId(fromUserId) };
-  const update = {
-    userId: new mongoose.Types.ObjectId(toUserId),
-    updatedAt: new Date(),
-  };
-  const options = session ? { session } : {};
-  const result = await TaskModel.updateMany(filter, { $set: update }, options);
-  return { transferred: result.modifiedCount };
+    if (!mongoose.Types.ObjectId.isValid(fromUserId)) throw new TaskInvalidUserIdError(fromUserId);
+    if (!mongoose.Types.ObjectId.isValid(toUserId))   throw new TaskInvalidUserIdError(toUserId);
+    logger.debug('writingTaskRepo.transferTasks', { fromUserId, toUserId });
+    const filter  = { userId: new mongoose.Types.ObjectId(fromUserId) };
+    const update  = { userId: new mongoose.Types.ObjectId(toUserId), updatedAt: new Date() };
+    const options = session ? { session } : {};
+    const result  = await WritingTaskModel.updateMany(filter, { $set: update }, options);
+    logger.debug('writingTaskRepo.transferTasks: done', { transferred: result.modifiedCount });
+    return { transferred: result.modifiedCount };
 };
 
 export const transferSingleTask = async (taskId, fromUserId, toUserId, session = null) => {
-  if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
-  if (!mongoose.Types.ObjectId.isValid(fromUserId)) throw new TaskInvalidUserIdError(fromUserId);
-  if (!mongoose.Types.ObjectId.isValid(toUserId)) throw new TaskInvalidUserIdError(toUserId);
-
-  const options = session ? { session } : {};
-  const doc = await TaskModel.findOneAndUpdate(
-    {
-      _id: new mongoose.Types.ObjectId(taskId),
-      userId: new mongoose.Types.ObjectId(fromUserId), // ensures ownership
-    },
-    { $set: { userId: new mongoose.Types.ObjectId(toUserId), updatedAt: new Date() } },
-    { returnDocument: 'after', runValidators: true, ...options }
-  ).lean();
-
-  if (!doc) throw new TaskNotFoundError(taskId); // task not found OR not owned by fromUser
-  return toDomain(doc);
+    if (!mongoose.Types.ObjectId.isValid(taskId))     throw new TaskInvalidIdError(taskId);
+    if (!mongoose.Types.ObjectId.isValid(fromUserId)) throw new TaskInvalidUserIdError(fromUserId);
+    if (!mongoose.Types.ObjectId.isValid(toUserId))   throw new TaskInvalidUserIdError(toUserId);
+    logger.debug('writingTaskRepo.transferSingleTask', { taskId, fromUserId, toUserId });
+    const options = session ? { session } : {};
+    const doc = await WritingTaskModel.findOneAndUpdate(
+        { _id: new mongoose.Types.ObjectId(taskId), userId: new mongoose.Types.ObjectId(fromUserId) },
+        { $set: { userId: new mongoose.Types.ObjectId(toUserId), updatedAt: new Date() } },
+        { returnDocument: 'after', runValidators: true, ...options }
+    ).lean();
+    if (!doc) throw new TaskNotFoundError(taskId);
+    logger.debug('writingTaskRepo.transferSingleTask: transferred', { taskId });
+    return toDomain(doc);
 };

@@ -2,30 +2,38 @@ import { Router } from 'express';
 import { asyncHandler } from '../async_handler.js';
 import { authenticate, authorizeAdmin } from '../../middleware/auth.middelware.js';
 import {
-    createTaskController,
-    getTaskByIdController,
-    listTaskController,
-    searchTaskController,
-    updateTaskController,
-    deleteTaskController,
-    startTaskController,
-    completeTaskController,
-    transferTaskController,
+    createWritingTaskController,
+    getWritingTaskByIdController,
+    listWritingTaskController,
+    searchWritingTaskController,
+    updateWritingTaskController,
+    deleteWritingTaskController,
+    startWritingTaskController,
+    submitTaskController,
+    reviewTaskController,
+    scoreTaskController,
+    transferWritingTaskController,
 } from './task.controller.js';
 
 const router = Router();
 
-router.use(authenticate);  // ← this is what sets req.user on every request
+router.use(authenticate);
 
-// ✅ Static routes MUST come before /:id — otherwise Express matches /transfer as an id
-router.post('/transfer',      authorizeAdmin, asyncHandler(transferTaskController));
-router.post('/',              asyncHandler(createTaskController));
-router.get('/search',         asyncHandler(searchTaskController));
-router.get('/',               asyncHandler(listTaskController));
-router.get('/:id',            asyncHandler(getTaskByIdController));
-router.patch('/:id/start',    asyncHandler(startTaskController));
-router.patch('/:id/complete', asyncHandler(completeTaskController));
-router.patch('/:id',          asyncHandler(updateTaskController));
-router.delete('/:id',         asyncHandler(deleteTaskController));
+// ── Static routes FIRST (before /:id to avoid param collision) ────────────────
+router.post('/transfer', authorizeAdmin, asyncHandler(transferWritingTaskController));
+router.get('/search',                   asyncHandler(searchWritingTaskController));
+
+// ── Collection ────────────────────────────────────────────────────────────────
+router.post('/',  asyncHandler(createWritingTaskController));
+router.get('/',   asyncHandler(listWritingTaskController));
+
+// ── Single resource ───────────────────────────────────────────────────────────
+router.get('/:id',             asyncHandler(getWritingTaskByIdController));
+router.patch('/:id/start',     asyncHandler(startWritingTaskController));
+router.patch('/:id/submit',    asyncHandler(submitTaskController));
+router.patch('/:id/review',    authorizeAdmin, asyncHandler(reviewTaskController));
+router.patch('/:id/score',     authorizeAdmin, asyncHandler(scoreTaskController));
+router.patch('/:id',           asyncHandler(updateWritingTaskController));
+router.delete('/:id',          asyncHandler(deleteWritingTaskController));
 
 export default router;

@@ -1,48 +1,81 @@
 import mongoose from 'mongoose';
-import {TaskStatus, TaskPriority} from "../../domain/base/task_enums.js"
+import { WritingStatus, TaskType, ExamType } from "../../domain/base/task_enums.js";
 
-const TaskSchema = new mongoose.Schema(
+const WritingTaskSchema = new mongoose.Schema(
     {
-        title:{
+        title: {
             type: String,
             required: true,
             trim: true,
             minlength: 3,
-            maxlength: 100
+            maxlength: 100,
         },
-        description:{
+        description: {
             type: String,
             required: false,
             trim: true,
-            default: ''
+            default: '',
         },
-        status:{
+        status: {
             type: String,
-            enum: Object.values(TaskStatus),
-            default: TaskStatus.PENDING            
+            enum: Object.values(WritingStatus),
+            default: WritingStatus.ASSIGNED,
         },
-        priority:{
+        taskType: {
             type: String,
-            enum: Object.values(TaskPriority),
-            default: TaskPriority.MEDIUM
+            enum: Object.values(TaskType),
+            required: true,
         },
-        dueDate:{
-            type:Date,
-            required: false
+        examType: {
+            type: String,
+            enum: Object.values(ExamType),
+            required: true,
         },
-        userId:{
+        questionPrompt: {
+            type: String,
+            trim: true,
+            default: '',
+        },
+        submissionText: {
+            type: String,
+            default: '',
+        },
+        wordCount: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        bandScore: {
+            type: Number,
+            default: null,
+            min: 0,
+            max: 9,
+        },
+        feedback: {
+            type: String,
+            default: '',
+        },
+        submittedAt: {
+            type: Date,
+            default: null,
+        },
+        reviewedAt: {
+            type: Date,
+            default: null,
+        },
+        userId: {
             type: mongoose.Schema.Types.ObjectId,
-            ref:'User',
-            required: true
-        }
+            ref: 'User',
+            required: true,
+        },
     },
     {
         timestamps: true,
-        versionKey:false
+        versionKey: false,
     }
 );
 
-TaskSchema.index({userId: 1, status: 1});
+WritingTaskSchema.index({ userId: 1, taskType: 1 });
 
-const TaskModel = mongoose.model('Task', TaskSchema);
-export default TaskModel;
+const WritingTaskModel = mongoose.model('WritingTask', WritingTaskSchema);
+export default WritingTaskModel;

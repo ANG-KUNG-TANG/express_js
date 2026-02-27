@@ -6,9 +6,12 @@ import { connectDB }    from './infrastructure/repositories/db.js';
 import userRouter  from './interfaces/table/user.router.js';
 import taskRouter  from './interfaces/table/task.router.js';
 import authRouter  from './interfaces/table/auth.router.js';
+import vocabRouter from './interfaces/table/vocab.router.js';
 import { errorHandler } from './middleware/error.handler.js';
 import { sendFailure }  from './interfaces/response_formatter.js';
 import { HTTP_STATUS }  from './interfaces/http_status.js';
+import { requestLoggerMiddleware } from './middleware/request.logger.middleware.js';
+import { errorLoggerMiddleware } from './middleware/error.logger.middleware.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -28,6 +31,8 @@ app.use(cors({
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(requestLoggerMiddleware);
+
 
 // ── Passport (MUST be called before any routes that need OAuth) ───────────────
 initPassport(app);   // ← FIX: was never called — OAuth was completely broken
@@ -36,13 +41,14 @@ initPassport(app);   // ← FIX: was never called — OAuth was completely broke
 app.use('/api/tasks', taskRouter);   // ✅ MUST be before /api — specific before broad
 app.use('/api',       userRouter);   // /api/users, /api/list_users
 app.use('/auth',      authRouter);   // /auth/login, /auth/refresh, /auth/logout, /auth/github, /auth/google
-
+app.use('/vocab', vocabRouter);
 // ── Root → serve login page ───────────────────────────────────────────────────
 // FIX: removed duplicate GET '/' — only one handler allowed, Express uses the first one
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public/pages/login.html'));
 });
 
+app.use(errorLoggerMiddleware);
 // ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {
     return sendFailure(

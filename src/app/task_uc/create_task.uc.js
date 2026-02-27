@@ -3,20 +3,17 @@ import {
     validateRequired,
     validateStringLength,
     validateEnum,
-    validateDate
 } from '../../app/validators/task_validator.js';
-import { TaskPriority, TaskStatus } from '../../domain/base/task_enums.js';
+import { TaskType, ExamType } from '../../domain/base/task_enums.js';
 
-
-export const createTask = async (userId, data) => {
-    console.log('[DEBUG] createTask UC data:', data);
+export const createWritingTask = async (userId, data) => {
     validateRequired(userId, 'userId');
-    const title = validateStringLength(data.title, 'title', 3, 100);
-    const description = data.description || '';
-    const status = data.status ? validateEnum(data.status, TaskStatus, 'status') : undefined;
-    const priority = data.priority ? validateEnum(data.priority, TaskPriority, 'priority') : undefined;
-    const dueDate = data.dueDate ? validateDate(data.dueDate, 'dueDate', false, false) : null;
+    const title         = validateStringLength(data.title, 'title', 3, 100);
+    const description   = data.description || '';
+    const taskType      = validateEnum(data.taskType, TaskType, 'taskType');
+    const examType      = validateEnum(data.examType, ExamType, 'examType');
+    const questionPrompt = data.questionPrompt || '';
 
-    const taskData = { title, description, status, priority, dueDate, userId };
+    const taskData = { title, description, taskType, examType, questionPrompt, userId };
     return await taskRepo.createTask(taskData);
 };
