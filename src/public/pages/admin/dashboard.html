@@ -1,0 +1,38 @@
+<!-- admin/dashboard.html -->
+<!DOCTYPE html><html lang="en">
+<head><meta charset="UTF-8"/><title>Admin Dashboard — IELTS Platform</title>
+<link rel="stylesheet" href="/css/base.css"/>
+<style>
+  .admin-nav { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+  .queue-list { display: flex; flex-direction: column; gap: 10px; }
+  .queue-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
+  .queue-item__title { font-size: .9rem; font-weight: 600; flex: 1; }
+  .queue-item__meta { font-size: .78rem; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="container page-content">
+  <div class="page-header">
+    <p class="page-header__eyebrow">Administration</p>
+    <h1 class="page-header__title">Admin Dashboard</h1>
+  </div>
+  <div class="admin-nav">
+    <a href="/pages/admin/dashboard.html" class="btn btn--secondary">Overview</a>
+    <a href="/pages/admin/tasks.html" class="btn btn--ghost">All Tasks</a>
+    <a href="/pages/admin/users.html" class="btn btn--ghost">Manage Users</a>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-card__number" id="stat-total">—</div><div class="stat-card__label">Total Tasks</div></div>
+    <div class="stat-card"><div class="stat-card__number" id="stat-submitted">—</div><div class="stat-card__label">Awaiting Review</div></div>
+    <div class="stat-card"><div class="stat-card__number" id="stat-reviewed">—</div><div class="stat-card__label">Awaiting Score</div></div>
+    <div class="stat-card"><div class="stat-card__number" id="stat-scored">—</div><div class="stat-card__label">Scored</div></div>
+    <div class="stat-card"><div class="stat-card__number" id="stat-users">—</div><div class="stat-card__label">Users</div></div>
+  </div>
+  <div class="section-header">
+    <h2 class="section-title">Action Queue</h2>
+    <a href="/pages/admin/tasks.html" class="btn btn--ghost btn--sm">View all →</a>
+  </div>
+  <div id="action-queue" class="queue-list"><p class="loading">Loading…</p></div>
+</div>
+<script type="module" src="/js/pages/admin/dashboard.js"></script>
+</body></html>

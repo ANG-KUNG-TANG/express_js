@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Interests — IELTS Platform</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/pages/news.css" />
+</head>
+<body class="page">
+  <div class="container page-content">
+
+    <div class="page-hero animate-in">
+      <p class="page-hero__eyebrow">
+        <a href="/pages/news/feed.html">← Back to Feed</a>
+      </p>
+      <h1 class="page-hero__title">My News Interests</h1>
+      <p class="page-hero__sub">
+        Select up to five topics to personalise your reading journey.
+      </p>
+    </div>
+
+    <div class="interests-layout">
+      <div class="interests-meta">
+        <p class="text-muted">Click a topic to select or deselect it.</p>
+        <span id="selected-count">0 / 5 selected</span>
+      </div>
+
+      <div id="categories-grid">
+        <p class="loading">Loading categories…</p>
+      </div>
+
+      <div class="save-row">
+        <button id="save-btn" class="btn btn--primary btn--lg" disabled>Save Interests</button>
+        <a href="/pages/news/feed.html" class="btn btn--ghost btn--lg">Cancel</a>
+      </div>
+    </div>
+
+  </div>
+  <script type="module" src="/js/pages/news/interests.js"></script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+/* ============================================================
+   tasks.css — list, create, detail pages
+   ============================================================ */
+
+/* ── Task list grid ─────────────────────────────────────────── */
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.task-card {
+  display: flex;
+  flex-direction: column;
+  cursor: default;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--border-light);
+}
+
+.task-card .card__actions {
+  margin-top: auto;
+}
+
+/* ── Create form ────────────────────────────────────────────── */
+.create-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 40px;
+  align-items: start;
+}
+
+.form-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.word-count-hint {
+  padding: 12px 16px;
+  background: var(--blue-dim);
+  border: 1px solid rgba(74,144,217,0.3);
+  border-radius: var(--radius);
+  color: var(--blue);
+  font-size: 0.875rem;
+  font-weight: 500;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--transition);
+}
+
+.word-count-hint:empty {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-dim);
+}
+
+.word-count-hint::before {
+  content: 'ℹ';
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* ── Create sidebar ─────────────────────────────────────────── */
+.sidebar-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  position: sticky;
+  top: calc(var(--nav-h) + 24px);
+}
+
+.sidebar-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-tip {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  padding-left: 14px;
+  border-left: 2px solid var(--accent-dim);
+  line-height: 1.6;
+}
+
+.sidebar-tip strong {
+  color: var(--accent-light);
+  font-weight: 600;
+}
+
+/* ── Detail page ────────────────────────────────────────────── */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 36px;
+  align-items: start;
+}
+
+.detail-header {
+  margin-bottom: 36px;
+}
+
+.detail-header h1 {
+  margin-bottom: 14px;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.detail-section {
+  margin-bottom: 32px;
+}
+
+.detail-section__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-section__content {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+/* ── Detail sidebar ─────────────────────────────────────────── */
+.detail-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: sticky;
+  top: calc(var(--nav-h) + 24px);
+}
+
+.detail-sidebar h3 {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  gap: 12px;
+}
+
+.meta-row:last-of-type { border-bottom: none; }
+
+.meta-row__label { color: var(--text-dim); flex-shrink: 0; }
+.meta-row__value { color: var(--text); font-weight: 500; text-align: right; }
+
+#task-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Band score display ─────────────────────────────────────── */
+.score-display {
+  text-align: center;
+  padding: 28px 20px;
+  background: var(--green-dim);
+  border: 1px solid rgba(76,175,125,0.3);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+}
+
+.score-display__number {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  color: var(--green);
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.score-display__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--green);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .create-grid  { grid-template-columns: 1fr; }
+  .detail-grid  { grid-template-columns: 1fr; }
+  .sidebar-card { position: static; }
+  .detail-sidebar { position: static; }
+}
+
+@media (max-width: 600px) {
+  .form-row      { grid-template-columns: 1fr; }
+  .form-card     { padding: 24px; }
+  .tasks-grid    { grid-template-columns: 1fr; }
+}
+
+/* ── Two‑column list layout (used in list.html) ── */
+.list-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .list-layout { grid-template-columns: 1fr; }
+}
+
+.list-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: sticky;
+  top: calc(var(--nav-h) + 24px);
+}
+
+.list-sidebar .page-header {
+  margin-bottom: 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.list-sidebar .btn {
+  margin-top: 16px;
+  width: 100%;
+}
+
+/* ── Extra action buttons in detail sidebar ── */
+.task-extra-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Optional: adjust edit button in notes section */
+#edit-notes-btn {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+}

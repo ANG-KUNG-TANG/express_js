@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Users — Admin</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/pages/admin.css" />
+</head>
+<body class="page">
+  <div class="container page-content">
+
+    <div class="page-header">
+      <p class="page-header__eyebrow">Administration</p>
+      <h1 class="page-header__title">Manage Users</h1>
+    </div>
+
+    <div class="admin-nav">
+      <a href="/pages/admin/dashboard.html" class="btn btn--ghost">Overview</a>
+      <a href="/pages/admin/tasks.html"     class="btn btn--ghost">All Tasks</a>
+      <a href="/pages/admin/users.html"     class="btn btn--secondary">Manage Users</a>
+    </div>
+
+    <div class="search-bar">
+      <input type="email" id="search-email" placeholder="Search by email address…" autocomplete="off" />
+      <button id="search-btn" class="btn btn--secondary">Search</button>
+    </div>
+
+    <div id="users-list">
+      <p class="loading">Loading users…</p>
+    </div>
+
+  </div>
+  <script type="module" src="/js/pages/admin/users.js"></script>
+</body>
+</html>

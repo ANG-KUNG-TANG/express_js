@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search News — IELTS Platform</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/pages/news.css" />
+</head>
+<body class="page">
+    <div class="page-hero animate-in">
+    <p class="page-hero__eyebrow">News</p>
+    <h1 class="page-hero__title">Search Articles</h1>
+    <p class="page-hero__sub">
+      Discover articles by keyword or category.
+    </p>
+
+    <form id="search-form" style="margin-top:20px">
+      <div class="search-bar">
+        <input type="text" id="search-input"
+              class="input"
+              placeholder="Search for keywords…" />
+        <button type="submit" class="btn btn--primary">
+          Search
+        </button>
+      </div>
+
+      <div style="margin-top:12px">
+        <select id="filter-category" class="input">
+          <option value="">All Categories</option>
+        </select>
+      </div>
+  </form>
+</div>
+  <script type="module" src="/js/pages/news/search.js"></script>
+</body>
+</html>

@@ -53,7 +53,11 @@ export const githubAuth = (req, res, next) =>
 
 const oauthCallback = (provider) => [
   (req, res, next) =>
-    passport.authenticate(provider, { session: false, failureRedirect: '/auth/failure' })(req, res, next),
+    passport.authenticate(provider, {
+      session: false,
+      // --- CHANGE: redirect to frontend failure page ---
+      failureRedirect: '/pages/auth/auth_fail.html?message=Authentication+failed'
+    })(req, res, next),
   (req, res) => {
     const tokens = issueTokens(res, req.user);
 
@@ -69,7 +73,11 @@ const oauthCallback = (provider) => [
       provider,
     }, req);
 
-    return sendSuccess(res, tokens, HTTP_STATUS.OK);
+    // --- CHANGE: redirect to frontend success page with token and user ---
+    // Encode user object as base64 to safely pass in URL
+    const userBase64 = Buffer.from(JSON.stringify(req.user)).toString('base64');
+    const successUrl = `/pages/auth/auth_success.html?token=${tokens.accessToken}&user=${userBase64}`;
+    return res.redirect(successUrl);
   },
 ];
 
@@ -165,5 +173,6 @@ export const logout = (req, res) => {
 export const authFailure = (req, res) => {
   logger.warn('auth.authFailure: OAuth authentication failed', { requestId: req.id });
   auditLogger.failure('auth.oauth.failure', { reason: 'oauth_provider_rejected' }, req);
-  return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'OAuth authentication failed' });
+  // --- CHANGE: redirect to frontend failure page ---
+  return res.redirect('/pages/auth/auth_fail.html?message=OAuth+authentication+failed');
 };

@@ -1,0 +1,83 @@
+<!DOCTYPE html><html lang="en">
+<head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Tasks — IELTS Platform</title>
+<link rel="stylesheet" href="/css/base.css"/>
+<style>
+  .list-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
+    align-items: start;
+  }
+  @media (max-width: 800px) {
+    .list-layout { grid-template-columns: 1fr; }
+  }
+  .list-sidebar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    position: sticky;
+    top: calc(var(--nav-h) + 24px);
+  }
+  .list-sidebar .page-header {
+    margin-bottom: 0;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .list-sidebar .btn {
+    margin-top: 16px;
+    width: 100%;
+  }
+  /* FIX: define list-main so the right column has proper spacing */
+  .list-main {
+    min-width: 0; /* prevent grid blowout */
+  }
+  /* FIX: define filter-bar layout used by list.js rendered content */
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+  }
+  .filter-bar input,
+  .filter-bar select {
+    padding: 7px 10px;
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+  }
+  .filter-bar input { flex: 1; min-width: 160px; }
+</style>
+</head>
+<body>
+<div class="container page-content">
+  <div class="list-layout">
+    <!-- LEFT SIDEBAR: My Tasks heading & new task button -->
+    <aside class="list-sidebar">
+      <div class="page-header">
+        <p class="page-header__eyebrow">Writing Practice</p>
+        <h1 class="page-header__title">My Tasks</h1>
+        <p class="page-header__sub">All your IELTS writing tasks in one place.</p>
+        <a href="/pages/tasks/create.html" class="btn btn--primary">+ New Task</a>
+      </div>
+    </aside>
+
+    <!-- RIGHT MAIN: filters and tasks grid -->
+    <main class="list-main">
+      <div class="filter-bar">
+        <input type="text" id="search-input" placeholder="Search tasks…" style="flex:1;"/>
+        <select id="filter-status"><option value="">All Statuses</option><option value="ASSIGNED">Assigned</option><option value="WRITING">Writing</option><option value="SUBMITTED">Submitted</option><option value="REVIEWED">Reviewed</option><option value="SCORED">Scored</option></select>
+        <select id="filter-type"><option value="">All Types</option><option value="TASK_1">Task 1</option><option value="TASK_2">Task 2</option></select>
+        <select id="filter-exam"><option value="">All Exams</option><option value="ACADEMIC">Academic</option><option value="GENERAL">General</option></select>
+      </div>
+      <div id="tasks-list" class="tasks-grid"><p class="loading">Loading tasks…</p></div>
+    </main>
+  </div>
+</div>
+<script type="module" src="/js/pages/tasks/list.js"></script>
+</body></html>

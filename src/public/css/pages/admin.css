@@ -1,0 +1,307 @@
+/* ============================================================
+   admin.css — admin dashboard, tasks, review, users pages
+   ============================================================ */
+
+/* ── Admin nav tabs ─────────────────────────────────────────── */
+.admin-nav {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 44px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+/* ── Stats row ──────────────────────────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 52px;
+}
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent-dim);
+  transition: background var(--transition);
+}
+
+.stat-card:hover::before {
+  background: var(--accent);
+}
+
+/* ── Queue ──────────────────────────────────────────────────── */
+.queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition);
+}
+
+.queue-item:hover {
+  border-color: var(--accent-dim);
+}
+
+.queue-item .card {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+/* ── Transfer card ──────────────────────────────────────────── */
+.transfer-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 36px;
+}
+
+.transfer-card h3 {
+  font-family: var(--font-display);
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.transfer-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.transfer-row .form-group {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* ── Tasks list (admin) ─────────────────────────────────────── */
+#tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-task-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition);
+}
+
+.admin-task-row:hover {
+  border-color: var(--border-light);
+}
+
+.admin-task-row .card {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+}
+
+.admin-task-row__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Review page ────────────────────────────────────────────── */
+.review-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 40px;
+  align-items: start;
+}
+
+.section-block {
+  margin-bottom: 36px;
+}
+
+.section-block__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.content-box {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.85;
+  white-space: pre-wrap;
+  max-height: 420px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.content-box::-webkit-scrollbar { width: 4px; }
+.content-box::-webkit-scrollbar-track { background: transparent; }
+.content-box::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ── Review sidebar ─────────────────────────────────────────── */
+.review-sidebar {
+  position: sticky;
+  top: calc(var(--nav-h) + 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.action-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.action-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.action-card .form-group {
+  margin-bottom: 16px;
+}
+
+.score-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.score-row .form-group { flex: 1; }
+
+#final-score {
+  display: none;
+  text-align: center;
+  padding: 24px 16px;
+  background: var(--green-dim);
+  border: 1px solid rgba(76,175,125,0.3);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+}
+
+#final-score p:first-child {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  color: var(--green);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Users page ─────────────────────────────────────────────── */
+.search-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 32px;
+  max-width: 480px;
+}
+
+.search-bar input {
+  border-radius: var(--radius) 0 0 var(--radius);
+  border-right: none;
+  flex: 1;
+}
+
+.search-bar button {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+#users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+  transition: border-color var(--transition);
+}
+
+.user-row:hover {
+  border-color: var(--border-light);
+}
+
+.user-row__info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.user-row__name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.user-row__email {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.user-row__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .review-grid    { grid-template-columns: 1fr; }
+  .review-sidebar { position: static; }
+  .stats-row      { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .stats-row       { grid-template-columns: repeat(2, 1fr); }
+  .transfer-row    { flex-direction: column; }
+  .admin-task-row  { flex-direction: column; align-items: flex-start; }
+  .user-row        { flex-direction: column; align-items: flex-start; }
+  .search-bar      { max-width: 100%; }
+}

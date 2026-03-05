@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — IELTS Platform</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/pages/dashboard.css" />
+</head>
+<body>
+  <!-- Navbar injected by navbar.js -->
+
+  <div class="page-body">
+
+    <!-- ── Hero greeting ── -->
+    <div class="dashboard-hero animate-in">
+      <p class="dashboard-hero__greeting">Dashboard</p>
+      <h1 id="welcome-name">Welcome back</h1>
+      <p>Here's what's happening with your IELTS practice.</p>
+      <div class="quick-actions" style="margin-top:18px">
+        <a href="/pages/tasks/create.html" class="btn btn--primary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Task
+        </a>
+        <a href="/pages/tasks/list.html"   class="btn btn--secondary">My Tasks</a>
+        <a href="/pages/vocab/browse.html" class="btn btn--ghost">Browse Vocab</a>
+        <a href="/pages/news/feed.html"    class="btn btn--ghost">News Feed</a>
+      </div>
+    </div>
+
+    <!-- ══ USER DASHBOARD ══ -->
+    <div id="user-dashboard">
+
+      <!-- Stats row -->
+      <div class="stats-row">
+        <div class="stat-card animate-in">
+          <div class="stat-card__number" id="stat-assigned">—</div>
+          <div class="stat-card__label">Assigned</div>
+        </div>
+        <div class="stat-card animate-in" style="animation-delay:.05s">
+          <div class="stat-card__number" id="stat-writing">—</div>
+          <div class="stat-card__label">Writing</div>
+        </div>
+        <div class="stat-card animate-in" style="animation-delay:.1s">
+          <div class="stat-card__number" id="stat-submitted">—</div>
+          <div class="stat-card__label">Submitted</div>
+        </div>
+        <div class="stat-card animate-in" style="animation-delay:.15s">
+          <div class="stat-card__number" id="stat-scored">—</div>
+          <div class="stat-card__label">Scored</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- Recent tasks -->
+        <div>
+          <div class="section-header">
+            <h2 class="section-title">Recent Tasks</h2>
+            <a href="/pages/tasks/list.html" class="btn btn--ghost btn--sm">View all →</a>
+          </div>
+          <div id="recent-tasks">
+            <p class="loading">Loading…</p>
+          </div>
+        </div>
+
+        <!-- News preview -->
+        <div>
+          <div class="section-header">
+            <h2 class="section-title">Your News Feed</h2>
+            <a href="/pages/news/interests.html" class="btn btn--ghost btn--sm">Edit interests →</a>
+          </div>
+          <div id="news-preview">
+            <p class="loading">Loading…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ADMIN DASHBOARD (hidden by default, shown by JS) ══ -->
+    <div id="admin-dashboard" style="display:none">
+
+      <div class="stats-row">
+        <div class="stat-card animate-in">
+          <div class="stat-card__number" id="admin-stat-total">—</div>
+          <div class="stat-card__label">Total Tasks</div>
+        </div>
+        <div class="stat-card animate-in" style="animation-delay:.05s">
+          <div class="stat-card__number" id="admin-stat-submitted">—</div>
+          <div class="stat-card__label">Awaiting Review</div>
+        </div>
+        <div class="stat-card animate-in" style="animation-delay:.1s">
+          <div class="stat-card__number" id="admin-stat-reviewed">—</div>
+          <div class="stat-card__label">Awaiting Score</div>
+        </div>
+        <div class="stat-card animate-in" style="animation-delay:.15s">
+          <div class="stat-card__number" id="admin-stat-users">—</div>
+          <div class="stat-card__label">Total Users</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">Action Queue</h2>
+        <a href="/pages/admin/tasks.html" class="btn btn--ghost btn--sm">All tasks →</a>
+      </div>
+      <div id="action-queue">
+        <p class="loading">Loading…</p>
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module" src="/js/pages/dashboard.js"></script>
+</body>
+</html>

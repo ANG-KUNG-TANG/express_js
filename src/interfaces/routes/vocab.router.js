@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { asyncHandler } from "../async_handler.js";
 import { createVocabulary, getVocabularyByTopic, fetchAndSaveExternal } from "../table/vocab.controller.js";
-
 const router = Router();
 
 router.post('/',                 asyncHandler(createVocabulary));          // POST /vocab

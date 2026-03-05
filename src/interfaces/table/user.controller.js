@@ -61,6 +61,7 @@ export const loginUser = async (req, res) => {
     const decoded = verifyRefreshToken(refreshToken);
     saveRefreshToken(decoded.jti, payload.id);
 
+    // Set refresh token as HttpOnly cookie
     res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
 
     auditLogger.log('user.login', {
@@ -69,7 +70,17 @@ export const loginUser = async (req, res) => {
         role: payload.role,
     }, req);
 
-    return sendSuccess(res, { accessToken, refreshToken }, HTTP_STATUS.OK);
+    // --- CHANGE HERE: return token and user instead of accessToken/refreshToken ---
+    // Frontend expects { data: { token, user } }
+    return sendSuccess(res, {
+        token: accessToken,
+        user: {
+            id: payload.id,
+            email: payload.email,
+            role: payload.role,
+            name: user.name  // include name if your user object has it
+        }
+    }, HTTP_STATUS.OK);
 };
 
 // ---------------------------------------------------------------------------

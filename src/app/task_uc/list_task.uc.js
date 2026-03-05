@@ -2,7 +2,8 @@
 import * as taskRepo from "../../infrastructure/repositories/task_repo.js";
 
 export const listWritingTasks = async (filters = {}, options = {}, userId = null) => {
-    const finalOptions = { ...options };
+    // findTasks reads status/taskType/examType from options, not the filter object
+    const finalOptions = { ...options, ...filters };
     if (userId) finalOptions.userId = userId;
-    return await taskRepo.findTasks(filters, finalOptions);
+    return await taskRepo.findTasks({}, finalOptions);
 };

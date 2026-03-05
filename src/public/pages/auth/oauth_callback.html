@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <script>
+        // Extract access token from URL query string
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('accessToken');
+
+        if (token) {
+            localStorage.setItem('token', token);
+            // Optionally fetch user profile and store it
+            // For now, just redirect to dashboard
+            window.location.href = '/pages/dashboard.html';
+        } else {
+            // No token – likely an error
+            window.location.href = '/pages/auth/login.html?error=oauth_failed';
+        }
+    </script>
+</head>
+<body>
+    <p>Authenticating…</p>
+</body>
+</html>

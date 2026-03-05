@@ -1,0 +1,57 @@
+<!-- admin/review.html -->
+<!DOCTYPE html><html lang="en">
+<head><meta charset="UTF-8"/><title>Review Task — Admin</title>
+<link rel="stylesheet" href="/css/base.css"/>
+<style>
+  .review-grid { display: grid; grid-template-columns: 1fr 320px; gap: 24px; }
+  .section-block { margin-bottom: 24px; }
+  .section-block__label { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+  .content-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px; font-size: .875rem; line-height: 1.75; color: var(--text-secondary); min-height: 80px; }
+  .action-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 14px; }
+  .action-card h3 { font-size: .95rem; font-weight: 600; margin-bottom: 16px; }
+  .score-display { text-align: center; padding: 20px; background: var(--accent-light); border-radius: var(--radius-sm); margin-bottom: 16px; }
+  .score-display__num { font-size: 3rem; font-weight: 800; letter-spacing: -.04em; color: var(--accent); line-height: 1; }
+  .score-display__label { font-size: .75rem; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .06em; }
+  .task-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+  @media (max-width: 768px) { .review-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container page-content">
+  <p style="margin-bottom:20px;"><a href="/pages/admin/tasks.html" style="color:var(--text-muted);text-decoration:none;font-size:.875rem;">← All Tasks</a></p>
+  <div class="task-header">
+    <h1 id="task-title" style="flex:1;font-size:1.5rem;font-weight:700;letter-spacing:-.02em;">Loading…</h1>
+    <span id="task-status"></span>
+  </div>
+  <p style="color:var(--text-muted);font-size:.875rem;margin-bottom:28px;" id="task-type"></p>
+  <div class="review-grid">
+    <div>
+      <div class="section-block">
+        <p class="section-block__label">Question Prompt</p>
+        <div class="content-box" id="task-prompt">—</div>
+      </div>
+      <div class="section-block">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <p class="section-block__label" style="margin:0;">Student Submission</p>
+          <span class="tag" id="task-wordcount"></span>
+        </div>
+        <div class="content-box" id="task-submission">—</div>
+      </div>
+    </div>
+    <aside>
+      <div class="action-card" id="review-section">
+        <h3>Step 1 — Review</h3>
+        <div class="form-group"><label for="feedback-input">Written Feedback</label><textarea id="feedback-input" rows="7" placeholder="Provide detailed feedback on structure, vocabulary, grammar, and task achievement…"></textarea></div>
+        <button id="review-btn" class="btn btn--warning btn--full">Save Review</button>
+      </div>
+      <div class="action-card" id="score-section" style="display:none;">
+        <h3>Step 2 — Score</h3>
+        <div class="score-display"><div class="score-display__num" id="final-score-num">—</div><div class="score-display__label">Band Score</div></div>
+        <div class="form-group"><label for="score-input">Band Score (0–9)</label><input type="number" id="score-input" min="0" max="9" step="0.5" placeholder="e.g. 6.5" /></div>
+        <button id="score-btn" class="btn btn--success btn--full">Save Score</button>
+      </div>
+    </aside>
+  </div>
+</div>
+<script type="module" src="/js/pages/admin/review.js"></script>
+</body></html>

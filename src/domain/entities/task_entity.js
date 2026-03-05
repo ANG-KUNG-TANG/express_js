@@ -105,8 +105,10 @@ export class WritingTask {
         if (this._status !== WritingStatus.ASSIGNED) {
             throw new Error("Only assigned tasks can be started");
         }
-        this._status    = WritingStatus.WRITING;
-        this._updatedAt = new Date();
+
+        this._status = WritingStatus.WRITING;
+            this._startedAt = new Date();
+            this._updatedAt = new Date();
     }
 
     submit(text) {
@@ -158,9 +160,47 @@ export class WritingTask {
     // -------------------------------------------------------------------------
 
     get id()             { return this._id; }
+    get title()          { return this._title; }           // FIX: was missing
+    get description()    { return this._description; }     // FIX: was missing
     get status()         { return this._status; }
     get taskType()       { return this._taskType; }
     get examType()       { return this._examType; }
+    get questionPrompt() { return this._questionPrompt; }  // FIX: was missing
+    get submissionText() { return this._submissionText; }  // FIX: was missing
     get wordCount()      { return this._wordCount; }
     get bandScore()      { return this._bandScore; }
+    get feedback()       { return this._feedback; }        // FIX: was missing
+    get userId()         { return this._userId; }          // FIX: was missing
+    get submittedAt()    { return this._submittedAt; }     // FIX: was missing
+    get reviewedAt()     { return this._reviewedAt; }      // FIX: was missing
+    get createdAt()      { return this._createdAt; }       // FIX: was missing
+    get updatedAt()      { return this._updatedAt; }       // FIX: was missing
+
+    // -------------------------------------------------------------------------
+    // FIX: toJSON — makes res.json() / JSON.stringify() serialize this class
+    // correctly. Without this, all _prefixed properties are invisible to
+    // JSON.stringify and the API returns {} — causing the frontend to lose
+    // the task id and break the create → write.html redirect flow.
+    // -------------------------------------------------------------------------
+
+    toJSON() {
+        return {
+            _id:            this._id,
+            title:          this._title,
+            description:    this._description,
+            status:         this._status,
+            taskType:       this._taskType,
+            examType:       this._examType,
+            questionPrompt: this._questionPrompt,
+            submissionText: this._submissionText,
+            wordCount:      this._wordCount,
+            bandScore:      this._bandScore,
+            feedback:       this._feedback,
+            userId:         this._userId,
+            submittedAt:    this._submittedAt,
+            reviewedAt:     this._reviewedAt,
+            createdAt:      this._createdAt,
+            updatedAt:      this._updatedAt,
+        };
+    }
 }

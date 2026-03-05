@@ -60,12 +60,12 @@ export const searchNewsController = async (req, res) => {
 
 export const getNewsByCategoryController = async (req, res) => {
     const { category } = req.params;
-    const { q, page, country } = req.query;
+    const { q, page, country, timeframe } = req.query;   
     const userId = getUserId(req);
 
     logger.debug('news.getByCategory called', { requestId: req.id, userId, category });
 
-    const result = await getNewsByCategory(category, { q, page, country });
+    const result = await getNewsByCategory(category, { q, page, country, timeframe });
 
     return sendSuccess(res, {
         category,
@@ -85,11 +85,6 @@ export const getCategoriesController = async (req, res) => {
     return sendSuccess(res, { categories }, HTTP_STATUS.OK);
 };
 
-// ---------------------------------------------------------------------------
-// PATCH /news/interests
-// Update the logged-in user's news interest categories.
-// Body: { interests: ['technology', 'health', 'science'] }
-// ---------------------------------------------------------------------------
 
 export const updateInterestsController = async (req, res) => {
     const userId    = getUserId(req);

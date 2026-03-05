@@ -1,28 +1,25 @@
 import axios from "axios";
 import { createVocabulary } from "../../domain/entities/vocab_entity.js";
 import * as vocabRepo from "../../infrastructure/repositories/vocab_repo.js";
-import { TopicEnum } from "../../domain/base/topics_enums.js";
-import { InvalidTopicError, VocabularyRuleViolationError } from "../../core/errors/vocab.errors.js";
-
-const validateRequired = (value, field) => {
-  if (!value) throw new Error(`${field} is required`);
-};
-
-const validateTopic = (topic) => {
-  if (!Object.values(TopicEnum).includes(topic)) {
-    throw new InvalidTopicError(topic);
-  }
-};
+import { validateRequired, validateTopic } from "../validators/vocab_validator.js";
+import {
+  VocabularyRuleViolationError,
+} from "../../core/errors/vocab.errors.js";
 
 export const fetchVocabUseCase = async (topic) => {
-  validateRequired(topic, 'topic');
+  validateRequired(topic, "topic");
   validateTopic(topic);
 
-  // Call external API
-  const url = `https://api.datamuse.com/words?ml=${encodeURIComponent(topic)}&md=p&max=50`;
   let response;
+
   try {
-    response = await axios.get(url);
+    response = await axios.get("https://api.datamuse.com/words", {
+      params: {
+        ml: topic,
+        md: "p",
+        max: 50,
+      },
+    });
   } catch (error) {
     throw new VocabularyRuleViolationError(
       "Failed to fetch from external vocabulary service",
@@ -32,26 +29,26 @@ export const fetchVocabUseCase = async (topic) => {
 
   const words = response.data;
 
-  // Transform to entity format
   const vocabEntities = words.map((item) => {
-    const posTag = item.tags?.find((tag) => ["n", "v", "adj", "adv"].includes(tag));
-    const partOfSpeech = posTag || null;
-    return createVocabulary({ topic, word: item.word, partOfSpeech });
+    const posTag = item.tags?.find((tag) =>
+      ["n", "v", "adj", "adv"].includes(tag)
+    );
+
+    return createVocabulary({
+      topic,
+      word: item.word,
+      partOfSpeech: posTag || null,
+    });
   });
 
-  // Save each, skipping duplicates
-  const saved = [];
-  for (const entity of vocabEntities) {
-    try {
-      const created = await vocabRepo.create(entity);
-      saved.push(created);
-    } catch (error) {
-      if (error.name === "DuplicateVocabularyError") {
-        continue; 
-      }
-      throw error;
-    }
-  }
+  // Parallel insertion with duplicate tolerance
+  const results = await Promise.allSettled(
+    vocabEntities.map((entity) => vocabRepo.create(entity))
+  );
+
+  const saved = results
+    .filter((r) => r.status === "fulfilled")
+    .map((r) => r.value);
 
   return saved;
 };

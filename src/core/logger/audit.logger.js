@@ -32,6 +32,7 @@ const auditWinston = winston.createLogger({
             ? [
                 new winston.transports.Console({
                     format: winston.format.combine(
+                        winston.format.timestamp({ format: "HH:mm:ss" }), // ✅ FIX 1: timestamp must be added before printf can destructure it
                         winston.format.colorize(),
                         winston.format.printf(
                             ({timestamp, message}) => `[AUDIT ${timestamp}] ${message}`
@@ -51,7 +52,8 @@ const auditWinston = winston.createLogger({
  *
  * @param {string}  action   - Dot-namespaced action label  e.g. "vocab.created"
  * @param {Object}  details  - Any extra context  e.g. { word, topic, savedCount }
- * @param {Request} [req]    - Express request object (optional — extracts IP, method, path)
+ * @param {Request} req      - Express request object — REQUIRED for requestId, IP, method, path.
+ *                             Pass `null` only for system-level (non-HTTP) events.
  * @param {'success'|'failure'} [outcome] - Defaults to 'success'
  */
 const log = (action, details = {}, req = null, outcome = "success") => {

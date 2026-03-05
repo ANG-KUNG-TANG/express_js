@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing — IELTS Platform</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <style>
+    /* ===== RESET & BASE ===== */
+    html, body { height: 100%; overflow: hidden; background: var(--bg); }
+    * { box-sizing: border-box; }
+
+    /* ===== MAIN LAYOUT ===== */
+    .writing-app {
+      display: flex;
+      height: calc(100vh - var(--nav-h));
+      overflow: hidden;
+    }
+
+    /* ===== LEFT PANEL (TASK INFO) ===== */
+    .task-panel {
+      width: 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      flex-shrink: 0;
+      transition: width 0.2s;
+      position: relative;
+    }
+    .task-panel.collapsed { width: 0; overflow: hidden; }
+    .task-panel__inner { padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; }
+    .task-panel__section { background: var(--surface2); border-radius: var(--radius-lg); padding: 16px; border: 1px solid var(--border); }
+    .task-panel__label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 8px; }
+    #task-title-display { font-family: var(--font-d); font-size: 1.1rem; font-weight: 700; color: var(--text); line-height: 1.3; }
+    #task-info { font-size: 0.8rem; color: var(--text2); }
+    .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .stat-value { font-family: var(--font-m); font-size: 2rem; font-weight: 500; color: var(--accent); line-height: 1; }
+    .stat-label { font-size: 0.7rem; color: var(--text3); text-transform: uppercase; }
+    .progress-bar { height: 6px; background: var(--border); border-radius: var(--r-full); overflow: hidden; margin: 8px 0 4px; }
+    .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.2s; }
+    .progress-fill.complete { background: var(--green); }
+    .wc-details { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text3); }
+    .autosave-indicator { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text3); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+    .dot.saving { background: var(--amber); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .prompt-card { background: var(--accent-dim); border-left: 3px solid var(--accent); border-radius: var(--radius-md); padding: 16px; font-size: 0.9rem; color: var(--text2); line-height: 1.6; }
+    #submit-btn { margin-top: auto; }
+
+    /* ===== CENTER EDITOR ===== */
+    .editor-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow: hidden;
+    }
+    .editor-toolbar {
+      height: 56px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text3);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .back-link:hover { color: var(--text); }
+    #paper-title-input {
+      flex: 1;
+      font-family: var(--font-d);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #paper-title-input:focus { border-color: var(--accent); }
+    /* FIX: styling for the renamed #paper-title span (replaces input) */
+    #paper-title {
+      flex: 1;
+      font-family: var(--font-d);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .step-indicator { display: flex; align-items: center; gap: 4px; }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text3);
+    }
+    .step__num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      display: grid;
+      place-items: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .step--active .step__num { background: var(--accent); border-color: var(--accent); color: white; }
+    .step--active { color: var(--text); }
+    .step--done .step__num { background: var(--green); border-color: var(--green); color: white; }
+    .step__connector { width: 24px; height: 1px; background: var(--border); margin: 0 4px; }
+
+    .editor-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+      display: flex;
+      justify-content: center;
+    }
+    .paper {
+      width: 100%;
+      max-width: 780px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      padding: 48px 56px;
+      min-height: 600px;
+      display: flex;
+      flex-direction: column;
+    }
+    #submission-textarea {
+      flex: 1;
+      border: none;
+      outline: none;
+      resize: none;
+      background: transparent;
+      font-family: var(--font-b);
+      font-size: 1.05rem;
+      line-height: 1.9;
+      color: var(--text);
+      min-height: 500px;
+    }
+
+    /* ===== RIGHT PANEL (VOCABULARY) ===== */
+    .vocab-panel {
+      width: 300px;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      overflow: hidden;
+      position: relative;
+      transition: width 0.2s;
+    }
+    .vocab-panel.collapsed { width: 0; overflow: hidden; }
+    .vocab-header {
+      padding: 20px 20px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .vocab-header h3 { font-family: var(--font-d); font-size: 1rem; margin-bottom: 12px; }
+    .tab-bar {
+      display: flex;
+      gap: 2px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 3px;
+      margin-bottom: 16px;
+    }
+    .tab {
+      flex: 1;
+      padding: 6px 0;
+      border: none;
+      background: transparent;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--text3);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+    .tab.active {
+      background: var(--surface);
+      color: var(--accent);
+      box-shadow: var(--shadow-xs);
+      border: 1px solid var(--border-light);
+    }
+    .tab-content { flex: 1; overflow-y: auto; padding: 0 16px 16px; }
+
+    /* Search */
+    .search-box {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .search-box input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface2);
+    }
+    .search-box button {
+      width: 40px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      color: var(--text3);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+    .search-box button:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Topic select */
+    .topic-select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface2);
+      margin-bottom: 16px;
+    }
+
+    /* Vocab cards */
+    .vocab-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      margin-bottom: 8px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+    .vocab-card:hover { border-color: var(--accent); }
+    .vocab-word { font-weight: 700; font-size: 0.95rem; margin-bottom: 2px; }
+    .vocab-pos {
+      display: inline-block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 2px 8px;
+      border-radius: var(--r-full);
+      margin-bottom: 6px;
+    }
+    .vocab-def { font-size: 0.8rem; color: var(--text2); line-height: 1.5; }
+    .vocab-example { font-size: 0.75rem; font-style: italic; color: var(--text3); margin-top: 4px; }
+    .vocab-insert {
+      position: absolute; top: 10px; right: 10px;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: grid;
+      place-items: center;
+    }
+    .vocab-insert:hover { background: var(--accent); color: white; }
+    .vocab-card.inserted { border-color: var(--green); background: var(--green-dim); }
+
+    .vocab-empty {
+      text-align: center;
+      padding: 40px 16px;
+      color: var(--text3);
+    }
+
+    /* Toggle buttons */
+    .panel-toggle {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px; height: 24px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      z-index: 10;
+      color: var(--text3);
+      transition: 0.2s;
+    }
+    .panel-toggle:hover { color: var(--accent); border-color: var(--accent); }
+    #toggle-left { right: -12px; }
+    #toggle-right { left: -12px; }
+
+    /* FIX: Swap toggle arrow direction when panel is collapsed */
+    #left-panel .panel-toggle::before  { content: '◀'; }
+    #left-panel.collapsed .panel-toggle::before { content: '▶'; }
+    #right-panel .panel-toggle::before { content: '▶'; }
+    #right-panel.collapsed .panel-toggle::before { content: '◀'; }
+    .panel-toggle { font-size: 0.65rem; }
+
+    @media (max-width: 900px) {
+      .vocab-panel { display: none; }
+    }
+    @media (max-width: 640px) {
+      .task-panel { display: none; }
+      .editor-body { padding: 16px; }
+      .paper { padding: 24px; }
+      .step-indicator { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar will be injected by navbar.js -->
+
+  <div class="writing-app">
+    <!-- LEFT PANEL -->
+    <aside id="left-panel" class="task-panel">
+      <div class="task-panel__inner">
+        <div>
+          <div class="task-panel__label">Task</div>
+          <div id="task-title-display">Loading…</div>
+          <div id="task-info"></div>
+        </div>
+
+        <div class="task-panel__section">
+          <div class="task-panel__label">Elapsed Time</div>
+          <div class="stat-row">
+            <span class="stat-value" id="timer-display">00:00</span>
+            <span class="stat-label">mm:ss</span>
+          </div>
+        </div>
+
+        <div class="task-panel__section">
+          <div class="task-panel__label">Word Count</div>
+          <div class="stat-row">
+            <span class="stat-value" id="word-counter-display">0</span>
+            <span class="stat-label">/<span id="target-display">250</span></span>
+          </div>
+          <div class="progress-bar"><div id="progress-bar-fill" class="progress-fill"></div></div>
+          <div class="wc-details">
+            <span id="progress-pct">0%</span>
+            <span>min <span id="target-display2">250</span></span>
+          </div>
+        </div>
+
+        <div class="autosave-indicator">
+          <span id="autosave-dot" class="dot"></span>
+          <span id="autosave-label">Saved</span>
+        </div>
+
+        <div class="task-panel__label">Question Prompt</div>
+        <div class="prompt-card" id="question-prompt">Loading prompt…</div>
+
+        <button id="submit-btn" class="btn btn--primary btn--full btn--lg" style="margin-top:auto;" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+          Submit Writing
+        </button>
+      </div>
+      <button id="toggle-left" class="panel-toggle" title="Collapse panel"></button>
+    </aside>
+
+    <!-- CENTER EDITOR -->
+    <main class="editor-panel">
+      <div class="editor-toolbar">
+        <a href="/pages/tasks/list.html" class="back-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          My Tasks
+        </a>
+        <span id="paper-title" class="paper-title-display">Untitled Essay</span>
+        <div class="step-indicator">
+          <div class="step step--done"><span class="step__num">✓</span><span>Setup</span></div>
+          <span class="step__connector"></span>
+          <div class="step step--active"><span class="step__num">2</span><span>Write</span></div>
+          <span class="step__connector"></span>
+          <div class="step"><span class="step__num">3</span><span>Submit</span></div>
+        </div>
+      </div>
+      <div class="editor-body">
+        <div class="paper">
+          <textarea id="submission-textarea" placeholder="Begin writing here… your progress is saved automatically."></textarea>
+        </div>
+      </div>
+    </main>
+
+    <!-- RIGHT PANEL -->
+    <aside id="right-panel" class="vocab-panel">
+      <button id="toggle-right" class="panel-toggle" title="Collapse panel"></button>
+      <div class="vocab-header">
+        <h3>Vocabulary</h3>
+        <div class="tab-bar">
+          <button class="tab active" data-tab="search">Search</button>
+          <button class="tab" data-tab="browse">Browse</button>
+        </div>
+      </div>
+
+      <!-- Search tab -->
+      <div id="tab-search" class="tab-content" style="display: block;">
+        <div class="search-box">
+          <input type="text" id="vocab-search" placeholder="Search any word…" autocomplete="on" />
+          <button id="vocab-search-btn" title="Search">🔍</button>
+        </div>
+        <div id="search-results">
+          <div class="vocab-empty">Search for a word to insert it into your essay</div>
+        </div>
+      </div>
+
+      <!-- Browse tab -->
+      <div id="tab-browse" class="tab-content" style="display: none;">
+        <select id="topic-select" class="topic-select">
+          <option value="all">All Topics</option>
+          <option value="environment">Environment</option>
+          <option value="education">Education</option>
+          <option value="technology">Technology</option>
+          <option value="health">Health</option>
+        </select>
+        <div id="browse-results">
+          <div class="vocab-empty">Select a topic to see vocabulary</div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script type="module" src="/js/pages/tasks/write.js"></script>
+
+</body>
+</html>

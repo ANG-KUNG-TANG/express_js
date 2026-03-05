@@ -21,13 +21,12 @@ export async function findByTopic(topic) {
 
   const items = await VocabularyModel.find({ topic }).lean();
 
-  if (!items.length) {
-    logger.warn("vocabRepo.findByTopic: no entries found", { topic });
-    throw new VocabularyNotFoundError(topic);
-  }
+  logger.debug("vocabRepo.findByTopic result", {
+    topic,
+    count: items.length,
+  });
 
-  logger.debug("vocabRepo.findByTopic: found items", { topic, count: items.length });
-  return items;
+  return items; // ← no exception if empty
 }
 
 /**

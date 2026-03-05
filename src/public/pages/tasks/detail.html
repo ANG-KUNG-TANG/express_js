@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Detail — IELTS Platform</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <style>
+    /* ===== DETAIL PAGE SPECIFIC ===== */
+    .detail-page { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--text3); font-size: 0.9rem; margin-bottom: 24px; }
+    .back-link:hover { color: var(--text); }
+
+    .task-header {
+      margin-bottom: 32px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .task-title { font-size: 2rem; margin: 0; }
+    .task-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+    .tag { font-size: 0.7rem; font-weight: 700; padding: 4px 12px; border-radius: var(--r-full); background: var(--surface2); color: var(--text2); }
+    .tag--type { background: var(--accent-dim); color: var(--accent); }
+    .tag--exam { background: var(--surface3); }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 32px;
+      align-items: start;
+    }
+
+    /* Main content cards */
+    .detail-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .detail-card__label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text3);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .detail-card__content {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text2);
+      white-space: pre-wrap;
+    }
+
+    /* Notes editing */
+    .notes-edit-area {
+      width: 100%;
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 12px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      resize: vertical;
+    }
+    .edit-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+    /* Sidebar */
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      position: sticky;
+      top: calc(var(--nav-h) + 24px);
+    }
+    .sidebar-card h3 { font-size: 1rem; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.9rem;
+    }
+    .meta-row__label { color: var(--text3); }
+    .meta-row__value { font-weight: 600; color: var(--text); }
+    .score-display {
+      background: var(--green-dim);
+      border: 1px solid rgba(76,175,125,0.3);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .score-number { font-family: var(--font-m); font-size: 3rem; font-weight: 700; color: var(--green); line-height: 1; }
+    .score-label { font-size: 0.7rem; text-transform: uppercase; color: var(--green); font-weight: 700; }
+
+    #task-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+    .task-extra-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); padding-top: 20px; }
+
+    @media (max-width: 800px) {
+      .detail-grid { grid-template-columns: 1fr; }
+      .sidebar-card { position: static; }
+    }
+  </style>
+</head>
+<body class="page">
+  <div class="detail-page">
+    <a href="/pages/tasks/list.html" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      My Tasks
+    </a>
+
+    <div id="task-container">
+      <div class="task-header">
+        <div>
+          <h1 class="task-title" id="task-title">Loading…</h1>
+          <div class="task-meta">
+            <span class="tag tag--type" id="task-type">—</span>
+            <span class="tag tag--exam" id="task-exam">—</span>
+          </div>
+        </div>
+        <div id="task-status"></div>
+      </div>
+
+      <div class="detail-grid">
+        <!-- Main column -->
+        <div>
+          <div class="detail-card">
+            <div class="detail-card__label">Question Prompt</div>
+            <div class="detail-card__content" id="task-prompt">—</div>
+          </div>
+
+          <div class="detail-card" id="notes-section">
+            <div class="detail-card__label">
+              Notes
+              <button class="btn btn--ghost btn--sm" id="edit-notes-btn">✎ Edit</button>
+            </div>
+            <div class="detail-card__content" id="task-description">—</div>
+          </div>
+
+          <div class="detail-card" id="submission-section" style="display:none;">
+            <div class="detail-card__label">
+              Submission
+              <span class="tag" id="task-wordcount"></span>
+            </div>
+            <div class="detail-card__content" id="task-submission"></div>
+          </div>
+
+          <div class="detail-card" id="feedback-section" style="display:none;">
+            <div class="detail-card__label">Feedback</div>
+            <div class="detail-card__content" id="task-feedback"></div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar-card">
+          <div id="score-section" style="display:none;">
+            <div class="score-display">
+              <div class="score-number" id="task-score">—</div>
+              <div class="score-label">Band Score</div>
+            </div>
+          </div>
+
+          <h3>Task Info</h3>
+          <div class="meta-row"><span class="meta-row__label">Submitted</span><span class="meta-row__value" id="task-submitted-at">—</span></div>
+          <div class="meta-row"><span class="meta-row__label">Reviewed</span><span class="meta-row__value" id="task-reviewed-at">—</span></div>
+
+          <div id="task-actions"></div>
+
+          <div class="task-extra-actions">
+            <button class="btn btn--secondary btn--full" id="transfer-task-btn">⇄ Transfer</button>
+            <button class="btn btn--secondary btn--full" id="share-task-btn">📤 Share</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/js/pages/tasks/detail.js"></script>
+</body>
+</html>

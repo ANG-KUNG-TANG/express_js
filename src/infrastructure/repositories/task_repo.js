@@ -78,8 +78,8 @@ export const findTaskByID = async (id) => {
 
 export const findTasks = async (filter = {}, options = {}) => {
     const {
-        skip = 0,
-        limit = 100,
+        page = 1,
+        limit = 20,
         sort = { createdAt: -1 },
         status,
         taskType,
@@ -87,9 +87,10 @@ export const findTasks = async (filter = {}, options = {}) => {
         userId,
     } = options;
 
-    const query = {};
-    const { userId: filterUserId, ...restFilter } = filter;
-    Object.assign(query, restFilter);
+    const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
+
+    // it comes through options. Just spread filter directly.
+    const query = { ...filter };
 
     if (status)   query.status   = status;
     if (taskType) query.taskType = taskType;
@@ -136,7 +137,8 @@ export const createTask = async (taskData) => {
 };
 
 export const updateTask = async (id, updates) => {
-    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError('TaskNotFoundError');
+    // FIX #3: Pass the actual `id` value to TaskInvalidIdError, not the string literal 'TaskNotFoundError'
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError(id);
     logger.debug('writingTaskRepo.updateTask', { id, fields: Object.keys(updates) });
 
     const existing = await WritingTaskModel.findById(id);
@@ -199,11 +201,12 @@ export const countTasks = async (filters = {}) => {
 // Status-transition helpers
 // ---------------------------------------------------------------------------
 
-export const startWritingTask = async (id) => {
-    logger.debug('writingTaskRepo.startWritingTask', { id });
-    const task = await findTaskByID(id);
+export const startWritingTask = async (task) => {
+    logger.debug('writingTaskRepo.startWritingTask', { id: task.id });
+
     task.startWriting();
-    return await updateTask(id, { status: task._status });
+
+    return await updateTask(task.id, { status: task._status });
 };
 
 export const submitTask = async (id, text) => {
@@ -287,7 +290,7 @@ export const getUserTaskStats = async (userId) => {
 };
 
 export const ensureTaskOwnership = (task, userId) => {
-    if (task._userId.toString() !== userId) {
+    if (task._userId.toString() !== userId.toString()) {
         logger.warn('writingTaskRepo.ensureTaskOwnership: ownership violation', { taskId: task.id, userId });
         throw new TaskOwnershipError(userId, task.id);
     }
@@ -323,4 +326,84 @@ export const transferSingleTask = async (taskId, fromUserId, toUserId, session =
     if (!doc) throw new TaskNotFoundError(taskId);
     logger.debug('writingTaskRepo.transferSingleTask: transferred', { taskId });
     return toDomain(doc);
+};
+
+// ---------------------------------------------------------------------------
+// Vocabulary lookup  (GET /api/vocab/:word)
+// ---------------------------------------------------------------------------
+
+/**
+ * Look up a word using the Free Dictionary API.
+ * Returns a normalised vocab entry so callers never need to know the
+ * upstream shape.
+ *
+ * @param {string} word
+ * @returns {Promise<{
+ *   word: string,
+ *   phonetic: string|null,
+ *   audio: string|null,
+ *   meanings: Array<{
+ *     partOfSpeech: string,
+ *     definitions: Array<{ definition: string, example: string|null, synonyms: string[], antonyms: string[] }>,
+ *     synonyms: string[],
+ *     antonyms: string[],
+ *   }>,
+ *   sourceUrls: string[],
+ * }>}
+ * @throws {TaskValidationError}  when the word param is blank
+ * @throws {TaskNotFoundError}    when the dictionary has no entry for the word
+ */
+export const lookupVocab = async (word) => {
+    if (!word || typeof word !== 'string' || !word.trim()) {
+        throw new TaskValidationError('word is required');
+    }
+
+    const normalised = word.trim().toLowerCase();
+    logger.debug('writingTaskRepo.lookupVocab', { word: normalised });
+
+    const url      = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(normalised)}`;
+    const response = await fetch(url);
+
+    if (response.status === 404) {
+        logger.warn('writingTaskRepo.lookupVocab: word not found', { word: normalised });
+        throw new TaskNotFoundError(normalised);
+    }
+
+    if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        logger.error('writingTaskRepo.lookupVocab: upstream error', { status: response.status, text });
+        throw new Error(`Dictionary API error: ${response.status}`);
+    }
+
+    const entries = await response.json();
+    const entry   = entries[0];                     // use the primary entry
+
+    // Flatten all phonetics to find the first non-empty text and audio URL
+    const phonetic = entry.phonetic
+        ?? entry.phonetics?.find((p) => p.text)?.text
+        ?? null;
+
+    const audio = entry.phonetics?.find((p) => p.audio)?.audio ?? null;
+
+    const meanings = (entry.meanings ?? []).map((m) => ({
+        partOfSpeech: m.partOfSpeech,
+        definitions:  (m.definitions ?? []).map((d) => ({
+            definition: d.definition,
+            example:    d.example   ?? null,
+            synonyms:   d.synonyms  ?? [],
+            antonyms:   d.antonyms  ?? [],
+        })),
+        synonyms: m.synonyms ?? [],
+        antonyms: m.antonyms ?? [],
+    }));
+
+    logger.debug('writingTaskRepo.lookupVocab: found', { word: entry.word, meanings: meanings.length });
+
+    return {
+        word:       entry.word,
+        phonetic,
+        audio,
+        meanings,
+        sourceUrls: entry.sourceUrls ?? [],
+    };
 };

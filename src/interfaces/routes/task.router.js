@@ -13,6 +13,7 @@ import {
     reviewTaskController,
     scoreTaskController,
     transferWritingTaskController,
+    lookupVocabController,
 } from '../table/task.controller.js';
 
 const router = Router();
@@ -22,6 +23,9 @@ router.use(authenticate);
 // ── Static routes FIRST (before /:id to avoid param collision) ────────────────
 router.post('/transfer', authorizeAdmin, asyncHandler(transferWritingTaskController));
 router.get('/search',                   asyncHandler(searchWritingTaskController));
+
+// ── Vocabulary lookup ─────────────────────────────────────────────────────────
+router.get('/vocab/:word',              asyncHandler(lookupVocabController));
 
 // ── Collection ────────────────────────────────────────────────────────────────
 router.post('/',  asyncHandler(createWritingTaskController));

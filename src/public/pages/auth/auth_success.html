@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signing in… — IELTS Platform</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--bg);
+    }
+    .callback-box {
+      text-align: center;
+      padding: 48px 32px;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      margin: 0 auto 24px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h2 { font-family: var(--font-display); margin-bottom: 8px; }
+    p  { color: var(--text-muted); font-size: 0.9rem; }
+    .error-msg { color: var(--red); margin-top: 16px; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="callback-box">
+    <div class="spinner"></div>
+    <h2>Signing you in…</h2>
+    <p>Please wait while we complete authentication.</p>
+    <p class="error-msg" id="error-msg"></p>
+  </div>
+
+  <script type="module">
+    /**
+     * auth-success.js
+     *
+     * The backend (Passport OAuth callback) should redirect here after
+     * a successful OAuth login, passing the JWT as a query param:
+     *
+     *   /pages/auth/auth-success.html?token=eyJ...&user=<base64-json>
+     *
+     * OR your backend can redirect with the token in a cookie and this
+     * page hits GET /api/auth/me to fetch the user object.
+     *
+     * Update the backend's successRedirect to point here.
+     */
+
+    const params = new URLSearchParams(window.location.search);
+    const token  = params.get('token');
+    const userB64 = params.get('user');
+
+    async function finish(token, user) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      window.location.replace('/pages/dashboard.html');
+    }
+
+    if (token && userB64) {
+      // Backend passed token + user as query params
+      try {
+        const user = JSON.parse(atob(userB64));
+        finish(token, user);
+      } catch {
+        showError('Failed to parse auth data. Please try again.');
+      }
+    } else if (token) {
+      // Backend passed token only — fetch user profile
+      try {
+        const res = await fetch('/api/users/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch user');
+        finish(token, data.data || data.user || data);
+      } catch (err) {
+        showError(err.message);
+      }
+    } else {
+      // No token in URL — check if backend uses HttpOnly cookie + session
+      // Try calling a /api/auth/session or /api/auth/me endpoint
+      try {
+        const res = await fetch('/api/auth/session', { credentials: 'include' });
+        const data = await res.json();
+        if (res.ok && data?.data?.token) {
+          finish(data.data.token, data.data.user);
+        } else {
+          showError('No session found. Please sign in again.');
+        }
+      } catch {
+        showError('Authentication failed. Please try again.');
+      }
+    }
+
+    function showError(msg) {
+      document.querySelector('.spinner').style.display = 'none';
+      document.getElementById('error-msg').textContent = msg;
+      setTimeout(() => {
+        window.location.replace('/pages/auth/login.html');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

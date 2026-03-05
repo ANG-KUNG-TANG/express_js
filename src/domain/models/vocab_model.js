@@ -6,7 +6,7 @@ const vocabularySchema = new mongoose.Schema(
     topic: {
       type: String,
       enum: Object.values(TopicEnum),
-      required: true,         
+      required: true,
     },
     word: {
       type: String,
@@ -14,10 +14,10 @@ const vocabularySchema = new mongoose.Schema(
     },
     partOfSpeech: {
       type: String,
-      required: false,         
+      required: false,
     },
   },
-  { timestamps: true }         
+  { timestamps: true }
 );
 
 vocabularySchema.index({ topic: 1, word: 1 }, { unique: true });

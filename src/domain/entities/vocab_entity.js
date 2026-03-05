@@ -6,6 +6,5 @@ export const createVocabulary = ({ topic, word, partOfSpeech }) => {
     topic,
     word,
     partOfSpeech: partOfSpeech || null,
-    createdAt: new Date(),
   });
 };
