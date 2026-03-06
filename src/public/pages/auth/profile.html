@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — IELTS Platform</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <style>
+    /* ══════════════════════════════════════════
+       Profile page — extends base.css variables.
+       Matches visual language of dashboard,
+       admin, login/register pages.
+    ══════════════════════════════════════════ */
+
+    .profile-page {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 32px 20px 72px;
+    }
+
+    /* ── Back link ── */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0.5;
+      text-decoration: none;
+      color: inherit;
+      margin-bottom: 28px;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    /* ══ Hero card ══ */
+    .profile-hero {
+      border-radius: var(--radius);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    /* Cover banner */
+    .profile-cover {
+      width: 100%;
+      height: 120px;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .profile-cover canvas { width: 100%; height: 100%; display: block; }
+    .profile-cover img    { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .profile-cover__hint {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity 0.2s;
+      background: rgba(0,0,0,0.32);
+    }
+    .profile-cover:hover .profile-cover__hint { opacity: 1; }
+    .profile-cover__hint span {
+      background: rgba(255,255,255,0.92);
+      border-radius: 7px;
+      padding: 5px 12px;
+      font-size: 12px; font-weight: 600; color: #111;
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    /* Avatar + identity row */
+    .profile-identity {
+      display: flex;
+      align-items: flex-end;
+      gap: 18px;
+      padding: 0 28px 24px;
+      margin-top: -44px;
+    }
+    .profile-avatar-wrap { position: relative; flex-shrink: 0; }
+    .profile-avatar-large {
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+      border: 4px solid var(--bg);
+      box-shadow: 0 4px 18px rgba(99,102,241,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; font-weight: 800; color: #fff;
+      overflow: hidden; cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+    .profile-avatar-large:hover { box-shadow: 0 4px 24px rgba(99,102,241,0.6); }
+    .profile-avatar-large img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+    .avatar-edit-badge {
+      position: absolute; bottom: 3px; right: 3px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .profile-avatar-wrap label:hover .avatar-edit-badge {
+      background: #818cf8; transform: scale(1.12);
+    }
+
+    .profile-identity__info { flex: 1; min-width: 0; padding-bottom: 4px; }
+    .profile-identity__name {
+      font-size: 20px; font-weight: 700;
+      margin: 0 0 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .profile-identity__email { font-size: 13px; color: var(--text-muted); margin: 0 0 10px; }
+    .profile-identity__badges { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 600;
+      padding: 3px 10px; border-radius: 999px;
+      background: rgba(99,102,241,0.12); color: var(--accent);
+      border: 1px solid rgba(99,102,241,0.22);
+    }
+    .badge--admin  { background: rgba(245,158,11,0.12); color: #f59e0b; border-color: rgba(245,158,11,0.25); }
+    .badge--active { background: rgba(16,185,129,0.1);  color: #10b981; border-color: rgba(16,185,129,0.2); }
+
+    /* ══ Stats strip ══ */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 520px) { .stats-strip { grid-template-columns: repeat(2,1fr); } }
+
+    /* reuse base.css .stat-card if present, or define here */
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm, 10px);
+      padding: 16px 14px; text-align: center;
+    }
+    .stat-card__number {
+      font-size: 24px; font-weight: 800;
+      color: var(--accent); line-height: 1; margin-bottom: 5px;
+      font-family: var(--font-display, inherit);
+    }
+    .stat-card__label {
+      font-size: 11px; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
+    }
+
+    /* ══ Section card ══ */
+    .profile-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+    .profile-section__header {
+      display: flex; align-items: center; gap: 9px;
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .profile-section__header svg { color: var(--accent); flex-shrink: 0; }
+    .profile-section__title { font-size: 14px; font-weight: 700; margin: 0; flex: 1; }
+    .profile-section__body  { padding: 22px 24px; }
+
+    /* ══ Form layout ══ */
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 520px) { .field-grid { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field--full { grid-column: 1 / -1; }
+
+    .field label {
+      font-size: 11.5px; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.07em;
+    }
+    .field input,
+    .field select,
+    .field textarea {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm, 8px);
+      padding: 10px 13px;
+      font-size: 14px; color: var(--text);
+      font-family: inherit; outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+      width: 100%;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .field input[readonly] { opacity: 0.48; cursor: not-allowed; }
+    .field textarea { resize: vertical; min-height: 76px; line-height: 1.55; }
+    .field select option { background: var(--bg, #1e1e2e); }
+
+    /* password strength bar */
+    .pw-bars { display: flex; gap: 4px; margin-top: 7px; }
+    .pw-bar  { flex: 1; height: 3px; border-radius: 2px; background: var(--border); transition: background 0.2s; }
+    .pw-bar.s-weak   { background: #ef4444; }
+    .pw-bar.s-fair   { background: #f59e0b; }
+    .pw-bar.s-strong { background: #3b82f6; }
+    .pw-bar.s-great  { background: #10b981; }
+    .pw-hint { font-size: 11.5px; margin-top: 4px; color: var(--text-muted); min-height: 16px; display: block; }
+    .pw-hint.s-weak   { color: #ef4444; }
+    .pw-hint.s-fair   { color: #f59e0b; }
+    .pw-hint.s-strong { color: #3b82f6; }
+    .pw-hint.s-great  { color: #10b981; }
+
+    /* ══ File drop zone ══ */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-sm, 10px);
+      padding: 28px 18px; text-align: center;
+      cursor: pointer;
+      transition: border-color 0.18s, background 0.18s;
+      background: var(--bg);
+    }
+    .dropzone:hover, .dropzone.drag-over {
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.05);
+    }
+    .dropzone__icon {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: rgba(99,102,241,0.12);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 10px; color: var(--accent);
+    }
+    .dropzone__title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+    .dropzone__sub   { font-size: 12px; color: var(--text-muted); }
+    .dropzone__btn {
+      display: inline-block; margin-top: 10px;
+      padding: 6px 16px; border-radius: 7px;
+      background: var(--accent); color: #fff;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; border: none; font-family: inherit;
+      transition: opacity 0.15s;
+    }
+    .dropzone__btn:hover { opacity: 0.85; }
+
+    /* file list */
+    .file-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+    .file-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px; border-radius: 8px;
+      background: var(--bg); border: 1px solid var(--border);
+      animation: fadeUp 0.2s ease;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .file-type {
+      width: 32px; height: 32px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; flex-shrink: 0;
+    }
+    .file-type.pdf  { background: rgba(239,68,68,0.12);  color: #ef4444; }
+    .file-type.doc  { background: rgba(59,130,246,0.12); color: #3b82f6; }
+    .file-type.img  { background: rgba(16,185,129,0.12); color: #10b981; }
+    .file-type.xls  { background: rgba(5,150,105,0.12);  color: #059669; }
+    .file-type.ppt  { background: rgba(245,158,11,0.12); color: #f59e0b; }
+    .file-type.misc { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+    .file-meta { flex: 1; min-width: 0; }
+    .file-meta__name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-meta__size { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .file-remove {
+      background: none; border: none; cursor: pointer; padding: 4px;
+      border-radius: 5px; color: var(--text-muted);
+      transition: color 0.15s, background 0.15s; flex-shrink: 0;
+    }
+    .file-remove:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+    /* ══ Section action bar ══ */
+    .section-actions {
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      padding: 14px 24px;
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .save-feedback {
+      display: none; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--green, #10b981);
+      margin-right: auto;
+    }
+    .save-feedback.show { display: flex; }
+
+    /* ══ Danger rows ══ */
+    .danger-row {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 14px;
+      padding: 18px 24px;
+    }
+    .danger-row__info p:first-child { font-size: 14px; font-weight: 600; margin: 0 0 3px; }
+    .danger-row__info p:last-child  { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+    /* btn extensions (base.css has .btn, .btn--primary, .btn--ghost) */
+    .btn--danger-soft {
+      background: rgba(239,68,68,0.1); color: #ef4444;
+      border: 1px solid rgba(239,68,68,0.22);
+    }
+    .btn--danger-soft:hover { background: rgba(239,68,68,0.2); }
+
+    /* ══ Toast ══ */
+    .toast {
+      position: fixed; bottom: 22px; right: 22px;
+      display: flex; align-items: center; gap: 9px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 11px 16px;
+      font-size: 13px; font-weight: 500;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.28);
+      transform: translateY(60px); opacity: 0;
+      transition: transform 0.28s cubic-bezier(.34,1.56,.64,1), opacity 0.2s;
+      z-index: 500; pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast--success .toast__icon { color: #10b981; }
+    .toast--error   .toast__icon { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <!-- Navbar injected by initNavbar() below -->
+
+  <div class="profile-page">
+
+    <a href="/pages/dashboard.html" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Dashboard
+    </a>
+
+    <!-- ══ Hero card ══ -->
+    <div class="profile-hero">
+      <!-- Cover photo -->
+      <div class="profile-cover" id="cover-area">
+        <canvas id="cover-canvas"></canvas>
+        <div class="profile-cover__hint">
+          <span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            Change cover
+          </span>
+        </div>
+        <input type="file" id="cover-file-input" accept="image/*" style="display:none"/>
+      </div>
+
+      <!-- Avatar + identity -->
+      <div class="profile-identity">
+        <div class="profile-avatar-wrap">
+          <label for="avatar-file-input" style="cursor:pointer">
+            <div class="profile-avatar-large" id="profile-avatar">
+              <span id="profile-initials">—</span>
+            </div>
+            <div class="avatar-edit-badge">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            </div>
+          </label>
+          <input type="file" id="avatar-file-input" accept="image/*" style="display:none"/>
+        </div>
+
+        <div class="profile-identity__info">
+          <h1 class="profile-identity__name" id="profile-display-name">—</h1>
+          <p class="profile-identity__email" id="profile-display-email">—</p>
+          <div class="profile-identity__badges">
+            <span class="badge" id="profile-role-badge">Student</span>
+            <span class="badge badge--active">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Active
+            </span>
+          </div>
+        </div>
+      </div>
+    </div><!-- /hero -->
+
+    <!-- ══ Progress stats ══ -->
+    <div class="stats-strip">
+      <div class="stat-card">
+        <div class="stat-card__number" id="ps-assigned">—</div>
+        <div class="stat-card__label">Assigned</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__number" id="ps-submitted">—</div>
+        <div class="stat-card__label">Submitted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__number" id="ps-scored">—</div>
+        <div class="stat-card__label">Scored</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__number" id="ps-avg">—</div>
+        <div class="stat-card__label">Avg Band</div>
+      </div>
+    </div>
+
+    <!-- ══ Personal information ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <h2 class="profile-section__title">Personal Information</h2>
+      </div>
+      <div class="profile-section__body">
+        <div class="field-grid">
+          <div class="field">
+            <label for="field-first">First Name</label>
+            <input id="field-first" type="text" placeholder="First name" autocomplete="given-name"/>
+          </div>
+          <div class="field">
+            <label for="field-last">Last Name</label>
+            <input id="field-last" type="text" placeholder="Last name" autocomplete="family-name"/>
+          </div>
+          <div class="field field--full">
+            <label for="field-email">Email Address</label>
+            <input id="field-email" type="email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="field">
+            <label for="field-target">Target Band Score</label>
+            <select id="field-target">
+              <option value="">— Select —</option>
+              <option>5.0</option><option>5.5</option><option>6.0</option>
+              <option>6.5</option><option>7.0</option><option>7.5</option>
+              <option>8.0</option><option>8.5</option><option>9.0</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="field-exam-date">Exam Date</label>
+            <input id="field-exam-date" type="date"/>
+          </div>
+          <div class="field field--full">
+            <label for="field-bio">About / Learning Goals</label>
+            <textarea id="field-bio" placeholder="e.g. Preparing for university admission in the UK…"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="section-actions">
+        <span class="save-feedback" id="info-feedback">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Saved!
+        </span>
+        <button class="btn btn--ghost" id="cancel-info-btn">Cancel</button>
+        <button class="btn btn--primary" id="save-info-btn">Save Changes</button>
+      </div>
+    </div>
+
+    <!-- ══ Change password ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <h2 class="profile-section__title">Change Password</h2>
+      </div>
+      <div class="profile-section__body">
+        <div class="field-grid">
+          <div class="field field--full">
+            <label for="field-pw-current">Current Password</label>
+            <input id="field-pw-current" type="password" placeholder="Enter current password" autocomplete="current-password"/>
+          </div>
+          <div class="field">
+            <label for="field-pw-new">New Password</label>
+            <input id="field-pw-new" type="password" placeholder="Min. 8 characters" autocomplete="new-password"/>
+            <div class="pw-bars">
+              <div class="pw-bar" id="pb1"></div><div class="pw-bar" id="pb2"></div>
+              <div class="pw-bar" id="pb3"></div><div class="pw-bar" id="pb4"></div>
+            </div>
+            <span class="pw-hint" id="pw-hint"></span>
+          </div>
+          <div class="field">
+            <label for="field-pw-confirm">Confirm New Password</label>
+            <input id="field-pw-confirm" type="password" placeholder="Repeat new password" autocomplete="new-password"/>
+          </div>
+        </div>
+      </div>
+      <div class="section-actions">
+        <span class="save-feedback" id="pw-feedback">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Password updated!
+        </span>
+        <button class="btn btn--ghost" id="clear-pw-btn">Clear</button>
+        <button class="btn btn--primary" id="save-pw-btn">Update Password</button>
+      </div>
+    </div>
+
+    <!-- ══ Files & attachments ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        <h2 class="profile-section__title">Files &amp; Documents</h2>
+        <span style="font-size:12px;color:var(--text-muted)" id="file-count-label">0 files</span>
+      </div>
+      <div class="profile-section__body">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          </div>
+          <div class="dropzone__title">Drop files here</div>
+          <div class="dropzone__sub">PDF, DOC, XLS, PPT, images — max 10 MB each</div>
+          <button class="dropzone__btn" type="button" id="browse-files-btn">Browse files</button>
+        </div>
+        <input type="file" id="file-input" multiple
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.txt"
+          style="display:none"/>
+        <div class="file-list" id="file-list"></div>
+      </div>
+    </div>
+
+    <!-- ══ Account metadata (from user_entity.js) ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <h2 class="profile-section__title">Account Details</h2>
+      </div>
+      <div class="profile-section__body">
+        <div class="field-grid">
+          <div class="field">
+            <label>User ID</label>
+            <input type="text" id="field-uid" readonly/>
+          </div>
+          <div class="field">
+            <label>Role</label>
+            <input type="text" id="field-role-display" readonly/>
+          </div>
+          <div class="field">
+            <label>Member Since</label>
+            <input type="text" id="field-created" readonly/>
+          </div>
+          <div class="field">
+            <label>Last Updated</label>
+            <input type="text" id="field-updated" readonly/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Account actions ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
+        <h2 class="profile-section__title">Account</h2>
+      </div>
+      <div class="danger-row" style="border-bottom:1px solid var(--border)">
+        <div class="danger-row__info">
+          <p>Sign out</p>
+          <p>Sign out of your account on this device.</p>
+        </div>
+        <button class="btn btn--ghost" id="signout-btn">Sign Out</button>
+      </div>
+      <div class="danger-row">
+        <div class="danger-row__info">
+          <p style="color:#ef4444">Delete Account</p>
+          <p>Permanently delete your account and all data. This cannot be undone.</p>
+        </div>
+        <button class="btn btn--danger-soft" id="delete-account-btn">Delete Account</button>
+      </div>
+    </div>
+
+  </div><!-- /profile-page -->
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="alert" aria-live="polite">
+    <svg class="toast__icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="toast-icon">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span id="toast-msg"></span>
+  </div>
+
+  <!-- ══ Navbar ══ -->
+  <script type="module">
+    import { initNavbar } from '/components/navbar.js';
+    initNavbar();
+  </script>
+
+  <!-- ══ Profile module (API calls live here) ══ -->
+  <script type="module" src="/js/pages/profile.js"></script>
+
+  <!-- ══ UI interactions ══ -->
+  <script>
+  /* ─── Helpers ─── */
+  const $  = id => document.getElementById(id);
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const fmtDate = d => {
+    if (!d) return '—';
+    const dt = typeof d === 'string' ? new Date(d) : d;
+    return dt.toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
+         + ' · ' + dt.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  };
+
+  /* toast */
+  let _toastTimer;
+  function showToast(msg, type = 'success') {
+    clearTimeout(_toastTimer);
+    const t  = $('toast');
+    const ic = $('toast-icon');
+    $('toast-msg').textContent = msg;
+    t.className = 'toast toast--' + type;
+    ic.innerHTML = type === 'success'
+      ? '<polyline points="20 6 9 17 4 12"/>'
+      : '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
+    requestAnimationFrame(() => t.classList.add('show'));
+    _toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  function showInline(id) {
+    const el = $(id);
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  /* ─── Cover photo ─── */
+  (function drawDefaultCover() {
+    const c = $('cover-canvas');
+    if (!c) return;
+    c.width  = c.closest('.profile-cover').offsetWidth || 760;
+    c.height = 120;
+    const ctx = c.getContext('2d');
+    const g = ctx.createLinearGradient(0, 0, c.width, 0);
+    g.addColorStop(0, '#3d5af1'); g.addColorStop(0.55, '#7c3aed'); g.addColorStop(1, '#0ea5e9');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+    for (let x = 0; x <= c.width;  x += 44) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,c.height); ctx.stroke(); }
+    for (let y = 0; y <= c.height; y += 44) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(c.width,y); ctx.stroke(); }
+  })();
+
+  $('cover-area').addEventListener('click', () => $('cover-file-input').click());
+  $('cover-file-input').addEventListener('change', function () {
+    const file = this.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const area = $('cover-area');
+      let img = area.querySelector('img.cover-img');
+      if (!img) {
+        img = document.createElement('img'); img.className = 'cover-img';
+        img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+        area.insertBefore(img, area.querySelector('.profile-cover__hint'));
+      }
+      img.src = e.target.result;
+      $('cover-canvas').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+    showToast('Cover photo updated');
+  });
+
+  /* ─── Avatar upload ─── */
+  $('avatar-file-input').addEventListener('change', function () {
+    const file = this.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      $('profile-avatar').innerHTML = `<img src="${e.target.result}" alt="Avatar"/>`;
+    };
+    reader.readAsDataURL(file);
+    showToast('Profile picture updated');
+  });
+
+  /* ─── Populate from localStorage (profile.js tops up from API) ─── */
+  (function populateUser() {
+    let user;
+    try { user = JSON.parse(localStorage.getItem('user')); } catch(e) {}
+    if (!user) return;
+
+    const name  = user.name  || '';
+    const email = user.email || '';
+    const role  = (user.role || 'USER').toUpperCase();
+
+    /* hero */
+    const parts    = name.trim().split(' ');
+    const initials = ((parts[0]?.[0]??'') + (parts[1]?.[0]??'')).toUpperCase() || 'U';
+    $('profile-initials').textContent      = initials;
+    $('profile-display-name').textContent  = name  || '—';
+    $('profile-display-email').textContent = email || '—';
+
+    const rb = $('profile-role-badge');
+    if (role === 'ADMIN') { rb.textContent = 'Admin'; rb.classList.add('badge--admin'); }
+    else { rb.textContent = 'Student'; }
+
+    /* personal info fields */
+    const [first, ...rest] = name.split(' ');
+    $('field-first').value = first || '';
+    $('field-last').value  = rest.join(' ');
+    $('field-email').value = email;
+
+    /* account metadata (mirrors user_entity.js fields) */
+    $('field-uid').value          = user.id || user._id || '—';
+    $('field-role-display').value = role;
+    $('field-created').value      = fmtDate(user.createdAt);
+    $('field-updated').value      = fmtDate(user.updatedAt);
+
+    /* stats from user.stats if populated */
+    if (user.stats) {
+      const map = { 'ps-assigned':'assigned', 'ps-submitted':'submitted',
+                    'ps-scored':'scored', 'ps-avg':'avgBand' };
+      Object.entries(map).forEach(([elId, key]) => {
+        const v = user.stats[key];
+        if (v != null) $(elId).textContent = elId === 'ps-avg' ? Number(v).toFixed(1) : v;
+      });
+    }
+  })();
+
+  /* ─── Personal info save / cancel ─── */
+  let _infoSnap = null;
+  function takeSnap() {
+    _infoSnap = {
+      first: $('field-first').value,
+      last:  $('field-last').value,
+      email: $('field-email').value,
+      target: $('field-target').value,
+      examDate: $('field-exam-date').value,
+      bio: $('field-bio').value,
+    };
+  }
+  window.addEventListener('DOMContentLoaded', takeSnap);
+
+  $('cancel-info-btn').addEventListener('click', () => {
+    if (!_infoSnap) return;
+    $('field-first').value     = _infoSnap.first;
+    $('field-last').value      = _infoSnap.last;
+    $('field-email').value     = _infoSnap.email;
+    $('field-target').value    = _infoSnap.target;
+    $('field-exam-date').value = _infoSnap.examDate;
+    $('field-bio').value       = _infoSnap.bio;
+  });
+
+  $('save-info-btn').addEventListener('click', () => {
+    const first = $('field-first').value.trim();
+    const last  = $('field-last').value.trim();
+    const email = $('field-email').value.trim();
+    const name  = (first + ' ' + last).trim();
+    /* mirrors user_entity.js _validateName + _validateEmail */
+    if (name.length < 3)        { showToast('Name must be at least 3 characters', 'error'); return; }
+    if (name.length > 100)      { showToast('Name must be under 100 characters',  'error'); return; }
+    if (!emailRe.test(email))   { showToast('Please enter a valid email address',  'error'); return; }
+
+    /* update hero */
+    $('profile-display-name').textContent  = name;
+    $('profile-display-email').textContent = email;
+    const parts = name.trim().split(' ');
+    $('profile-initials').textContent = ((parts[0]?.[0]??'') + (parts[1]?.[0]??'')).toUpperCase() || 'U';
+
+    /* sync localStorage */
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      u.name = name; u.email = email; u.updatedAt = new Date().toISOString();
+      localStorage.setItem('user', JSON.stringify(u));
+      $('field-updated').value = fmtDate(new Date());
+    } catch(e) {}
+
+    takeSnap();
+    showInline('info-feedback');
+    showToast('Profile saved');
+    /* profile.js will call PATCH /api/users/me with the new values */
+  });
+
+  /* ─── Password ─── */
+  $('field-pw-new').addEventListener('input', function () { checkPwStrength(this.value); });
+
+  function checkPwStrength(pw) {
+    const lvls  = ['s-weak','s-fair','s-strong','s-great'];
+    const lbls  = ['Weak',  'Fair',  'Strong',  'Great!'];
+    let s = 0;
+    if (pw.length >= 8)  s++;
+    if (pw.length >= 12) s++;
+    if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+    if (/\d/.test(pw) && /[^A-Za-z0-9]/.test(pw)) s++;
+    s = pw.length ? Math.max(1, s) : 0;
+    ['pb1','pb2','pb3','pb4'].forEach((id, i) => {
+      $(id).className = 'pw-bar' + (i < s ? ' ' + lvls[s-1] : '');
+    });
+    const h = $('pw-hint');
+    h.textContent = pw.length ? lbls[s-1] : '';
+    h.className   = 'pw-hint' + (pw.length ? ' ' + lvls[s-1] : '');
+  }
+
+  $('clear-pw-btn').addEventListener('click', () => {
+    ['field-pw-current','field-pw-new','field-pw-confirm'].forEach(id => $(id).value = '');
+    checkPwStrength('');
+  });
+
+  $('save-pw-btn').addEventListener('click', () => {
+    const curr = $('field-pw-current').value;
+    const nw   = $('field-pw-new').value;
+    const conf = $('field-pw-confirm').value;
+    /* mirrors user_entity.js _validatePassword */
+    if (!curr)        { showToast('Enter your current password',             'error'); return; }
+    if (nw.length < 8){ showToast('Password must be at least 8 characters', 'error'); return; }
+    if (nw !== conf)  { showToast('Passwords do not match',                  'error'); return; }
+    /* profile.js / API: PATCH /api/auth/password */
+    ['field-pw-current','field-pw-new','field-pw-confirm'].forEach(id => $(id).value = '');
+    checkPwStrength('');
+    showInline('pw-feedback');
+    showToast('Password updated successfully');
+  });
+
+  /* ─── File attachments ─── */
+  const _files = [];
+
+  function fileCategory(name) {
+    const ext = (name.split('.').pop()||'').toLowerCase();
+    if (ext === 'pdf') return 'pdf';
+    if (['doc','docx','txt'].includes(ext)) return 'doc';
+    if (['png','jpg','jpeg','gif','webp'].includes(ext)) return 'img';
+    if (['xls','xlsx','csv'].includes(ext)) return 'xls';
+    if (['ppt','pptx'].includes(ext)) return 'ppt';
+    return 'misc';
+  }
+  function fmtSize(b) {
+    return b < 1024 ? b+'B' : b < 1048576 ? (b/1024).toFixed(1)+'KB' : (b/1048576).toFixed(1)+'MB';
+  }
+  function renderFiles() {
+    const n = _files.length;
+    $('file-count-label').textContent = n + ' file' + (n !== 1 ? 's' : '');
+    $('file-list').innerHTML = '';
+    _files.forEach((f, i) => {
+      const cat = fileCategory(f.name);
+      const ext = (f.name.split('.').pop()||'?').toUpperCase();
+      const el  = document.createElement('div');
+      el.className = 'file-item';
+      el.innerHTML = `
+        <div class="file-type ${cat}">${ext}</div>
+        <div class="file-meta">
+          <div class="file-meta__name">${f.name}</div>
+          <div class="file-meta__size">${fmtSize(f.size)}</div>
+        </div>
+        <button class="file-remove" onclick="removeFile(${i})" title="Remove">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>`;
+      $('file-list').appendChild(el);
+    });
+  }
+  window.removeFile = function(i) { _files.splice(i,1); renderFiles(); showToast('File removed'); };
+
+  function addFiles(list) {
+    list.forEach(f => {
+      if (f.size > 10*1024*1024) { showToast(f.name+' exceeds 10 MB', 'error'); return; }
+      if (_files.find(x => x.name===f.name && x.size===f.size)) return;
+      _files.push(f);
+    });
+    renderFiles();
+  }
+
+  $('browse-files-btn').addEventListener('click', () => $('file-input').click());
+  $('file-input').addEventListener('change', function () { addFiles([...(this.files)]); this.value=''; });
+
+  const dz = $('dropzone');
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', ()  => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    addFiles([...e.dataTransfer.files]);
+  });
+
+  /* ─── Sign out (calls logOut from auth.js — same as navbar) ─── */
+  $('signout-btn').addEventListener('click', async () => {
+    try {
+      const { logOut } = await import('/js/core/auth.js');
+      logOut();
+    } catch(e) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.replace('/pages/auth/login.html');
+    }
+  });
+
+  /* ─── Delete account ─── */
+  $('delete-account-btn').addEventListener('click', () => {
+    if (confirm('Are you absolutely sure?\n\nThis will permanently delete your account and all data. This cannot be undone.')) {
+      showToast('Account deletion requested — signing out…', 'error');
+      /* profile.js / API: DELETE /api/users/me */
+    }
+  });
+  </script>
+</body>
+</html>
