@@ -1,0 +1,253 @@
+/* css/pages/forgot_password.css
+   Extends auth.css with password-reset-specific styles
+   Design: refined, academic — cool slate tones, serif accents */
+
+/* ── Auth card base overrides ─────────────────────────────────────────────── */
+.auth-card {
+  max-width: 440px;
+  width: 100%;
+  margin: auto;
+  background: var(--surface, #ffffff);
+  border-radius: 16px;
+  padding: 48px 40px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / .06), 0 24px 48px -8px rgb(0 0 0 / .12);
+  animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1);    }
+}
+
+/* ── Step transitions ─────────────────────────────────────────────────────── */
+.auth-step { animation: stepIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@keyframes stepIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+.hidden { display: none !important; }
+
+/* ── Icon ─────────────────────────────────────────────────────────────────── */
+.auth-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: #f0f4ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+}
+
+.auth-icon svg { width: 30px; height: 30px; color: #3b5bdb; }
+.auth-icon.success { background: #ecfdf5; }
+.auth-icon.success svg { color: #059669; }
+.auth-icon.error { background: #fff1f2; }
+.auth-icon.error svg { color: #e11d48; }
+.auth-icon.loading { background: #f8fafc; }
+
+/* ── Spinner ring ─────────────────────────────────────────────────────────── */
+.spinner-ring {
+  width: 32px; height: 32px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b5bdb;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Typography ───────────────────────────────────────────────────────────── */
+.auth-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.auth-subtitle {
+  font-size: 0.9rem;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.6;
+  margin: 0 0 28px;
+}
+
+.auth-hint {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+/* ── Form ─────────────────────────────────────────────────────────────────── */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+  letter-spacing: 0.01em;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 11px 44px 11px 38px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.input-wrapper input:focus {
+  border-color: #3b5bdb;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgb(59 91 219 / .12);
+}
+
+.input-wrapper input.is-error {
+  border-color: #e11d48;
+  box-shadow: 0 0 0 3px rgb(225 29 72 / .1);
+}
+
+/* ── Show/hide password toggle ────────────────────────────────────────────── */
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #94a3b8;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+}
+.toggle-password:hover { color: #3b5bdb; }
+.eye-icon { width: 16px; height: 16px; }
+
+/* ── Password strength bar ────────────────────────────────────────────────── */
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.strength-track {
+  flex: 1;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+}
+.strength-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 99px;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.35s;
+}
+.strength-fill.s1 { width: 25%; background: #ef4444; }
+.strength-fill.s2 { width: 50%; background: #f97316; }
+.strength-fill.s3 { width: 75%; background: #eab308; }
+.strength-fill.s4 { width: 100%; background: #22c55e; }
+.strength-label { font-size: 0.75rem; color: #64748b; white-space: nowrap; }
+
+/* ── Field error ──────────────────────────────────────────────────────────── */
+.field-error {
+  display: block;
+  font-size: 0.78rem;
+  color: #e11d48;
+  margin-top: 5px;
+  min-height: 16px;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: #3b5bdb;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+  text-decoration: none;
+}
+.btn-primary:hover { background: #2f4ac4; box-shadow: 0 4px 12px rgb(59 91 219 / .3); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-secondary {
+  width: 100%;
+  padding: 11px;
+  background: transparent;
+  color: #3b5bdb;
+  border: 1.5px solid #3b5bdb;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 12px;
+}
+.btn-secondary:hover { background: #f0f4ff; }
+
+/* ── Btn spinner ──────────────────────────────────────────────────────────── */
+.btn-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgb(255 255 255 / .4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+
+/* ── Back link ────────────────────────────────────────────────────────────── */
+.auth-back-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 20px;
+  font-size: 0.85rem;
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.auth-back-link svg { width: 14px; height: 14px; }
+.auth-back-link:hover { color: #3b5bdb; }
