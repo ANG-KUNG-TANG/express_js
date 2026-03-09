@@ -1,5 +1,6 @@
 /**
  * news/feed.js — personalised news feed
+ * Same pattern as category.js and search.js.
  */
 
 import { requireAuth }  from '../../core/router.js';
@@ -11,60 +12,62 @@ import { toast }        from '../../core/toast.js';
 requireAuth();
 initNavbar();
 
-const gridEl     = document.getElementById('news-grid');
-const searchEl   = document.getElementById('search-input');
-const nextBtn    = document.getElementById('next-page-btn');
-const loadingEl  = document.getElementById('loading-state');
+const gridEl    = document.getElementById('news-grid');
+const loadingEl = document.getElementById('loading-state');
+const nextBtn   = document.getElementById('next-page-btn');
+const searchEl  = document.getElementById('search-input');
 
-let nextPage     = null;
-let searchTimer  = null;
+let nextPage  = null;
+let lastQuery = '';
 
 // ---------------------------------------------------------------------------
 // Load feed
 // ---------------------------------------------------------------------------
 const loadFeed = async (page = null, append = false) => {
-    if (!append) gridEl.innerHTML = '';
-    loadingEl.style.display = 'block';
-    nextBtn.style.display   = 'none';
+    if (!append) {
+        gridEl.innerHTML = '';
+        if (loadingEl) loadingEl.style.display = 'block';
+    }
 
-    const q = searchEl.value.trim();
     const params = new URLSearchParams();
-    if (q)    params.set('q', q);
-    if (page) params.set('page', page);
+    if (lastQuery) params.set('q', lastQuery);
+    if (page)      params.set('page', page);
 
     try {
         const res      = await apiFetch(`/api/news/feed?${params}`);
         const articles = res?.data?.articles || [];
-        nextPage       = res?.data?.nextPage || null;
+        nextPage       = res?.data?.nextPage  || null;
 
-        if (!append && articles.length === 0) {
-            gridEl.innerHTML = `
-                <p class="empty-state">
-                    No articles found. 
-                    <a href="/pages/news/interests.html">Set your interests</a> to personalise your feed.
-                </p>`;
-        } else {
-            gridEl.insertAdjacentHTML('beforeend', articles.map(newsCard).join(''));
-        }
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (!append)   gridEl.innerHTML = '';
+
+        gridEl.insertAdjacentHTML('beforeend', articles.length
+            ? articles.map(newsCard).join('')
+            : '<p class="empty-state">No articles found for your interests.</p>');
 
         nextBtn.style.display = nextPage ? 'block' : 'none';
+
     } catch (err) {
+        if (loadingEl) loadingEl.style.display = 'none';
+        gridEl.innerHTML = '<p class="error-state">Failed to load feed.</p>';
         toast(err.message, 'error');
-        gridEl.innerHTML = '<p class="error-state">Failed to load news.</p>';
-    } finally {
-        loadingEl.style.display = 'none';
     }
 };
 
 // ---------------------------------------------------------------------------
-// Events
+// Search within feed — debounced
 // ---------------------------------------------------------------------------
-searchEl.addEventListener('input', () => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => loadFeed(), 500);
+let t;
+searchEl?.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+        lastQuery = searchEl.value.trim();
+        nextPage  = null;
+        loadFeed();
+    }, 380);
 });
 
-nextBtn.addEventListener('click', () => {
+nextBtn?.addEventListener('click', () => {
     if (nextPage) loadFeed(nextPage, true);
 });
 

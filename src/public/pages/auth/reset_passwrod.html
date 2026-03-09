@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset Password — IELTS Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/base.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:   #0b1120;
+      --frost: #f5f3ef;
+      --gold:  #c9a84c;
+      --blue:  #4d7cfe;
+    }
+
+    html, body { height: 100%; }
+    body {
+      min-height: 100vh;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--frost);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      display: flex; flex-direction: column;
+    }
+
+    /* ── Page chrome ─────────────────────────────────────────────────────── */
+    .page-header {
+      padding: 22px 36px;
+      border-bottom: 1px solid rgba(0,0,0,.07);
+      background: #fff;
+    }
+    .page-brand {
+      display: inline-flex; align-items: center; gap: 10px;
+      text-decoration: none;
+    }
+    .page-brand-mark {
+      width: 32px; height: 32px;
+      background: var(--ink); border-radius: 8px;
+      display: grid; place-items: center;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700; font-size: 16px; color: #fff;
+    }
+    .page-brand-name {
+      font-size: .88rem; font-weight: 600;
+      color: var(--ink); letter-spacing: .01em;
+    }
+
+    .page-main {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 20px;
+    }
+
+    /* ── Card ────────────────────────────────────────────────────────────── */
+    .auth-card {
+      width: 100%; max-width: 420px;
+      background: #fff;
+      border-radius: 18px;
+      padding: 44px 40px;
+      border: 1px solid #e8e4dc;
+      box-shadow:
+        0 1px 3px rgba(0,0,0,.04),
+        0 12px 32px rgba(0,0,0,.07),
+        0 32px 64px rgba(0,0,0,.04);
+      animation: cardIn .42s cubic-bezier(.16,1,.3,1) both;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(22px) scale(.98); }
+      to   { opacity: 1; transform: translateY(0)    scale(1);   }
+    }
+
+    .step { animation: stepIn .32s cubic-bezier(.16,1,.3,1) both; }
+    @keyframes stepIn {
+      from { opacity: 0; transform: translateX(14px); }
+      to   { opacity: 1; transform: translateX(0);    }
+    }
+    .hidden { display: none !important; }
+
+    /* ── Icon ────────────────────────────────────────────────────────────── */
+    .card-icon {
+      width: 62px; height: 62px;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+    }
+    .card-icon svg { width: 28px; height: 28px; }
+    .card-icon.default { background: #f0f3ff; color: var(--blue); }
+    .card-icon.loading { background: #f8f7f4; }
+    .card-icon.success { background: #f0fdf4; color: #16a34a; }
+    .card-icon.error   { background: #fff2f2; color: #dc2626; }
+
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid #e2e7f0;
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Text ────────────────────────────────────────────────────────────── */
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.55rem; font-weight: 700;
+      letter-spacing: -.02em; color: var(--ink);
+      text-align: center; margin-bottom: 10px;
+      line-height: 1.2;
+    }
+    .card-sub {
+      font-size: .875rem; color: #6b7a96;
+      text-align: center; line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    /* ── Form ────────────────────────────────────────────────────────────── */
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block;
+      font-size: .72rem; font-weight: 600;
+      color: #4e5a70; margin-bottom: 7px;
+      letter-spacing: .06em; text-transform: uppercase;
+    }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 13px; top: 50%;
+      transform: translateY(-50%);
+      width: 15px; height: 15px;
+      color: #b6bfcc; pointer-events: none;
+    }
+    .toggle-pw {
+      position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none; cursor: pointer;
+      color: #b6bfcc; padding: 3px;
+      display: flex; align-items: center;
+      transition: color .14s;
+    }
+    .toggle-pw:hover { color: var(--blue); }
+    .toggle-pw svg { width: 15px; height: 15px; }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 42px 12px 38px;
+      border: 1.5px solid #dde2ec;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem; color: var(--ink);
+      background: #fafbfd; outline: none;
+      transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .form-group input::placeholder { color: #b6bfcc; }
+    .form-group input:focus {
+      border-color: var(--blue); background: #fff;
+      box-shadow: 0 0 0 3px rgba(77,124,254,.11);
+    }
+    .form-group input.is-error {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220,38,38,.09);
+    }
+    .field-error {
+      display: block; font-size: .74rem; color: #dc2626;
+      margin-top: 5px; min-height: 14px;
+    }
+
+    /* ── Strength meter ──────────────────────────────────────────────────── */
+    .strength-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 8px;
+    }
+    .strength-track {
+      flex: 1; height: 4px;
+      background: #e8ecf4;
+      border-radius: 99px; overflow: hidden;
+    }
+    .strength-bar {
+      height: 100%; width: 0;
+      border-radius: 99px;
+      transition: width .35s cubic-bezier(.4,0,.2,1), background .3s;
+    }
+    .strength-bar.s1 { width: 25%; background: #ef4444; }
+    .strength-bar.s2 { width: 50%; background: #f97316; }
+    .strength-bar.s3 { width: 75%; background: #eab308; }
+    .strength-bar.s4 { width: 100%; background: #22c55e; }
+    .strength-lbl { font-size: .72rem; color: #8a9ab8; white-space: nowrap; }
+
+    /* ── Buttons ─────────────────────────────────────────────────────────── */
+    .btn-primary {
+      width: 100%; padding: 13px;
+      background: var(--ink); color: #fff;
+      border: none; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem; font-weight: 600;
+      cursor: pointer; letter-spacing: .02em;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .15s, transform .1s, box-shadow .15s;
+      position: relative; overflow: hidden; text-decoration: none;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.07) 0%, transparent 55%);
+    }
+    .btn-primary:hover { background: #1a2640; box-shadow: 0 5px 18px rgba(11,17,32,.2); }
+    .btn-primary:active { transform: scale(.985); }
+    .btn-primary:disabled { opacity: .55; cursor: not-allowed; }
+
+    .btn-ring {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: inline-block; flex-shrink: 0;
+    }
+
+    /* ── Back link ───────────────────────────────────────────────────────── */
+    .back-link {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      margin-top: 20px;
+      font-size: .82rem; color: #7a8aa0;
+      text-decoration: none; transition: color .14s;
+    }
+    .back-link svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .back-link:hover { color: var(--blue); }
+
+    /* ── Requirements list ───────────────────────────────────────────────── */
+    .req-list {
+      list-style: none;
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin-bottom: 18px;
+    }
+    .req-list li {
+      font-size: .72rem; padding: 3px 9px;
+      border-radius: 99px;
+      background: #f1f3f9; color: #7a8aa0;
+      border: 1px solid #e4e8f0;
+      transition: background .2s, color .2s, border-color .2s;
+    }
+    .req-list li.ok {
+      background: #f0fdf4; color: #16a34a;
+      border-color: #bbf7d0;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <a href="/" class="page-brand">
+      <span class="page-brand-mark">I</span>
+      <span class="page-brand-name">IELTS Platform</span>
+    </a>
+  </header>
+
+  <main class="page-main">
+    <div class="auth-card">
+
+      <!-- Step: Validating token -->
+      <div class="step" id="stepValidating">
+        <div class="card-icon loading">
+          <div class="spinner"></div>
+        </div>
+        <p class="card-sub" style="margin-bottom:0">Validating your reset link…</p>
+      </div>
+
+      <!-- Step: Invalid / expired -->
+      <div class="step hidden" id="stepInvalid">
+        <div class="card-icon error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <h1 class="card-title">Link expired</h1>
+        <p class="card-sub">This reset link is invalid or has expired. Links are only valid for 30 minutes.</p>
+        <a href="/pages/auth/forgot_password.html" class="btn-primary">Request a new link</a>
+      </div>
+
+      <!-- Step: Reset form -->
+      <div class="step hidden" id="stepForm">
+        <div class="card-icon default">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+          </svg>
+        </div>
+        <h1 class="card-title">Set new password</h1>
+        <p class="card-sub">Choose a strong password for your IELTS Platform account.</p>
+
+        <form id="resetForm" novalidate>
+          <div class="form-group">
+            <label for="password">New password</label>
+            <div class="input-wrap">
+              <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+              <input type="password" id="password" placeholder="New password" autocomplete="new-password" required />
+              <button type="button" class="toggle-pw" data-for="password" aria-label="Show/hide">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+            <div class="strength-row">
+              <div class="strength-track"><div class="strength-bar" id="strengthBar"></div></div>
+              <span class="strength-lbl" id="strengthLbl"></span>
+            </div>
+            <span class="field-error" id="errPassword"></span>
+          </div>
+
+          <!-- Live requirements -->
+          <ul class="req-list" id="reqList">
+            <li id="req-len">8+ characters</li>
+            <li id="req-upper">Uppercase</li>
+            <li id="req-lower">Lowercase</li>
+            <li id="req-num">Number</li>
+          </ul>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm password</label>
+            <div class="input-wrap">
+              <svg class="input-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+              <input type="password" id="confirmPassword" placeholder="Confirm new password" autocomplete="new-password" required />
+              <button type="button" class="toggle-pw" data-for="confirmPassword" aria-label="Show/hide">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+            <span class="field-error" id="errConfirm"></span>
+          </div>
+
+          <button type="submit" class="btn-primary" id="resetBtn">
+            <span id="resetBtnText">Reset password</span>
+            <span id="resetBtnRing" class="btn-ring hidden"></span>
+          </button>
+        </form>
+
+        <a href="/pages/auth/login.html" class="back-link">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+          Back to sign in
+        </a>
+      </div>
+
+      <!-- Step: Success -->
+      <div class="step hidden" id="stepDone">
+        <div class="card-icon success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <h1 class="card-title">Password updated</h1>
+        <p class="card-sub">Your password has been reset. You can now sign in with your new password.</p>
+        <a href="/pages/auth/login.html" class="btn-primary">Go to sign in</a>
+      </div>
+
+    </div>
+  </main>
+
+  <script type="module" src="/js/pages/auth/reset_password.js"></script>
+
+  <script>
+    // Strength meter + requirements (inline — no extra module needed)
+    const pw   = document.getElementById('password');
+    const bar  = document.getElementById('strengthBar');
+    const lbl  = document.getElementById('strengthLbl');
+    const LBLS = ['', 'Weak', 'Fair', 'Good', 'Strong'];
+
+    const check = (v) => ({
+      len:   v.length >= 8,
+      upper: /[A-Z]/.test(v),
+      lower: /[a-z]/.test(v),
+      num:   /[0-9]/.test(v),
+    });
+
+    pw?.addEventListener('input', () => {
+      const v = pw.value;
+      const c = check(v);
+      const score = Object.values(c).filter(Boolean).length;
+
+      bar.className = 'strength-bar' + (score ? ' s' + score : '');
+      lbl.textContent = LBLS[score] || '';
+
+      document.getElementById('req-len').classList.toggle('ok', c.len);
+      document.getElementById('req-upper').classList.toggle('ok', c.upper);
+      document.getElementById('req-lower').classList.toggle('ok', c.lower);
+      document.getElementById('req-num').classList.toggle('ok', c.num);
+    });
+
+    // Toggle show/hide password
+    document.querySelectorAll('.toggle-pw').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const inp = document.getElementById(btn.dataset.for);
+        if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+      });
+    });
+  </script>
+</body>
+</html>

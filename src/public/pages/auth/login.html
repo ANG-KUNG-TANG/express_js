@@ -47,6 +47,10 @@
     .auth-footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
 
     @media (max-width: 768px) { .auth-hero { display: none; } .auth-panel { padding: 32px 20px; } }
+
+    .forgot-row { text-align: right; margin: -6px 0 14px; }
+    .forgot-link { font-size: .78rem; color: var(--accent); text-decoration: none; font-weight: 500; transition: opacity .14s; }
+    .forgot-link:hover { opacity: .75; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -84,6 +88,7 @@
         <form id="login-form" novalidate>
           <div class="form-group"><label for="email">Email address</label><input type="email" id="email" placeholder="you@example.com" required autocomplete="email" /><p class="form-error" id="err-email"></p></div>
           <div class="form-group"><label for="password">Password</label><input type="password" id="password" placeholder="Your password" required autocomplete="current-password" /><p class="form-error" id="err-password"></p></div>
+          <div class="forgot-row"><a href="/pages/auth/forgot_password.html" class="forgot-link">Forgot password?</a></div>
           <button type="submit" class="btn btn--primary btn--full btn--lg" style="margin-top:4px">Sign In</button>
         </form>
         <div class="auth-footer">Don't have an account? <a href="/pages/auth/register.html">Create one — it's free</a></div>

@@ -58,3 +58,4 @@ export const updateUserInterests = async (userId, interests) => {
 export const getAvailableCategories = () => {
     return Object.values(NewsCategory);
 };
+
