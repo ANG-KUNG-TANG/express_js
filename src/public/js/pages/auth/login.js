@@ -33,8 +33,6 @@ form?.addEventListener('submit', async (e) => {
             body: JSON.stringify({ email, password }),
         });
 
-        // ✅ FIX 2: backend returns { token, user } directly OR nested in .data
-        // Handle both shapes safely
         const token = res?.token || res?.data?.token;
         const user  = res?.user  || res?.data?.user;
 

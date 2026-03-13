@@ -28,10 +28,8 @@
       </div>
     </div>
 
-    <!-- ══ USER DASHBOARD ══ -->
+    <!-- ══ STUDENT DASHBOARD ══ -->
     <div id="user-dashboard">
-
-      <!-- Stats row -->
       <div class="stats-row">
         <div class="stat-card animate-in">
           <div class="stat-card__number" id="stat-assigned">—</div>
@@ -52,28 +50,43 @@
       </div>
 
       <div class="two-col">
-        <!-- Recent tasks -->
         <div>
           <div class="section-header">
             <h2 class="section-title">Recent Tasks</h2>
             <a href="/pages/tasks/list.html" class="btn btn--ghost btn--sm">View all →</a>
           </div>
-          <div id="recent-tasks">
-            <p class="loading">Loading…</p>
-          </div>
+          <div id="recent-tasks"><p class="loading">Loading…</p></div>
         </div>
-
-        <!-- News preview -->
         <div>
           <div class="section-header">
             <h2 class="section-title">Your News Feed</h2>
             <a href="/pages/news/interests.html" class="btn btn--ghost btn--sm">Edit interests →</a>
           </div>
-          <div id="news-preview">
-            <p class="loading">Loading…</p>
-          </div>
+          <div id="news-preview"><p class="loading">Loading…</p></div>
         </div>
       </div>
+    </div>
+
+    <!-- ══ TEACHER DASHBOARD (hidden by default, shown by JS) ══ -->
+    <div id="teacher-dashboard" style="display:none">
+
+      <div class="stats-row">
+        <div class="stat-card animate-in">
+          <div class="stat-card__number" id="teacher-stat-submitted">—</div>
+          <div class="stat-card__label">Awaiting Review</div>
+        </div>
+        <div class="stat-card animate-in" style="animation-delay:.05s">
+          <div class="stat-card__number" id="teacher-stat-reviewed">—</div>
+          <div class="stat-card__label">Reviewed</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">Tasks Awaiting Review</h2>
+        <a href="/pages/teacher/dashboard.html" class="btn btn--ghost btn--sm">All tasks →</a>
+      </div>
+      <div id="teacher-queue"><p class="loading">Loading…</p></div>
+
     </div>
 
     <!-- ══ ADMIN DASHBOARD (hidden by default, shown by JS) ══ -->
@@ -102,9 +115,7 @@
         <h2 class="section-title">Action Queue</h2>
         <a href="/pages/admin/tasks.html" class="btn btn--ghost btn--sm">All tasks →</a>
       </div>
-      <div id="action-queue">
-        <p class="loading">Loading…</p>
-      </div>
+      <div id="action-queue"><p class="loading">Loading…</p></div>
 
     </div>
   </div>

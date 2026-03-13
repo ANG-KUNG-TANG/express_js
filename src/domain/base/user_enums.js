@@ -1,4 +1,5 @@
 export const UserRole= Object.freeze({
     USER : 'user',
-    ADMIN: 'admin'
+    ADMIN: 'admin',
+    TEACHER: 'teacher'
 })

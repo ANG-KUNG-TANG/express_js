@@ -9,6 +9,8 @@ import writingTaskRouter from './interfaces/routes/task.router.js';
 import authRouter        from './interfaces/routes/auth.router.js';
 import vocabRouter       from './interfaces/routes/vocab.router.js';
 import newsRouter        from './interfaces/routes/news.router.js';
+import adminRouter       from  './interfaces/routes/admin.router.js';
+import teacherRouter      from './interfaces/routes/teacher.router.js';
 import { errorHandler }            from './middleware/error.handler.js';
 import { sendFailure }             from './interfaces/response_formatter.js';
 import { HTTP_STATUS }             from './interfaces/http_status.js';
@@ -17,6 +19,10 @@ import { errorLoggerMiddleware }   from './middleware/error.logger.middleware.js
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs';
+import { notificationRouter } from './interfaces/routes/notification.router.js';
+import { passwordResetRouter } from './interfaces/routes/password_reset.router.js';
+// FIX: authenticate was used below but never imported
+import { authenticate } from './middleware/auth.middelware.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,13 +57,17 @@ initPassport(app);
 app.use('/api/writing-tasks', writingTaskRouter);
 app.use('/api/news',          newsRouter);
 app.use('/api/vocab',         vocabRouter);
+app.use('/api/notifications', authenticate, notificationRouter);
 app.use('/api/auth',          authRouter);
+app.use('/api/auth',          passwordResetRouter);
+app.use('/api/admin',         adminRouter);
+app.use('/api/teacher',       teacherRouter);
 app.use('/api',               profileRouter);  // /api/users/me — must be before userRouter
 app.use('/api',               userRouter);     // /api/users/:id
 
 // ── Root → redirect to login ──────────────────────────────────────────────────
 app.get('/', (req, res) => {
-    res.redirect('/public/pages/auth/login.html');
+    res.redirect('/pages/auth/login.html');
 });
 
 // ── 404 handler ───────────────────────────────────────────────────────────────

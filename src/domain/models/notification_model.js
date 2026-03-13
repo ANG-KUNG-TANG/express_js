@@ -1,51 +1,49 @@
 // domain/models/notification_model.js
 
-import { DataTypes } from 'sequelize';
-import { sequelize } from '../../infrastructure/repositories/db.js';
-import { NotificationType } from '../entities/notification_entity.js';
+import mongoose from 'mongoose';
+import { NotificationType } from '../entities/notificaiton_entity.js';
 
-export const NotificationModel = sequelize.define(
-    'Notification',
+const notificationSchema = new mongoose.Schema(
     {
-        id: {
-            type:         DataTypes.UUID,
-            defaultValue: DataTypes.UUIDV4,
-            primaryKey:   true,
+        _id: {
+            type:    String,   // UUID string from entity
+            default: undefined,
         },
         userId: {
-            type:       DataTypes.UUID,
-            allowNull:  false,
-            references: { model: 'users', key: 'id' },
-            onDelete:   'CASCADE',
+            type:     String,
+            required: true,
+            index:    true,
         },
         type: {
-            type:      DataTypes.ENUM(...Object.values(NotificationType)),
-            allowNull: false,
+            type:     String,
+            enum:     Object.values(NotificationType),
+            required: true,
         },
         title: {
-            type:      DataTypes.STRING(255),
-            allowNull: false,
+            type:     String,
+            required: true,
         },
         message: {
-            type:      DataTypes.TEXT,
-            allowNull: false,
+            type:     String,
+            required: true,
         },
         isRead: {
-            type:         DataTypes.BOOLEAN,
-            defaultValue: false,
+            type:    Boolean,
+            default: false,
         },
         metadata: {
-            type:      DataTypes.JSONB,   // use DataTypes.TEXT + JSON.parse if not on Postgres
-            allowNull: true,
+            type:    mongoose.Schema.Types.Mixed,
+            default: null,
         },
     },
     {
-        tableName:  'notifications',
-        timestamps: true,
-        indexes: [
-            { fields: ['userId']           },
-            { fields: ['userId', 'isRead'] },
-            { fields: ['createdAt']        },
-        ],
+        timestamps:  true,              // adds createdAt + updatedAt
+        versionKey:  false,
     }
 );
+
+// Compound indexes to mirror the original
+notificationSchema.index({ userId: 1, isRead: 1 });
+notificationSchema.index({ createdAt: -1 });
+
+export const NotificationModel = mongoose.model('Notification', notificationSchema);

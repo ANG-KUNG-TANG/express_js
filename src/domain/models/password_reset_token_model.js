@@ -1,45 +1,36 @@
 // domain/models/password_reset_token_model.js
-// Mirrors user_model.js / task_model.js: DataTypes, tableName, indexes
 
-import { DataTypes } from 'sequelize';
-import { sequelize } from '../../infrastructure/repositories/db.js';
+import mongoose from 'mongoose';
 
-export const PasswordResetTokenModel = sequelize.define(
-    'PasswordResetToken',
+const passwordResetTokenSchema = new mongoose.Schema(
     {
-        id: {
-            type:         DataTypes.UUID,
-            defaultValue: DataTypes.UUIDV4,
-            primaryKey:   true,
+        _id: {
+            type:    String,  // UUID string from entity
+            default: undefined,
         },
         userId: {
-            type:       DataTypes.UUID,
-            allowNull:  false,
-            references: { model: 'users', key: 'id' },
-            onDelete:   'CASCADE',
+            type:     String,
+            required: true,
+            index:    true,
         },
         tokenHash: {
-            type:      DataTypes.STRING(64),
-            allowNull: false,
-            unique:    true,
-            comment:   'SHA-256 hash of the raw token — raw token only lives in the email link',
+            type:     String,
+            required: true,
+            unique:   true,   // SHA-256 hash of the raw token
         },
         expiresAt: {
-            type:      DataTypes.DATE,
-            allowNull: false,
+            type:     Date,
+            required: true,
         },
         used: {
-            type:         DataTypes.BOOLEAN,
-            defaultValue: false,
+            type:    Boolean,
+            default: false,
         },
     },
     {
-        tableName:  'password_reset_tokens',
-        timestamps: true,
-        updatedAt:  false, // tokens are create + mark-used only
-        indexes: [
-            { fields: ['tokenHash'] },
-            { fields: ['userId']    },
-        ],
+        timestamps: { createdAt: true, updatedAt: false }, // tokens are create + mark-used only
+        versionKey: false,
     }
 );
+
+export const PasswordResetTokenModel = mongoose.model('PasswordResetToken', passwordResetTokenSchema);

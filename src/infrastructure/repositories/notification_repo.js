@@ -1,28 +1,28 @@
 // infrastructure/repositories/notification_repo.js
-// Mirrors user_repo.js / task_repo.js: thin DB adapter, maps rows → entities
 
-import { Op }               from 'sequelize';
 import { NotificationModel } from '../../domain/models/notification_model.js';
-import { Notification }      from '../../domain/entities/notification_entity.js';
+import { Notification }      from '../../domain/entities/notificaiton_entity.js';
 
-const toEntity = (row) => row
+const toEntity = (doc) => doc
     ? new Notification({
-        id:        row.id,
-        userId:    row.userId,
-        type:      row.type,
-        title:     row.title,
-        message:   row.message,
-        isRead:    row.isRead,
-        metadata:  row.metadata,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
+        id:        doc._id,
+        userId:    doc.userId,
+        type:      doc.type,
+        title:     doc.title,
+        message:   doc.message,
+        isRead:    doc.isRead,
+        metadata:  doc.metadata,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
     })
     : null;
 
 export const notificationRepo = {
+
     async create(notificationEntity) {
-        const row = await NotificationModel.create({
-            id:       notificationEntity.id,
+        // FIX: use Mongoose .create() — entity id stored in _id
+        const doc = await NotificationModel.create({
+            _id:      notificationEntity.id,
             userId:   notificationEntity.userId,
             type:     notificationEntity.type,
             title:    notificationEntity.title,
@@ -30,21 +30,26 @@ export const notificationRepo = {
             isRead:   notificationEntity.isRead,
             metadata: notificationEntity.metadata,
         });
-        return toEntity(row);
+        return toEntity(doc);
     },
 
     async findByUserId(userId, { page = 1, limit = 20 } = {}) {
-        const { count, rows } = await NotificationModel.findAndCountAll({
-            where:  { userId },
-            order:  [['createdAt', 'DESC']],
-            limit,
-            offset: (page - 1) * limit,
-        });
-        return { notifications: rows.map(toEntity), total: count };
+        // FIX: Mongoose uses .countDocuments() + .find() instead of findAndCountAll
+        const [total, docs] = await Promise.all([
+            NotificationModel.countDocuments({ userId }),
+            NotificationModel
+                .find({ userId })
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean(),
+        ]);
+        return { notifications: docs.map(toEntity), total };
     },
 
     async countUnread(userId) {
-        return NotificationModel.count({ where: { userId, isRead: false } });
+        // FIX: Mongoose uses .countDocuments() not .count()
+        return NotificationModel.countDocuments({ userId, isRead: false });
     },
 
     /**
@@ -53,14 +58,12 @@ export const notificationRepo = {
      * @returns {number} updatedCount
      */
     async markRead(userId, ids) {
-        const where = ids === 'all'
+        // FIX: Mongoose uses .updateMany() — no Op import needed
+        const filter = ids === 'all'
             ? { userId }
-            : { userId, id: { [Op.in]: ids } };
+            : { userId, _id: { $in: ids } };
 
-        const [updatedCount] = await NotificationModel.update(
-            { isRead: true },
-            { where }
-        );
-        return updatedCount;
+        const result = await NotificationModel.updateMany(filter, { isRead: true });
+        return result.modifiedCount;
     },
 };

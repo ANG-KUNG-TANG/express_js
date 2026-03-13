@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Review Task</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+</head>
+<body>
+    <div id="navbar"></div>
+    <main class="review-layout">
+
+        <header class="admin-header">
+            <a href="/pages/teacher/dashboard.html" class="back-link">Dashboard</a>
+            <h1 class="admin-header__title">Review Task</h1>
+            <div id="task-status"></div>
+        </header>
+
+        <!-- Task info -->
+        <div class="review-card">
+            <div class="review-card__header">
+                <h2 class="review-card__title" id="task-title">Loading…</h2>
+                <span id="task-type" style="font-family:var(--font-mono);font-size:12px;color:var(--text3)"></span>
+            </div>
+            <div class="review-card__body">
+                <div class="review-meta">
+                    <span class="review-meta__item"><strong>Word Count:</strong> <span id="task-wordcount">—</span></span>
+                </div>
+
+                <p class="review-section-title">Question Prompt</p>
+                <div class="review-prose" id="task-prompt" style="margin-bottom:20px;max-height:160px">—</div>
+
+                <p class="review-section-title">Student Submission</p>
+                <div class="review-prose" id="task-submission">—</div>
+            </div>
+        </div>
+
+        <!-- Review section — teachers can only review, not score -->
+        <div class="review-card" id="review-section">
+            <div class="review-card__header">
+                <h2 class="review-card__title">Feedback</h2>
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">
+                    Scoring is handled by admins
+                </span>
+            </div>
+            <div class="review-card__body">
+                <div class="form-group" style="margin-bottom:16px">
+                    <label class="form-label">Your Feedback</label>
+                    <textarea id="feedback-input" class="textarea"
+                        placeholder="Write detailed feedback for the student…"></textarea>
+                </div>
+                <button id="review-btn" class="btn btn--warning">Save Review</button>
+            </div>
+        </div>
+
+        <!-- Reviewed notice (shown when already reviewed) -->
+        <div class="review-card" id="reviewed-notice" style="display:none">
+            <div class="review-card__body" style="display:flex;align-items:center;gap:12px">
+                <span class="badge badge--info">REVIEWED</span>
+                <span style="font-size:13px;color:var(--text2)">
+                    This task has been reviewed. An admin will assign the band score.
+                </span>
+            </div>
+        </div>
+
+    </main>
+    <div id="toast-container"></div>
+    <script type="module" src="/js/pages/teacher/review.js"></script>
+</body>
+</html>

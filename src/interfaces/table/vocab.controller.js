@@ -4,7 +4,7 @@ import { fetchVocabUseCase } from "../../app/vocab_uc/fetch_api.uc.js";
 import { lookupWordUseCase } from "../../app/vocab_uc/lookup_word.uc.js";
 import { sendSuccess } from "../response_formatter.js";
 import { HTTP_STATUS } from "../http_status.js";
-import { sanitizeCreateInput } from "./vocab.input_sanitizer.js";
+import { sanitizeCreateInput } from "../input_sanitizers/vocab.input_sanitizer.js";
 import auditLogger from "../../core/logger/audit.logger.js";
 import logger from "../../core/logger/logger.js";
 

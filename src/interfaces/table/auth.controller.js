@@ -7,7 +7,7 @@ import {
   revokeAllForUser,
 } from '../../core/services/token_store.service.js';
 import { authenticateUserUseCase } from '../../app/user_uc/auth_user.uc.js';
-import { sanitizeAuthInput } from './user.input_sanitizer.js';
+import { sanitizeAuthInput } from '../input_sanitizers/user.input_sanitizer.js';
 import { sendSuccess } from '../response_formatter.js';
 import { HTTP_STATUS } from '../http_status.js';
 import logger from '../../core/logger/logger.js';

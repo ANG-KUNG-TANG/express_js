@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { authenticate } from "../../middleware/auth.middelware.js";
 import { asyncHandler } from "../async_handler.js";
 import {
     createUser,

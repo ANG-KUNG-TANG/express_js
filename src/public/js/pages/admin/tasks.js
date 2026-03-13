@@ -1,95 +1,76 @@
-/**
- * admin/tasks.js — all tasks across all users with filters and transfer
- *
- * Bugs fixed:
- *  1. import '../../../components/...' → '../../components/...' (wrong depth)
- *  2. import from '../../core/toasts.js' → '../../core/toast.js' (wrong filename)
- */
-
 import { requireAdmin } from '../../core/router.js';
 import { apiFetch }     from '../../core/api.js';
-// ✅ FIX 1: correct depth
-import { initNavbar }   from '../../components/navbar.js';
-import { taskCard }     from '../../components/taskCard.js';
-// ✅ FIX 2: correct filename
+import { initNavbar }   from '../../../components/navbar.js';
 import { toast }        from '../../core/toast.js';
 
 requireAdmin();
 initNavbar();
 
-const listEl      = document.getElementById('tasks-list');
-const searchEl    = document.getElementById('search-input');
-const statusEl    = document.getElementById('filter-status');
-const transferBtn = document.getElementById('transfer-btn');
+const fmtTime = d => d ? new Date(d).toLocaleString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
+const statusBadge = s => {
+    const cls = { DRAFT:'badge--default', SUBMITTED:'badge--warning', REVIEWED:'badge--info', SCORED:'badge--success' };
+    return `<span class="badge ${cls[s]??'badge--default'}">${s}</span>`;
+};
 
 let searchTimer = null;
 
 const loadTasks = async () => {
-    listEl.innerHTML = '<p class="loading">Loading…</p>';
-
-    const q      = searchEl.value.trim();
-    const status = statusEl.value;
-    const params = new URLSearchParams();
-    if (status) params.set('status', status);
-
+    const el     = document.getElementById('tasks-list');
+    const q      = document.getElementById('search-input').value.trim();
+    const status = document.getElementById('filter-status').value;
+    el.innerHTML = '<p class="loading">Loading…</p>';
     try {
-        let res;
-        if (q) {
-            res = await apiFetch(`/api/writing-tasks/search?q=${encodeURIComponent(q)}&${params}`);
-        } else {
-            res = await apiFetch(`/api/writing-tasks?${params}`);
-        }
+        const params = new URLSearchParams();
+        if (status) params.set('status', status);
+        const url = q
+            ? `/api/admin/writing-tasks/search?q=${encodeURIComponent(q)}&${params}`
+            : `/api/admin/writing-tasks?${params}`;
+        const { data: tasks } = await apiFetch(url);
 
-        const tasks = res?.data || [];
-        listEl.innerHTML = tasks.length
-            ? tasks.map(t => {
-                const tid = t._id || t.id;
-                return `
-                <div class="admin-task-row">
-                    ${taskCard(t)}
-                    <div class="admin-task-row__actions">
-                        ${t.status === 'SUBMITTED' || t.status === 'REVIEWED'
-                            ? `<a href="/pages/admin/review.html?id=${tid}" class="btn btn--warning btn--sm">
-                                   ${t.status === 'SUBMITTED' ? 'Review' : 'Score'}
-                               </a>`
-                            : ''}
-                    </div>
-                </div>`;
-              }).join('')
-            : '<p class="empty-state">No tasks found.</p>';
+        if (!(tasks ?? []).length) { el.innerHTML = '<p class="empty-state">No tasks found.</p>'; return; }
 
+        el.innerHTML = `<table class="data-table">
+            <thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead>
+            <tbody>${tasks.map(t => {
+                const tid   = t.id ?? t._id;
+                const st    = t._status ?? t.status;
+                const action = st === 'SUBMITTED'
+                    ? `<a href="/pages/admin/review.html?id=${tid}" class="btn btn--warning btn--xs">Review</a>`
+                    : st === 'REVIEWED'
+                    ? `<a href="/pages/admin/review.html?id=${tid}" class="btn btn--info btn--xs">Score</a>`
+                    : '';
+                return `<tr>
+                    <td class="col-title">${t._title ?? t.title}</td>
+                    <td>${t._taskType ?? t.taskType ?? '—'}</td>
+                    <td>${statusBadge(st)}</td>
+                    <td class="col-mono">${fmtTime(t._updatedAt ?? t.updatedAt)}</td>
+                    <td class="actions-cell">${action}</td>
+                </tr>`;
+            }).join('')}</tbody></table>`;
     } catch (err) {
-        listEl.innerHTML = '<p class="error-state">Failed to load tasks.</p>';
+        el.innerHTML = '<p class="error-state">Failed to load tasks.</p>';
         toast(err.message, 'error');
     }
 };
 
-transferBtn?.addEventListener('click', async () => {
+document.getElementById('filter-status').addEventListener('change', loadTasks);
+document.getElementById('search-input').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadTasks, 400);
+});
+document.getElementById('transfer-btn').addEventListener('click', async () => {
     const fromUserId = document.getElementById('transfer-from').value.trim();
     const toUserId   = document.getElementById('transfer-to').value.trim();
-
-    if (!fromUserId || !toUserId) {
-        toast('Both user IDs are required for transfer.', 'error');
-        return;
-    }
-    if (!confirm(`Transfer ALL tasks from user ${fromUserId} to ${toUserId}?`)) return;
-
+    if (!fromUserId || !toUserId) { toast('Both user IDs are required.', 'error'); return; }
+    if (!confirm(`Transfer ALL tasks from ${fromUserId} → ${toUserId}?`)) return;
     try {
-        const res = await apiFetch('/api/writing-tasks/transfer', {
+        const { data } = await apiFetch('/api/admin/writing-tasks/transfer', {
             method: 'POST',
             body: JSON.stringify({ fromUserId, toUserId }),
         });
-        toast(`Transferred ${res?.data?.transferred || 0} tasks.`);
+        toast(`Transferred ${data?.transferred ?? 0} tasks.`);
         loadTasks();
-    } catch (err) {
-        toast(err.message, 'error');
-    }
-});
-
-statusEl.addEventListener('change', loadTasks);
-searchEl.addEventListener('input', () => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(loadTasks, 400);
+    } catch (err) { toast(err.message, 'error'); }
 });
 
 loadTasks();

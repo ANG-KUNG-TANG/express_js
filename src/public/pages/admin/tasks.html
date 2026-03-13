@@ -1,58 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>All Tasks — Admin</title>
-  <link rel="stylesheet" href="/css/base.css" />
-  <link rel="stylesheet" href="/css/pages/admin.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Task Management</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
 </head>
-<body class="page">
-  <div class="container page-content">
+<body>
+    <div id="navbar"></div>
+    <main class="admin-layout">
 
-    <div class="page-header">
-      <p class="page-header__eyebrow">Administration</p>
-      <h1 class="page-header__title">All Tasks</h1>
-    </div>
+        <header class="admin-header">
+            <a href="/pages/admin/dashboard.html" class="back-link">Dashboard</a>
+            <h1 class="admin-header__title">Task Management</h1>
+            <span class="admin-header__badge">ADMIN</span>
+        </header>
 
-    <div class="admin-nav">
-      <a href="/pages/admin/dashboard.html" class="btn btn--ghost">Overview</a>
-      <a href="/pages/admin/tasks.html"     class="btn btn--secondary">All Tasks</a>
-      <a href="/pages/admin/users.html"     class="btn btn--ghost">Manage Users</a>
-    </div>
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <h2 class="admin-panel__title">All Tasks</h2>
+                <div class="admin-panel__controls">
+                    <input id="search-input" type="text" class="input input--sm"
+                        placeholder="Search by title…" style="width:200px" />
+                    <select id="filter-status" class="select select--sm" style="width:150px">
+                        <option value="">All Statuses</option>
+                        <option value="DRAFT">Draft</option>
+                        <option value="SUBMITTED">Submitted</option>
+                        <option value="REVIEWED">Reviewed</option>
+                        <option value="SCORED">Scored</option>
+                    </select>
+                </div>
+            </div>
+            <div id="tasks-list"><p class="loading">Loading…</p></div>
+        </section>
 
-    <!-- Transfer tool -->
-    <div class="transfer-card">
-      <h3>Transfer Tasks</h3>
-      <div class="transfer-row">
-        <div class="form-group">
-          <label>From User ID</label>
-          <input type="text" id="transfer-from" placeholder="Source user ID" />
-        </div>
-        <div class="form-group">
-          <label>To User ID</label>
-          <input type="text" id="transfer-to" placeholder="Target user ID" />
-        </div>
-        <button id="transfer-btn" class="btn btn--warning">Transfer All Tasks</button>
-      </div>
-    </div>
+        <!-- Transfer panel -->
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <h2 class="admin-panel__title">Transfer Tasks</h2>
+                <span class="admin-panel__sub">Move all tasks from one user to another</span>
+            </div>
+            <div class="admin-panel__body">
+                <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+                    <div class="form-group" style="flex:1;min-width:160px">
+                        <label class="form-label">From User ID</label>
+                        <input id="transfer-from" type="text" class="input input--sm" placeholder="user ObjectId" />
+                    </div>
+                    <div class="form-group" style="flex:1;min-width:160px">
+                        <label class="form-label">To User ID</label>
+                        <input id="transfer-to" type="text" class="input input--sm" placeholder="user ObjectId" />
+                    </div>
+                    <button id="transfer-btn" class="btn btn--warning btn--sm">Transfer All</button>
+                </div>
+            </div>
+        </section>
 
-    <!-- Filters -->
-    <div class="filter-bar">
-      <input type="text" id="search-input" placeholder="Search tasks…" style="flex:1;" />
-      <select id="filter-status">
-        <option value="">All Statuses</option>
-        <option value="ASSIGNED">Assigned</option>
-        <option value="WRITING">Writing</option>
-        <option value="SUBMITTED">Submitted</option>
-        <option value="REVIEWED">Reviewed</option>
-        <option value="SCORED">Scored</option>
-      </select>
-    </div>
-
-    <div id="tasks-list"><p class="loading">Loading…</p></div>
-
-  </div>
-  <script type="module" src="/js/pages/admin/tasks.js"></script>
+    </main>
+    <div id="toast-container"></div>
+    <script type="module" src="/js/pages/admin/tasks.js"></script>
 </body>
 </html>

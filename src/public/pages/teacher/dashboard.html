@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+</head>
+<body>
+    <div id="navbar"></div>
+    <main class="admin-layout">
+
+        <header class="admin-header">
+            <h1 class="admin-header__title">Dashboard</h1>
+            <span class="admin-header__sub">Your review queue</span>
+            <span class="admin-header__badge" style="border-color:var(--teal);color:var(--teal);background:rgba(45,212,191,.1)">TEACHER</span>
+        </header>
+
+        <!-- Stats -->
+        <section class="stats-bar" style="grid-template-columns:repeat(3,1fr)">
+            <div class="stat-card stat-card--warning" id="stat-submitted">
+                <span class="stat-card__value">—</span>
+                <span class="stat-card__label">Awaiting Review</span>
+            </div>
+            <div class="stat-card stat-card--info" id="stat-reviewed">
+                <span class="stat-card__value">—</span>
+                <span class="stat-card__label">Reviewed</span>
+            </div>
+            <div class="stat-card stat-card--success" id="stat-scored">
+                <span class="stat-card__value">—</span>
+                <span class="stat-card__label">Scored</span>
+            </div>
+        </section>
+
+        <!-- Pending queue -->
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="admin-panel__title">⚠ Review Queue</h2>
+                    <span class="admin-panel__sub">Submitted tasks waiting for your feedback</span>
+                </div>
+            </div>
+            <div id="pending-list"><p class="loading">Loading…</p></div>
+        </section>
+
+        <!-- All tasks -->
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <h2 class="admin-panel__title">All Tasks</h2>
+                <div class="admin-panel__controls">
+                    <input id="task-search" type="text" class="input input--sm"
+                        placeholder="Search by title…" style="width:200px" />
+                    <select id="task-status-filter" class="select select--sm" style="width:150px">
+                        <option value="">Submitted + Reviewed</option>
+                        <option value="SUBMITTED">Submitted</option>
+                        <option value="REVIEWED">Reviewed</option>
+                    </select>
+                </div>
+            </div>
+            <div id="tasks-list"><p class="loading">Loading…</p></div>
+        </section>
+
+    </main>
+    <div id="toast-container"></div>
+    <script type="module" src="/js/pages/teacher/dashboard.js"></script>
+</body>
+</html>

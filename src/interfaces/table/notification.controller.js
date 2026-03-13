@@ -1,9 +1,9 @@
 // interfaces/table/notification.controller.js
-// Same style as user.controller.js and task.controller.js
 
+// FIX: paths were '/notification/' — correct folder is '/notification_uc/'
 import { getNotificationsUseCase } from '../../app/notification/get_noti.uc.js';
 import { markNotificationsReadUseCase } from '../../app/notification/mark_noti.uc.js';
-import { sanitizeNotificationQueryInput, sanitizeMarkReadInput } from './notificaiton.input_sanitizer.js';
+import { sanitizeNotificationQueryInput, sanitizeMarkReadInput } from '../input_sanitizers/notification.input_sanitizer.js';
 import { sendSuccess } from '../response_formatter.js';
 import { HTTP_STATUS } from '../http_status.js';
 import logger          from '../../core/logger/logger.js';

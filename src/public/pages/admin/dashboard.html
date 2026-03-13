@@ -1,38 +1,99 @@
-<!-- admin/dashboard.html -->
-<!DOCTYPE html><html lang="en">
-<head><meta charset="UTF-8"/><title>Admin Dashboard — IELTS Platform</title>
-<link rel="stylesheet" href="/css/base.css"/>
-<style>
-  .admin-nav { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
-  .queue-list { display: flex; flex-direction: column; gap: 10px; }
-  .queue-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
-  .queue-item__title { font-size: .9rem; font-weight: 600; flex: 1; }
-  .queue-item__meta { font-size: .78rem; color: var(--text-muted); }
-</style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
 </head>
 <body>
-<div class="container page-content">
-  <div class="page-header">
-    <p class="page-header__eyebrow">Administration</p>
-    <h1 class="page-header__title">Admin Dashboard</h1>
-  </div>
-  <div class="admin-nav">
-    <a href="/pages/admin/dashboard.html" class="btn btn--secondary">Overview</a>
-    <a href="/pages/admin/tasks.html" class="btn btn--ghost">All Tasks</a>
-    <a href="/pages/admin/users.html" class="btn btn--ghost">Manage Users</a>
-  </div>
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-card__number" id="stat-total">—</div><div class="stat-card__label">Total Tasks</div></div>
-    <div class="stat-card"><div class="stat-card__number" id="stat-submitted">—</div><div class="stat-card__label">Awaiting Review</div></div>
-    <div class="stat-card"><div class="stat-card__number" id="stat-reviewed">—</div><div class="stat-card__label">Awaiting Score</div></div>
-    <div class="stat-card"><div class="stat-card__number" id="stat-scored">—</div><div class="stat-card__label">Scored</div></div>
-    <div class="stat-card"><div class="stat-card__number" id="stat-users">—</div><div class="stat-card__label">Users</div></div>
-  </div>
-  <div class="section-header">
-    <h2 class="section-title">Action Queue</h2>
-    <a href="/pages/admin/tasks.html" class="btn btn--ghost btn--sm">View all →</a>
-  </div>
-  <div id="action-queue" class="queue-list"><p class="loading">Loading…</p></div>
-</div>
-<script type="module" src="/js/pages/admin/dashboard.js"></script>
-</body></html>
+    <div id="navbar"></div>
+    <main class="admin-layout">
+
+        <header class="admin-header">
+            <h1 class="admin-header__title">Dashboard</h1>
+            <span class="admin-header__sub">Platform overview</span>
+            <span class="admin-header__badge">ADMIN</span>
+        </header>
+
+        <!-- Panel 1: Stats Bar -->
+        <section class="stats-bar">
+            <div class="stat-card" id="stat-total-users">
+                <span class="stat-card__value">—</span>
+                <span class="stat-card__label">Total Users</span>
+            </div>
+            <div class="stat-card stat-card--highlight" id="stat-new-users">
+                <span class="stat-card__value">—</span>
+                <span class="stat-card__label">New This Week</span>
+            </div>
+            <div class="stat-card" id="stat-teachers">
+                <span class="stat-card__value">—</span>
+                <span class="stat-card__label">Teachers</span>
+            </div>
+            <div class="stat-card stat-card--warning" id="stat-pending">
+                <span class="stat-card__value">—</span>
+                <span class="stat-card__label">Pending Review</span>
+            </div>
+        </section>
+
+        <!-- Panel 2: Pending Work Queue -->
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="admin-panel__title">⚠ Pending Review</h2>
+                    <span class="admin-panel__sub">Oldest first — needs attention</span>
+                </div>
+            </div>
+            <div id="pending-list"><p class="loading">Loading…</p></div>
+        </section>
+
+        <!-- Panel 3: Recent Activity -->
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="admin-panel__title">Recent Activity</h2>
+                    <span class="admin-panel__sub">Last 10 task updates</span>
+                </div>
+            </div>
+            <div id="activity-list"><p class="loading">Loading…</p></div>
+        </section>
+
+        <!-- Panel 4: User Management -->
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <h2 class="admin-panel__title">User Management</h2>
+                <div class="admin-panel__controls">
+                    <input id="search-email" type="text" class="input input--sm"
+                        placeholder="Search by email…" style="width:220px" />
+                    <button id="search-btn"       class="btn btn--secondary btn--sm">Search</button>
+                    <button id="clear-search-btn" class="btn btn--ghost btn--sm">Clear</button>
+                </div>
+            </div>
+            <div id="users-list"><p class="loading">Loading…</p></div>
+        </section>
+
+        <!-- Panel 5: Task Management -->
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <h2 class="admin-panel__title">Task Management</h2>
+                <div class="admin-panel__controls">
+                    <input id="task-search" type="text" class="input input--sm"
+                        placeholder="Search by title…" style="width:200px" />
+                    <select id="task-status-filter" class="select select--sm" style="width:150px">
+                        <option value="">All Statuses</option>
+                        <option value="DRAFT">Draft</option>
+                        <option value="SUBMITTED">Submitted</option>
+                        <option value="REVIEWED">Reviewed</option>
+                        <option value="SCORED">Scored</option>
+                    </select>
+                </div>
+            </div>
+            <div id="tasks-list"><p class="loading">Loading…</p></div>
+        </section>
+
+    </main>
+    <div id="toast-container"></div>
+    <script type="module" src="/js/pages/admin/dashboard.js"></script>
+</body>
+</html>

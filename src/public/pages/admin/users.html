@@ -1,36 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manage Users — Admin</title>
-  <link rel="stylesheet" href="/css/base.css" />
-  <link rel="stylesheet" href="/css/pages/admin.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management</title>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
 </head>
-<body class="page">
-  <div class="container page-content">
+<body>
+    <div id="navbar"></div>
+    <main class="admin-layout">
 
-    <div class="page-header">
-      <p class="page-header__eyebrow">Administration</p>
-      <h1 class="page-header__title">Manage Users</h1>
-    </div>
+        <header class="admin-header">
+            <a href="/pages/admin/dashboard.html" class="back-link">Dashboard</a>
+            <h1 class="admin-header__title">User Management</h1>
+            <span class="admin-header__badge">ADMIN</span>
+        </header>
 
-    <div class="admin-nav">
-      <a href="/pages/admin/dashboard.html" class="btn btn--ghost">Overview</a>
-      <a href="/pages/admin/tasks.html"     class="btn btn--ghost">All Tasks</a>
-      <a href="/pages/admin/users.html"     class="btn btn--secondary">Manage Users</a>
-    </div>
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <h2 class="admin-panel__title">All Users</h2>
+                <div class="admin-panel__controls">
+                    <input id="search-email" type="text" class="input input--sm"
+                        placeholder="Search by email…" style="width:240px" />
+                    <button id="search-btn"       class="btn btn--secondary btn--sm">Search</button>
+                    <button id="clear-search-btn" class="btn btn--ghost btn--sm">Clear</button>
+                </div>
+            </div>
+            <div id="users-list"><p class="loading">Loading…</p></div>
+        </section>
 
-    <div class="search-bar">
-      <input type="email" id="search-email" placeholder="Search by email address…" autocomplete="off" />
-      <button id="search-btn" class="btn btn--secondary">Search</button>
-    </div>
-
-    <div id="users-list">
-      <p class="loading">Loading users…</p>
-    </div>
-
-  </div>
-  <script type="module" src="/js/pages/admin/users.js"></script>
+    </main>
+    <div id="toast-container"></div>
+    <script type="module" src="/js/pages/admin/users.js"></script>
 </body>
 </html>

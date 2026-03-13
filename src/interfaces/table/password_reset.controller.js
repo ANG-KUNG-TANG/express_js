@@ -9,7 +9,7 @@ import {
     sanitizeForgotPasswordInput,
     sanitizeValidateTokenInput,
     sanitizeResetPasswordInput,
-} from './password_reset.input_sanitizer.js';
+} from '../input_sanitizers/password_reset.input_sanitizer.js';
 import { sendSuccess }   from '../response_formatter.js';
 import { HTTP_STATUS }   from '../http_status.js';
 import logger            from '../../core/logger/logger.js';

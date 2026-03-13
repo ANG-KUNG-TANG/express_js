@@ -12,7 +12,7 @@ import { scoreTask }           from '../../app/task_uc/score_task.uc.js';
 import { lookupVocabUseCase }  from '../../app/task_uc/lookup_vocab.uc.js';
 import { sendSuccess }           from '../response_formatter.js';
 import { HTTP_STATUS }           from '../http_status.js';
-import { sanitizeCreateInput, sanitizeUpdateInput } from './task.input_sanitizer.js';
+import { sanitizeCreateInput, sanitizeUpdateInput } from '../input_sanitizers/user.input_sanitizer.js';
 import logger      from '../../core/logger/logger.js';
 import auditLogger from '../../core/logger/audit.logger.js';
 import { getUser } from '../../public/js/core/auth.js';
