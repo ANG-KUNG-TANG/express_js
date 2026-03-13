@@ -1,6 +1,7 @@
 import { createVocabularyUseCase } from "../../app/vocab_uc/vocab_create.uc.js";
 import { getVocabularyByTopicUseCase } from "../../app/vocab_uc/get_vocab.uc.js";
 import { fetchVocabUseCase } from "../../app/vocab_uc/fetch_api.uc.js";
+import { lookupWordUseCase } from "../../app/vocab_uc/lookup_word.uc.js";
 import { sendSuccess } from "../response_formatter.js";
 import { HTTP_STATUS } from "../http_status.js";
 import { sanitizeCreateInput } from "./vocab.input_sanitizer.js";
@@ -59,4 +60,16 @@ export const fetchAndSaveExternal = async (req, res) => {
     },
     HTTP_STATUS.CREATED
   );
+};
+
+export const lookupWord = async (req, res) => {
+  const { word } = req.params;
+
+  logger.debug("vocab.lookupWord called", { requestId: req.id, word });
+
+  const result = await lookupWordUseCase(word);
+
+  auditLogger.log("vocab.lookup", { word }, req);
+
+  return sendSuccess(res, result, HTTP_STATUS.OK);
 };

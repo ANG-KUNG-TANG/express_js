@@ -1,5 +1,4 @@
 import { createUserUsecase } from "../../app/user_uc/create_user.uc.js";
-import { authenticateUserUseCase } from "../../app/user_uc/auth_User.uc.js";
 import { getUseByIdUc, getUserByEamilUc } from "../../app/user_uc/get_user.uc.js";
 import { updateUserUseCase } from "../../app/user_uc/update_use.uc.js";
 import { deleteUserUc } from "../../app/user_uc/delete_user.uc.js";
@@ -12,6 +11,11 @@ import { saveRefreshToken } from '../../core/services/token_store.service.js';
 import { listAllUsersUseCase } from "../../app/user_uc/list_user.uc.js";
 import logger from '../../core/logger/logger.js';
 import auditLogger from '../../core/logger/audit.logger.js';
+import { id } from "fp-ts/lib/Refinement.js";
+import { InvalidCredentialsError, UserEmailNotFoundError, UserNotFoundError, UserValidationError } from "../../core/errors/user.errors.js";
+import UserModel from "../../domain/models/user_model.js";
+import { MongooseError } from "mongoose";
+import { sanitizeUser } from "../../infrastructure/repositories/user_repo.js";
 
 const REFRESH_COOKIE_OPTIONS = {
     httpOnly: true,
@@ -38,49 +42,6 @@ export const createUser = async (req, res) => {
     }, req);
 
     return sendSuccess(res, user, HTTP_STATUS.CREATED);
-};
-
-// ---------------------------------------------------------------------------
-// Login  (POST /users/login)
-// ---------------------------------------------------------------------------
-
-export const loginUser = async (req, res) => {
-    const input = sanitizeAuthInput(req.body);
-
-    logger.debug('user.loginUser called', { requestId: req.id, email: input.email });
-
-    const user = await authenticateUserUseCase(input);
-
-    const payload = {
-        id:    user.id    ?? user._id,
-        email: user.email ?? user._email,
-        role:  user.role  ?? user._role,
-    };
-
-    const { accessToken, refreshToken } = generateTokenPair(payload);
-    const decoded = verifyRefreshToken(refreshToken);
-    saveRefreshToken(decoded.jti, payload.id);
-
-    // Set refresh token as HttpOnly cookie
-    res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
-
-    auditLogger.log('user.login', {
-        userId: payload.id,
-        email: payload.email,
-        role: payload.role,
-    }, req);
-
-    // --- CHANGE HERE: return token and user instead of accessToken/refreshToken ---
-    // Frontend expects { data: { token, user } }
-    return sendSuccess(res, {
-        token: accessToken,
-        user: {
-            id: payload.id,
-            email: payload.email,
-            role: payload.role,
-            name: user.name  // include name if your user object has it
-        }
-    }, HTTP_STATUS.OK);
 };
 
 // ---------------------------------------------------------------------------
@@ -149,6 +110,59 @@ export const updateUser = async (req, res) => {
 // ---------------------------------------------------------------------------
 // Delete user  (DELETE /users/:id)
 // ---------------------------------------------------------------------------
+export const updateProfileInfo = async (id, { name, email, bio, targetBand, examDate}) => {
+    logger.debug('UserRepo.updateProfileInfo', {id});
+    return await updateUser(id, {name, email, bio, targetBand, examDate})
+};
+
+export const updateAvatarUrl = async (id, avatarUrl) => {
+    logger.debug('userRepo.updateAvatarUrl', {id});
+    return await updateUser(id, { avatarUrl});
+};
+
+export const updateCoverUrl = async (id, coverUrl) => {
+    logger.debug('UserRepo.updateAvatarUrl', {id});
+    return await updateUser(id, {coverUrl});
+};
+
+export const addAttachemet = async (id, attachment) => {
+    logger.debug('usrRepo.addAttachment', {id, file: attachment.originalName});
+    if (!mongoose.Types.ObjectId.isValid(id)){
+        throw new UserValidationError('invalid user id format')
+    }
+    const doc = await UserModel.findByIdAndUpdate(
+        id, 
+        {$push: {attachement: attachment}},
+        {returnDocument: 'after', runValidators: true}
+    ).lean();
+    if (!doc) throw new UserNotFoundError(id);
+    return toDomain(doc);
+}
+
+export const getAttachments = async (userId) => {
+    logger.debug('userRepo.getAttachments', { userId });
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        throw new UserValidationError('invalid user id format');
+    }
+    const doc = await UserModel.findById(userId).select('attachments').lean();
+    if (!doc) throw new UserNotFoundError(userId);
+    return doc.attachments ?? [];
+};
+
+export const authenticateUser = async (email, password) => {
+    logger.debug('userRepo.authenticateUser', {email});
+    const doc = await UserModel.findOne({email: email.toLowerCase()});
+    if (!doc){
+        logger.warn('userRepo.authenticateUser: email not found', {email});
+        throw new UserEmailNotFoundError(email);
+    }
+    if (doc.password !== password ) {
+        logger.warn('userRepo.authenticateUser: invalid credentials', { email});
+        throw new InvalidCredentialsError();
+    }
+    logger.debug('userRep.authenticateUers: credentials valid', {email});
+    return sanitizeUser(toDomain(doc));
+}
 
 export const deleteUser = async (req, res) => {
     const { id } = req.params;

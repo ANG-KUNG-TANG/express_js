@@ -2,7 +2,6 @@ import { Router } from "express";
 import { asyncHandler } from "../async_handler.js";
 import {
     createUser,
-    loginUser,
     getUserByEamil,
     getUserById,
     updateUser,
@@ -13,8 +12,6 @@ import {
 
 const router = Router();
 
-// ── Auth (login lives here because it needs userRepo) ─────────────────────────
-router.post('/auth/login',          asyncHandler(loginUser));
 
 // ── User CRUD ─────────────────────────────────────────────────────────────────
 router.post('/users',               asyncHandler(createUser));

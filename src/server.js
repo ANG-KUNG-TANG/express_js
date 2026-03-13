@@ -4,6 +4,7 @@ import express from 'express';
 import { initPassport } from './config/passport.config.js';
 import { connectDB }    from './infrastructure/repositories/db.js';
 import userRouter        from './interfaces/routes/user.router.js';
+import profileRouter     from './interfaces/routes/profile.router.js';
 import writingTaskRouter from './interfaces/routes/task.router.js';
 import authRouter        from './interfaces/routes/auth.router.js';
 import vocabRouter       from './interfaces/routes/vocab.router.js';
@@ -15,6 +16,8 @@ import { requestLoggerMiddleware } from './middleware/request.logger.middleware.
 import { errorLoggerMiddleware }   from './middleware/error.logger.middleware.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import fs from 'fs';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -33,6 +36,13 @@ app.use(express.json());
 app.use(requestLoggerMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// ── Static: serve uploaded files ──────────────────────────────────────────────
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // ── Passport ──────────────────────────────────────────────────────────────────
 initPassport(app);
@@ -42,7 +52,8 @@ app.use('/api/writing-tasks', writingTaskRouter);
 app.use('/api/news',          newsRouter);
 app.use('/api/vocab',         vocabRouter);
 app.use('/api/auth',          authRouter);
-app.use('/api',               userRouter);
+app.use('/api',               profileRouter);  // /api/users/me — must be before userRouter
+app.use('/api',               userRouter);     // /api/users/:id
 
 // ── Root → redirect to login ──────────────────────────────────────────────────
 app.get('/', (req, res) => {

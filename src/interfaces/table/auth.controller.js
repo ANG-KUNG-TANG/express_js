@@ -6,6 +6,8 @@ import {
   isRefreshTokenValid,
   revokeAllForUser,
 } from '../../core/services/token_store.service.js';
+import { authenticateUserUseCase } from '../../app/user_uc/auth_user.uc.js';
+import { sanitizeAuthInput } from './user.input_sanitizer.js';
 import { sendSuccess } from '../response_formatter.js';
 import { HTTP_STATUS } from '../http_status.js';
 import logger from '../../core/logger/logger.js';
@@ -35,6 +37,35 @@ const issueTokens = (res, user) => {
 
   res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
   return { accessToken };
+};
+
+// ---------------------------------------------------------------------------
+// Login  (POST /auth/login)
+// ---------------------------------------------------------------------------
+
+export const loginUser = async (req, res) => {
+  const input = sanitizeAuthInput(req.body);
+
+  logger.debug('auth.loginUser called', { requestId: req.id, email: input.email });
+
+  const user = await authenticateUserUseCase(input);
+  const { accessToken } = issueTokens(res, user);
+
+  auditLogger.log('auth.login', {
+    userId: user.id ?? user._id,
+    email:  user.email ?? user._email,
+    role:   user.role  ?? user._role,
+  }, req);
+
+  return sendSuccess(res, {
+    token: accessToken,
+    user: {
+      id:    user.id    ?? user._id,
+      email: user.email ?? user._email,
+      role:  user.role  ?? user._role,
+      name:  user.name  ?? user._name,
+    },
+  }, HTTP_STATUS.OK);
 };
 
 // ---------------------------------------------------------------------------

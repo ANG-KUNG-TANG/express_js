@@ -6,6 +6,7 @@ import {
   githubAuth,
   githubCallback,
   refreshTokens,
+  loginUser,
   logout,
   authFailure,
 } from '../table/auth.controller.js';
@@ -22,6 +23,7 @@ router.get('/github/callback', ...githubCallback);
 
 // ── Token management ─────────────────────────────────────────────────────────
 router.post('/refresh',        asyncHandler(refreshTokens));
+router.post('/login',          asyncHandler(loginUser));
 router.post('/logout',         asyncHandler(logout));
 
 // ── Failure fallback ─────────────────────────────────────────────────────────

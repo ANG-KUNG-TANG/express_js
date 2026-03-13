@@ -1,11 +1,854 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0; url=/pages/auth/login.html" />
-  <title>IELTS Platform</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IELTS Platform — Academic Excellence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ── TOKENS ── */
+:root {
+  --navy:      #080e1a;
+  --navy2:     #0d1525;
+  --navy3:     #111f35;
+  --gold:      #c9a84c;
+  --gold2:     #e8c97a;
+  --gold3:     #f5dfa0;
+  --gold-dim:  rgba(201,168,76,.1);
+  --gold-glow: rgba(201,168,76,.3);
+  --cream:     #f2ead8;
+  --cream2:    #c8bfa8;
+  --cream3:    #7a7060;
+  --blue:      #3b82f6;
+  --green:     #34d399;
+  --border:    rgba(255,255,255,.06);
+  --border2:   rgba(255,255,255,.11);
+
+  --fd: 'Cormorant Garamond', Georgia, serif;
+  --fu: 'Outfit', system-ui, sans-serif;
+  --fm: 'JetBrains Mono', monospace;
+
+  --ease: cubic-bezier(0.16,1,0.3,1);
+  --spring: cubic-bezier(0.34,1.56,0.64,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  min-height: 100vh;
+  background: var(--navy);
+  color: var(--cream);
+  font-family: var(--fu);
+  overflow-x: hidden;
+  cursor: none;
+}
+::selection { background: var(--gold-dim); color: var(--gold2); }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--navy3); border-radius: 4px; }
+
+/* ── CUSTOM CURSOR ── */
+.cursor {
+  position: fixed;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--gold2);
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width .2s var(--spring), height .2s var(--spring), opacity .2s;
+  mix-blend-mode: screen;
+}
+.cursor-ring {
+  position: fixed;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(201,168,76,.5);
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: width .35s var(--ease), height .35s var(--ease), border-color .2s;
+}
+body:has(a:hover) .cursor { width: 16px; height: 16px; }
+body:has(a:hover) .cursor-ring { width: 52px; height: 52px; border-color: var(--gold); }
+body:has(button:hover) .cursor { width: 16px; height: 16px; }
+body:has(button:hover) .cursor-ring { width: 52px; height: 52px; border-color: var(--gold); }
+
+/* ── CANVAS ── */
+#bg-canvas {
+  position: fixed;
+  inset: 0; z-index: 0;
+  pointer-events: none;
+}
+
+/* ── NOISE OVERLAY ── */
+.noise {
+  position: fixed; inset: 0; z-index: 1;
+  pointer-events: none;
+  opacity: .028;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
+
+/* ── VIGNETTE ── */
+.vignette {
+  position: fixed; inset: 0; z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, rgba(8,14,26,.7) 100%);
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 22px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+  animation: navIn .8s var(--ease) .2s both;
+}
+nav::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 48px; right: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), transparent);
+}
+@keyframes navIn { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--fd);
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--cream); text-decoration: none;
+  letter-spacing: .01em;
+}
+.logo-mark {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--gold) 0%, #7a5a10 100%);
+  display: grid; place-items: center;
+  font-family: var(--fu); font-size: .72rem; font-weight: 700; color: var(--navy);
+  box-shadow: 0 0 16px var(--gold-glow);
+  animation: pulse-mark 3s ease-in-out infinite;
+}
+@keyframes pulse-mark {
+  0%,100% { box-shadow: 0 0 16px var(--gold-glow); }
+  50% { box-shadow: 0 0 28px rgba(201,168,76,.5); }
+}
+
+.nav-links { display: flex; gap: 6px; align-items: center; }
+.nav-link {
+  padding: 6px 16px; font-size: .85rem; font-weight: 500;
+  color: var(--cream2); border-radius: 8px; text-decoration: none;
+  transition: color .15s, background .15s;
+}
+.nav-link:hover { color: var(--cream); background: rgba(255,255,255,.06); }
+.nav-cta {
+  padding: 8px 22px; font-size: .85rem; font-weight: 600;
+  color: var(--navy); background: linear-gradient(135deg, var(--gold), var(--gold2));
+  border-radius: 8px; text-decoration: none;
+  box-shadow: 0 2px 12px var(--gold-glow);
+  transition: transform .15s, box-shadow .15s;
+}
+.nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 22px var(--gold-glow); }
+
+/* ── HERO ── */
+.hero {
+  position: relative; z-index: 10;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+}
+
+/* Floating badge */
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(201,168,76,.25);
+  border-radius: 999px;
+  padding: 6px 16px 6px 8px;
+  font-size: .75rem; font-weight: 600;
+  color: var(--gold2); letter-spacing: .04em; text-transform: uppercase;
+  margin-bottom: 36px;
+  animation: badgeIn .7s var(--spring) .4s both;
+}
+@keyframes badgeIn { from { opacity:0; transform:scale(.8) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.badge-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  display: grid; place-items: center;
+  font-size: .65rem; color: var(--navy); font-weight: 700;
+}
+
+/* Headline */
+.hero-h1 {
+  font-family: var(--fd);
+  font-size: clamp(3.2rem, 9vw, 7.5rem);
+  font-weight: 300;
+  line-height: 1.03;
+  letter-spacing: -.02em;
+  color: var(--cream);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.hero-h1 em {
+  font-style: italic;
+  color: var(--gold2);
+  display: inline-block;
+  animation: shimmerText 4s ease-in-out infinite;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold3) 40%, var(--gold) 70%);
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+@keyframes shimmerText {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.line-wrap { overflow: hidden; display: block; }
+.line-wrap span {
+  display: block;
+  animation: lineUp .9s var(--ease) both;
+}
+.line-wrap:nth-child(1) span { animation-delay: .5s; }
+.line-wrap:nth-child(2) span { animation-delay: .65s; }
+.line-wrap:nth-child(3) span { animation-delay: .8s; }
+@keyframes lineUp { from { transform: translateY(100%); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+/* Sub */
+.hero-sub {
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  color: var(--cream2);
+  font-weight: 300;
+  line-height: 1.7;
+  max-width: 540px;
+  margin: 24px auto 48px;
+  animation: fadeUp .8s var(--ease) 1s both;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+/* CTA group */
+.cta-group {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center;
+  animation: fadeUp .8s var(--ease) 1.1s both;
+}
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 15px 34px; font-size: 1rem; font-weight: 600;
+  color: var(--navy);
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold2) 100%);
+  border-radius: 12px; text-decoration: none; border: none; cursor: pointer;
+  box-shadow: 0 4px 20px var(--gold-glow);
+  transition: transform .2s var(--spring), box-shadow .2s;
+  font-family: var(--fu);
+  position: relative; overflow: hidden;
+}
+.btn-primary::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,.15) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform .5s;
+}
+.btn-primary:hover::before { transform: translateX(100%); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 32px var(--gold-glow); }
+.btn-secondary {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 15px 30px; font-size: 1rem; font-weight: 500;
+  color: var(--cream2); text-decoration: none;
+  border: 1px solid var(--border2); border-radius: 12px;
+  transition: border-color .2s, color .2s, transform .2s var(--spring);
+  font-family: var(--fu);
+}
+.btn-secondary:hover { border-color: var(--gold); color: var(--gold2); transform: translateY(-2px); }
+
+/* Arrow icon */
+.arrow-icon {
+  width: 18px; height: 18px;
+  transition: transform .2s var(--spring);
+}
+.btn-primary:hover .arrow-icon { transform: translateX(3px); }
+
+/* Stats strip */
+.stats-strip {
+  display: flex; align-items: center; gap: 40px;
+  margin-top: 72px;
+  animation: fadeUp .8s var(--ease) 1.25s both;
+}
+.stat { text-align: center; }
+.stat-n {
+  font-family: var(--fd);
+  font-size: 2.4rem; font-weight: 600; line-height: 1;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold3) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.stat-l { font-size: .75rem; color: var(--cream3); text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
+.stat-sep { width: 1px; height: 36px; background: var(--border2); }
+
+/* ── FLOATING CARDS ── */
+.floats {
+  position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: hidden;
+}
+.fcard {
+  position: absolute;
+  background: rgba(13,21,37,.85);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  padding: 14px 18px;
+  backdrop-filter: blur(12px);
+  font-size: .78rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  animation: floatIn .8s var(--ease) both, levitate 6s ease-in-out infinite;
+  white-space: nowrap;
+}
+@keyframes floatIn { from { opacity:0; transform:translateY(20px) scale(.95); } to { opacity:1; transform:translateY(0) scale(1); } }
+@keyframes levitate {
+  0%,100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Card 1 — Timer */
+.fc1 {
+  top: 22%; left: 5%;
+  animation-delay: 1.3s, 1.3s;
+  animation-duration: .8s, 7s;
+}
+.fc1 .fc-label { font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; color:var(--cream3); margin-bottom:4px; }
+.fc1 .fc-timer { font-family:var(--fm); font-size:1.8rem; font-weight:500; color:var(--gold2); line-height:1; }
+.fc1 .fc-bar { height:3px; background:rgba(255,255,255,.08); border-radius:3px; margin-top:8px; overflow:hidden; }
+.fc1 .fc-fill { height:100%; width:62%; background:linear-gradient(90deg,var(--gold),var(--gold2)); border-radius:3px; animation:barShrink 40s linear infinite; }
+@keyframes barShrink { from{width:62%} to{width:0%} }
+
+/* Card 2 — Word count */
+.fc2 {
+  top: 55%; left: 3%;
+  animation-delay: 1.5s, 1.5s;
+  animation-duration: .8s, 9s;
+}
+.fc2 .fc-wc { font-family:var(--fm); font-size:2rem; font-weight:500; color:var(--green); line-height:1; }
+.fc2 .fc-wl { font-size:.7rem; color:var(--cream3); }
+
+/* Card 3 — Band score */
+.fc3 {
+  top: 20%; right: 4%;
+  animation-delay: 1.6s, 1.6s;
+  animation-duration: .8s, 8s;
+}
+.fc3 .fc-score { font-family:var(--fd); font-size:2.8rem; font-weight:700; line-height:1; }
+.fc3 .fc-score span { font-style:italic; color:var(--gold2); }
+.fc3 .fc-sl { font-size:.7rem; color:var(--cream3); margin-top:2px; }
+.fc3 .stars { color:var(--gold); font-size:.9rem; letter-spacing:2px; margin-top:4px; }
+
+/* Card 4 — Vocab insert */
+.fc4 {
+  top: 58%; right: 3%;
+  animation-delay: 1.8s, 1.8s;
+  animation-duration: .8s, 7.5s;
+}
+.fc4 .fc-word { font-weight:600; color:var(--cream); margin-bottom:2px; }
+.fc4 .fc-pos { display:inline-block; font-size:.58rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--gold); background:var(--gold-dim); padding:2px 7px; border-radius:999px; margin-bottom:5px; }
+.fc4 .fc-def { font-size:.72rem; color:var(--cream2); line-height:1.5; max-width:170px; white-space:normal; }
+.fc4 .fc-ins { display:inline-flex; align-items:center; gap:5px; margin-top:8px; padding:5px 12px; background:var(--gold); border-radius:6px; font-size:.72rem; font-weight:700; color:var(--navy); border:none; font-family:var(--fu); animation:btnPulse 2.5s ease-in-out infinite; cursor:default; }
+@keyframes btnPulse { 0%,100%{box-shadow:0 0 0 0 var(--gold-glow)} 50%{box-shadow:0 0 0 6px rgba(201,168,76,0)} }
+
+/* Card 5 — Save status */
+.fc5 {
+  top: 38%; right: 5%;
+  animation-delay: 2s, 2s;
+  animation-duration: .8s, 10s;
+}
+.fc5 .fc-row { display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--cream2); }
+.fc5 .dot { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:dotPulse 2s ease-in-out infinite; }
+@keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── FEATURES SECTION ── */
+.features {
+  position: relative; z-index: 10;
+  padding: 100px 48px;
+  max-width: 1200px; margin: 0 auto;
+}
+.section-eyebrow {
+  font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--gold); margin-bottom: 16px;
+  animation: fadeUp .6s var(--ease) both;
+}
+.section-title {
+  font-family: var(--fd);
+  font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 300; line-height: 1.15;
+  color: var(--cream); margin-bottom: 64px;
+  max-width: 600px;
+}
+.section-title em { font-style: italic; color: var(--gold2); }
+
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+.feat-card {
+  background: rgba(13,21,37,.6);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  position: relative; overflow: hidden;
+  transition: border-color .25s, transform .25s var(--ease), box-shadow .25s;
+  opacity: 0; transform: translateY(24px);
+  transition: opacity .6s var(--ease), transform .6s var(--ease), border-color .25s, box-shadow .25s;
+}
+.feat-card.visible { opacity: 1; transform: translateY(0); }
+.feat-card:hover {
+  border-color: rgba(201,168,76,.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,.3), inset 0 1px 0 rgba(201,168,76,.08);
+}
+.feat-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,.3), transparent);
+  opacity: 0; transition: opacity .25s;
+}
+.feat-card:hover::before { opacity: 1; }
+.feat-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: var(--gold-dim); border: 1px solid rgba(201,168,76,.2);
+  display: grid; place-items: center;
+  font-size: 1.2rem; margin-bottom: 20px;
+  transition: transform .2s var(--ease);
+}
+.feat-card:hover .feat-icon { transform: scale(1.1) rotate(-3deg); }
+.feat-title { font-family: var(--fd); font-size: 1.25rem; font-weight: 600; color: var(--cream); margin-bottom: 10px; }
+.feat-body { font-size: .85rem; color: var(--cream2); line-height: 1.7; }
+
+/* ── MARQUEE ── */
+.marquee-wrap {
+  position: relative; z-index: 10;
+  padding: 40px 0;
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin: 0;
+  mask-image: linear-gradient(90deg, transparent, black 10%, black 90%, transparent);
+}
+.marquee {
+  display: flex; gap: 32px;
+  animation: marquee 22s linear infinite;
+  width: max-content;
+}
+.marquee-item {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--fd); font-size: 1rem; font-style: italic;
+  color: var(--cream3); white-space: nowrap;
+}
+.marquee-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); opacity: .5; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ── CTA SECTION ── */
+.cta-section {
+  position: relative; z-index: 10;
+  padding: 120px 48px;
+  text-align: center;
+}
+.cta-inner {
+  max-width: 680px; margin: 0 auto;
+  background: rgba(13,21,37,.7);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  padding: 64px 48px;
+  position: relative; overflow: hidden;
+}
+.cta-inner::before {
+  content: '';
+  position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(201,168,76,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.cta-h2 {
+  font-family: var(--fd);
+  font-size: clamp(2rem, 5vw, 3rem); font-weight: 300; line-height: 1.2;
+  color: var(--cream); margin-bottom: 16px;
+}
+.cta-h2 em { font-style: italic; color: var(--gold2); }
+.cta-p { font-size: .95rem; color: var(--cream2); line-height: 1.7; margin-bottom: 36px; }
+
+/* ── FOOTER ── */
+footer {
+  position: relative; z-index: 10;
+  border-top: 1px solid var(--border);
+  padding: 32px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.foot-logo { font-family: var(--fd); font-size: 1rem; color: var(--cream2); }
+.foot-copy { font-size: .75rem; color: var(--cream3); }
+
+/* ── SCROLL REVEAL UTILITY ── */
+.reveal {
+  opacity: 0; transform: translateY(28px);
+  transition: opacity .7s var(--ease), transform .7s var(--ease);
+}
+.reveal.visible { opacity: 1; transform: translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  nav { padding: 18px 24px; }
+  nav::after { left: 24px; right: 24px; }
+  .nav-links { display: none; }
+  .fc1,.fc5 { left: -2%; }
+  .fc3,.fc4 { right: -2%; }
+  .stats-strip { gap: 24px; }
+  .features { padding: 60px 24px; }
+  .cta-section { padding: 60px 24px; }
+  .cta-inner { padding: 40px 24px; }
+  footer { padding: 24px; flex-direction: column; gap: 8px; text-align: center; }
+}
+</style>
 </head>
 <body>
-  <script>window.location.replace('/pages/auth/login.html');</script>
+
+<!-- Custom cursor -->
+<div class="cursor" id="cur"></div>
+<div class="cursor-ring" id="curR"></div>
+
+<!-- Animated canvas background -->
+<canvas id="bg-canvas"></canvas>
+<div class="noise"></div>
+<div class="vignette"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">
+    <span class="logo-mark">IE</span>
+    IELTS Platform
+  </a>
+  <div class="nav-links">
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#" class="nav-link">Practice</a>
+    <a href="#" class="nav-link">Vocabulary</a>
+    <a href="#" class="nav-link">News</a>
+  </div>
+  <a href="/pages/auth/login.html" class="nav-cta">Get Started →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+
+  <!-- Floating UI cards -->
+  <div class="floats" aria-hidden="true">
+    <!-- Timer -->
+    <div class="fcard fc1">
+      <div class="fc-label">Time Remaining</div>
+      <div class="fc-timer" id="fc-timer">39:14</div>
+      <div class="fc-bar"><div class="fc-fill"></div></div>
+    </div>
+
+    <!-- Word count -->
+    <div class="fcard fc2">
+      <div class="fc-wc" id="fc-wc">247</div>
+      <div class="fc-wl">words written</div>
+    </div>
+
+    <!-- Band score -->
+    <div class="fcard fc3">
+      <div class="fc-score"><span>8.0</span></div>
+      <div class="fc-sl">Predicted Band Score</div>
+      <div class="stars">★★★★☆</div>
+    </div>
+
+    <!-- Vocab insert -->
+    <div class="fcard fc4">
+      <div class="fc-word">Alleviate</div>
+      <span class="fc-pos">verb</span>
+      <div class="fc-def">To make suffering or a problem less severe.</div>
+      <button class="fc-ins">+ Insert into essay</button>
+    </div>
+
+    <!-- Save status -->
+    <div class="fcard fc5">
+      <div class="fc-row"><span class="dot"></span> Saved just now</div>
+    </div>
+  </div>
+
+  <!-- Badge -->
+  <div class="hero-badge">
+    <span class="badge-dot">✦</span>
+    Trusted by 50,000+ IELTS candidates
+  </div>
+
+  <!-- Headline -->
+  <h1 class="hero-h1">
+    <span class="line-wrap"><span>Write with</span></span>
+    <span class="line-wrap"><span><em>confidence.</em></span></span>
+    <span class="line-wrap"><span>Score higher.</span></span>
+  </h1>
+
+  <!-- Sub -->
+  <p class="hero-sub">
+    The most complete IELTS writing platform — real exam simulations, live vocabulary tools, and AI-powered feedback to push your band score further.
+  </p>
+
+  <!-- CTAs -->
+  <div class="cta-group">
+    <a href="/pages/auth/login.html" class="btn-primary">
+      Start Practising Free
+      <svg class="arrow-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="9" x2="15" y2="9"/><polyline points="10 4 15 9 10 14"/>
+      </svg>
+    </a>
+    <a href="#features" class="btn-secondary">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+      See how it works
+    </a>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-strip">
+    <div class="stat">
+      <div class="stat-n" data-target="50000">0</div>
+      <div class="stat-l">Students</div>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat">
+      <div class="stat-n" data-target="8.0" data-decimal>0.0</div>
+      <div class="stat-l">Avg. Band Gain</div>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat">
+      <div class="stat-n" data-target="12000">0</div>
+      <div class="stat-l">Practice Essays</div>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat">
+      <div class="stat-n" data-target="98">0</div>
+      <div class="stat-l">% Satisfaction</div>
+    </div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap" aria-hidden="true">
+  <div class="marquee">
+    <!-- duplicated for seamless loop -->
+    <span class="marquee-item"><span class="marquee-dot"></span>Task 1 — Data Interpretation</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Task 2 — Argumentative Essay</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Real-Time Word Counter</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Dictionary Search</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Auto-Save Technology</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Band Score Prediction</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Vocabulary Builder</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>News Reading Practice</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Task 1 — Data Interpretation</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Task 2 — Argumentative Essay</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Real-Time Word Counter</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Dictionary Search</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Auto-Save Technology</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Band Score Prediction</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>Vocabulary Builder</span>
+    <span class="marquee-item"><span class="marquee-dot"></span>News Reading Practice</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="reveal">
+    <div class="section-eyebrow">Everything you need</div>
+    <h2 class="section-title">Built for serious <em>IELTS</em> candidates.</h2>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">✍️</div>
+      <div class="feat-title">Exam-Accurate Writing</div>
+      <p class="feat-body">Simulate real IELTS test conditions with timed sessions, a distraction-free editor, and word-count tracking — exactly as you'll face on exam day.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📖</div>
+      <div class="feat-title">Live Vocabulary Tools</div>
+      <p class="feat-body">Look up any word mid-essay with real dictionary definitions, phonetics, and examples. Insert high-band vocabulary directly into your writing.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📰</div>
+      <div class="feat-title">News Reading Practice</div>
+      <p class="feat-body">Build reading stamina and topic knowledge with curated news articles on IELTS themes — environment, technology, education, and more.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">💾</div>
+      <div class="feat-title">Auto-Save & Progress</div>
+      <p class="feat-body">Never lose a word. Your essays are saved automatically as you type, with a full draft history so you can review and improve over time.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🎯</div>
+      <div class="feat-title">Practice & Exam Modes</div>
+      <p class="feat-body">Switch between Practice Mode with all learning aids, and Exam Mode that disables tools to replicate real test pressure. Train how you compete.</p>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Progress Dashboard</div>
+      <p class="feat-body">Track your word count growth, session history, and essay count over time. See exactly how your writing is improving week by week.</p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA SECTION -->
+<section class="cta-section">
+  <div class="cta-inner reveal">
+    <div class="section-eyebrow" style="justify-content:center;display:flex;">Ready to begin?</div>
+    <h2 class="cta-h2">Your Band 7+ starts <em>today.</em></h2>
+    <p class="cta-p">Join thousands of students who are already writing with purpose, building vocabulary, and walking into the exam room with confidence.</p>
+    <div class="cta-group">
+      <a href="/pages/auth/login.html" class="btn-primary">
+        Create Free Account
+        <svg class="arrow-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="9" x2="15" y2="9"/><polyline points="10 4 15 9 10 14"/>
+        </svg>
+      </a>
+      <a href="/pages/auth/login.html" class="btn-secondary">Sign In</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-logo">IELTS Platform</div>
+  <div class="foot-copy">© 2025 IELTS Platform. Built for learners.</div>
+</footer>
+
+<script>
+/* ── CURSOR ── */
+const cur = document.getElementById('cur');
+const curR = document.getElementById('curR');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+(function animCursor(){
+  rx += (mx-rx)*.12; ry += (my-ry)*.12;
+  cur.style.left  = mx+'px'; cur.style.top  = my+'px';
+  curR.style.left = rx+'px'; curR.style.top = ry+'px';
+  requestAnimationFrame(animCursor);
+})();
+
+/* ── CANVAS PARTICLE FIELD ── */
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, pts=[];
+
+function resize(){
+  W=canvas.width=window.innerWidth;
+  H=canvas.height=window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const N = Math.min(90, Math.floor(window.innerWidth/16));
+for(let i=0;i<N;i++) pts.push({
+  x: Math.random()*window.innerWidth,
+  y: Math.random()*window.innerHeight,
+  vx: (Math.random()-.5)*.28,
+  vy: (Math.random()-.5)*.28,
+  r: Math.random()*1.4+.3,
+  o: Math.random()*.5+.15
+});
+
+let mouseX=W/2, mouseY=H/2;
+document.addEventListener('mousemove', e=>{ mouseX=e.clientX; mouseY=e.clientY; });
+
+function drawCanvas(){
+  ctx.clearRect(0,0,W,H);
+
+  // Subtle radial glow at mouse
+  const g = ctx.createRadialGradient(mouseX,mouseY,0,mouseX,mouseY,300);
+  g.addColorStop(0,'rgba(201,168,76,.04)');
+  g.addColorStop(1,'transparent');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  // Particles + connections
+  pts.forEach((p,i)=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(201,168,76,${p.o})`;
+    ctx.fill();
+
+    for(let j=i+1;j<pts.length;j++){
+      const q=pts[j];
+      const dx=p.x-q.x, dy=p.y-q.y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<120){
+        ctx.beginPath();
+        ctx.moveTo(p.x,p.y);
+        ctx.lineTo(q.x,q.y);
+        ctx.strokeStyle=`rgba(201,168,76,${.08*(1-d/120)})`;
+        ctx.lineWidth=.5;
+        ctx.stroke();
+      }
+    }
+  });
+  requestAnimationFrame(drawCanvas);
+}
+drawCanvas();
+
+/* ── FLOATING TIMER ── */
+let timerS = 39*60+14;
+setInterval(()=>{
+  if(timerS>0) timerS--;
+  const m=Math.floor(timerS/60), s=timerS%60;
+  document.getElementById('fc-timer').textContent=
+    String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+},1000);
+
+/* ── FLOATING WORD COUNT ── */
+const wcEl = document.getElementById('fc-wc');
+let wc=247, wcDir=1;
+setInterval(()=>{
+  wc+=wcDir*(Math.random()<.3?1:0);
+  if(wc>=252)wcDir=-1; if(wc<=240)wcDir=1;
+  wcEl.textContent=wc;
+},800);
+
+/* ── COUNT-UP ANIMATION ── */
+function countUp(el, target, isDecimal){
+  let start=0, dur=2000, startTime=null;
+  function step(t){
+    if(!startTime) startTime=t;
+    const p=Math.min((t-startTime)/dur,1);
+    const ease=1-Math.pow(1-p,3);
+    const val=start+(target-start)*ease;
+    el.textContent = isDecimal ? val.toFixed(1) : Math.floor(val).toLocaleString();
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+/* ── INTERSECTION OBSERVER ── */
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{
+    if(en.isIntersecting){
+      en.target.classList.add('visible');
+      // Trigger count-up for stat numbers
+      const target = en.target.dataset.target;
+      if(target){
+        countUp(en.target, parseFloat(target), en.target.dataset.decimal!=null);
+        io.unobserve(en.target);
+      }
+    }
+  });
+},{threshold:.15});
+
+document.querySelectorAll('.reveal,.feat-card,.stat-n').forEach(el=>io.observe(el));
+
+/* ── STAGGER FEAT CARDS ── */
+document.querySelectorAll('.feat-card').forEach((c,i)=>{
+  c.style.transitionDelay = (i*.1)+'s';
+});
+
+/* ── SMOOTH SCROLL ── */
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    const t=document.querySelector(a.getAttribute('href'));
+    if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'});}
+  });
+});
+</script>
 </body>
-</html>
+</html> -->

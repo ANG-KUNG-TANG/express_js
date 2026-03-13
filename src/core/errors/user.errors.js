@@ -24,6 +24,13 @@ export class UserEmailNotFoundError extends NotFoundError {
     }
 }
 
+export class UserFileNotFoundError extends NotFoundError {
+    constructor(fileId) {
+        super(`File ${fileId} not found for this user`);
+        this.code = 'USER_FILE_NOT_FOUND';
+    }
+}
+
 // ------------------------------------------------------------------
 // Validation
 // ------------------------------------------------------------------
@@ -73,6 +80,58 @@ export class UserInvalidRoleError extends UserValidationError {
     constructor(role) {
         super(`Invalid user role: ${role}`);
         this.code = 'USER_INVALID_ROLE';
+    }
+}
+
+// ------------------------------------------------------------------
+// Profile Validation
+// ------------------------------------------------------------------
+export class UserInvalidAvatarTypeError extends UserValidationError {
+    constructor(mimetype) {
+        super(`Avatar file type "${mimetype}" is not allowed. Use JPEG, PNG, WEBP, or GIF`);
+        this.code = 'USER_INVALID_AVATAR_TYPE';
+    }
+}
+
+export class UserAvatarTooLargeError extends UserValidationError {
+    constructor(maxMb = 5) {
+        super(`Avatar must be under ${maxMb} MB`);
+        this.code = 'USER_AVATAR_TOO_LARGE';
+    }
+}
+
+export class UserInvalidCoverTypeError extends UserValidationError {
+    constructor(mimetype) {
+        super(`Cover file type "${mimetype}" is not allowed. Use JPEG, PNG, WEBP, or GIF`);
+        this.code = 'USER_INVALID_COVER_TYPE';
+    }
+}
+
+export class UserCoverTooLargeError extends UserValidationError {
+    constructor(maxMb = 5) {
+        super(`Cover photo must be under ${maxMb} MB`);
+        this.code = 'USER_COVER_TOO_LARGE';
+    }
+}
+
+export class UserInvalidFileTypeError extends UserValidationError {
+    constructor(mimetype) {
+        super(`File type "${mimetype}" is not allowed`);
+        this.code = 'USER_INVALID_FILE_TYPE';
+    }
+}
+
+export class UserFileTooLargeError extends UserValidationError {
+    constructor(fileName, maxMb = 10) {
+        super(`"${fileName}" exceeds the ${maxMb} MB limit`);
+        this.code = 'USER_FILE_TOO_LARGE';
+    }
+}
+
+export class UserBioTooLongError extends UserValidationError {
+    constructor(maxLength = 300) {
+        super(`Bio cannot exceed ${maxLength} characters`);
+        this.code = 'USER_BIO_TOO_LONG';
     }
 }
 

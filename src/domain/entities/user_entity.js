@@ -20,6 +20,12 @@ export class User{
         email,
         password,
         role = UserRole.USER,
+        avatarUrl = null,
+        coverUrl = null,
+        bio = '',
+        targetBand = null,
+        examDate = null,
+        attachments = [],
         createdAt = new Date(),
         updatedAt = new Date()
     }){
@@ -33,6 +39,11 @@ export class User{
         this._email = email;
         this._password = password;
         this._role = role;
+        this._avatarUrl = avatarUrl;
+        this._coverUrl = coverUrl;
+        this._bio = bio;
+        this._targetBand = targetBand;
+        this._examDate = examDate;
         this._createdAt = createdAt;
         this._updatedAt = updatedAt;
     }
@@ -68,6 +79,12 @@ export class User{
     get email(){ return this._email }
     get role(){ return this._role }
     get password(){ return this._password }
+    get avatarUrl()   { return this._avatarUrl; }
+    get coverUrl()    { return this._coverUrl; }
+    get bio()         { return this._bio; }
+    get targetBand()  { return this._targetBand; }
+    get examDate()    { return this._examDate; }
+    get attachments() { return this._attachments; }
     get createdAt(){ return this._createdAt }
     get updatedAt(){ return this._updatedAt }
 }
