@@ -1,65 +1,37 @@
-// interfaces/table/notification.controller.js
+// api/table/notification.controller.js
+// Routes through the existing use-cases so architecture stays consistent.
 
-// FIX: paths were '/notification/' — correct folder is '/notification_uc/'
 import { getNotificationsUseCase } from '../../app/notification/get_noti.uc.js';
-import { markNotificationsReadUseCase } from '../../app/notification/mark_noti.uc.js';
-import { sanitizeNotificationQueryInput, sanitizeMarkReadInput } from '../input_sanitizers/notification.input_sanitizer.js';
-import { sendSuccess } from '../response_formatter.js';
-import { HTTP_STATUS } from '../http_status.js';
-import logger          from '../../core/logger/logger.js';
+import { markNotiUc } from '../../app/notification/mark_noti.uc.js';
+import { sendSuccess }                  from '../response_formatter.js';
+import { HTTP_STATUS }                  from '../http_status.js';
 
-// ---------------------------------------------------------------------------
-// GET /notifications
-// ---------------------------------------------------------------------------
-
+// GET /api/notifications?page=1&limit=15
+// Export name matches notification_router.js import
 export const getNotifications = async (req, res) => {
-    const { page, limit } = sanitizeNotificationQueryInput(req.query);
+    const userId = String(req.user._id ?? req.user.id);
+    const page   = Math.max(1, parseInt(req.query.page  ?? 1));
+    const limit  = Math.min(50, parseInt(req.query.limit ?? 15));
 
-    logger.debug('notification.getNotifications called', {
-        requestId: req.id,
-        userId: req.user.id,
-        page,
-        limit,
-    });
-
-    const result = await getNotificationsUseCase(req.user.id, { page, limit });
-
+    const result = await getNotificationsUseCase(userId, { page, limit });
     return sendSuccess(res, result, HTTP_STATUS.OK);
 };
 
-// ---------------------------------------------------------------------------
-// PATCH /notifications/read
-// Body: { ids: ['id1','id2'] } or { ids: 'all' }
-// ---------------------------------------------------------------------------
-
+// PATCH /api/notifications/read — mark all or a list of IDs as read
+// Export name matches notification_router.js import
 export const markRead = async (req, res) => {
-    const { ids } = sanitizeMarkReadInput(req.body);
+    const userId = String(req.user._id ?? req.user.id);
+    const { ids } = req.body;   // 'all' | string[]
 
-    logger.debug('notification.markRead called', {
-        requestId: req.id,
-        userId: req.user.id,
-        ids,
-    });
-
-    const result = await markNotificationsReadUseCase(req.user.id, ids);
-
+    const result = await markNotiUc(userId, ids ?? 'all');
     return sendSuccess(res, result, HTTP_STATUS.OK);
 };
 
-// ---------------------------------------------------------------------------
-// PATCH /notifications/:id/read
-// ---------------------------------------------------------------------------
-
+// PATCH /api/notifications/:id/read — mark a single notification as read
 export const markOneRead = async (req, res) => {
+    const userId = String(req.user._id ?? req.user.id);
     const { id } = req.params;
 
-    logger.debug('notification.markOneRead called', {
-        requestId: req.id,
-        userId: req.user.id,
-        notificationId: id,
-    });
-
-    const result = await markNotificationsReadUseCase(req.user.id, [id]);
-
+    const result = await markNotificationsReadUseCase(userId, [id]);
     return sendSuccess(res, result, HTTP_STATUS.OK);
 };

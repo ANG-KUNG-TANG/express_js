@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/components.css" />
     <link rel="stylesheet" href="/css/pages/admin.css" />
 </head>
 <body>
-    <div id="navbar"></div>
     <main class="admin-layout">
 
         <header class="admin-header">
@@ -17,7 +17,6 @@
             <span class="admin-header__badge">ADMIN</span>
         </header>
 
-        <!-- Panel 1: Stats Bar -->
         <section class="stats-bar">
             <div class="stat-card" id="stat-total-users">
                 <span class="stat-card__value">—</span>
@@ -37,18 +36,16 @@
             </div>
         </section>
 
-        <!-- Panel 2: Pending Work Queue -->
         <section class="admin-panel">
             <div class="admin-panel__header">
                 <div>
-                    <h2 class="admin-panel__title">⚠ Pending Review</h2>
+                    <h2 class="admin-panel__title">Pending Review</h2>
                     <span class="admin-panel__sub">Oldest first — needs attention</span>
                 </div>
             </div>
             <div id="pending-list"><p class="loading">Loading…</p></div>
         </section>
 
-        <!-- Panel 3: Recent Activity -->
         <section class="admin-panel">
             <div class="admin-panel__header">
                 <div>
@@ -59,7 +56,6 @@
             <div id="activity-list"><p class="loading">Loading…</p></div>
         </section>
 
-        <!-- Panel 4: User Management -->
         <section class="admin-panel">
             <div class="admin-panel__header">
                 <h2 class="admin-panel__title">User Management</h2>
@@ -73,7 +69,6 @@
             <div id="users-list"><p class="loading">Loading…</p></div>
         </section>
 
-        <!-- Panel 5: Task Management -->
         <section class="admin-panel">
             <div class="admin-panel__header">
                 <h2 class="admin-panel__title">Task Management</h2>
@@ -82,7 +77,8 @@
                         placeholder="Search by title…" style="width:200px" />
                     <select id="task-status-filter" class="select select--sm" style="width:150px">
                         <option value="">All Statuses</option>
-                        <option value="DRAFT">Draft</option>
+                        <option value="ASSIGNED">Assigned</option>
+                        <option value="WRITING">Writing</option>
                         <option value="SUBMITTED">Submitted</option>
                         <option value="REVIEWED">Reviewed</option>
                         <option value="SCORED">Scored</option>
@@ -94,6 +90,7 @@
 
     </main>
     <div id="toast-container"></div>
+    <!-- FIX: was /pages/admin/dashboard.js — correct path is /js/pages/admin/dashboard.js -->
     <script type="module" src="/js/pages/admin/dashboard.js"></script>
 </body>
 </html>

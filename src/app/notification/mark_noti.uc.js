@@ -6,7 +6,7 @@ import { NotificationNotFoundError } from '../../core/errors/notification.errors
  * @param {string}          userId
  * @param {string[]|'all'}  ids
  */
-export const markNotificationsReadUseCase = async (userId, ids) => {
+export const markNotiUc = async (userId, ids) => {
     if (ids !== 'all' && (!Array.isArray(ids) || ids.length === 0)) {
         throw new NotificationNotFoundError('(none provided)');
     }

@@ -1,72 +1,79 @@
-/**
- * respond_assignment.uc.js
- *
- * Student accepts or declines a teacher-assigned task.
- *
- * Accept:  assignmentStatus → accepted  (status stays ASSIGNED — student starts separately)
- * Decline: assignmentStatus → declined  (teacher is notified with the reason)
- *
- * Uses repo helpers acceptAssignment() / declineAssignment() which call the
- * entity methods, so all validation stays in WritingTask.
- */
+// src/app/task_uc/respond_assignment.uc.js
+//
+// Called when Alice (student) accepts or declines a teacher-assigned task.
+// Uses the WritingTask entity's acceptAssignment() / declineAssignment() methods.
+//
+// Route: POST /api/writing-tasks/:taskId/respond-assignment
+// Body:  { action: 'accept' | 'decline', declineReason?: string }
 
-import {
-    findTaskByID,
-    acceptAssignment,
-    declineAssignment,
-} from '../../infrastructure/repositories/task_repo.js';
+import * as taskRepo from '../../infrastructure/repositories/task_repo.js';
 import { sendNotificationUseCase } from '../notification/send_noti.uc.js';
-import { NotificationType } from '../../domain/entities/notificaiton_entity.js';
-import { TaskSource } from '../../domain/base/task_enums.js';
-import {
-    NotFoundError,
-    ForbiddenError,
-    ValidationError,
-} from '../../core/errors/base.errors.js';
+import { NotificationType }        from '../../domain/entities/notificaiton_entity.js';
+import { AssignmentStatus }        from '../../domain/base/task_enums.js';
+import { TaskValidationError }     from '../../core/errors/task.errors.js';
 
-export async function respondAssignmentUC(student, { taskId, action, declineReason }) {
-    // 1. Fetch task
-    const task = await findTaskByID(taskId);
+export const respondAssignmentUC = async (student, { taskId, action, declineReason }) => {
+    const studentId = String(student._id ?? student.id);
 
-    // 2. Must be assigned to this student
-    if (task._assignedTo?.toString() !== student.id.toString()) {
-        throw new ForbiddenError('This task was not assigned to you');
-    }
-
-    // 3. Must be an assigned task (not self-created)
-    if (task._source === TaskSource.SELF || !task._assignedBy) {
-        throw new ForbiddenError('This is not an assigned task');
-    }
-
-    // 4. Validate action
+    // ── Validate action ───────────────────────────────────────────────────────
     if (!['accept', 'decline'].includes(action)) {
-        throw new ValidationError('action must be "accept" or "decline"');
+        throw new TaskValidationError('action must be "accept" or "decline"');
     }
     if (action === 'decline' && !declineReason?.trim()) {
-        throw new ValidationError('declineReason is required when declining');
+        throw new TaskValidationError('declineReason is required when declining a task');
     }
 
-    // 5. Delegate to repo (which calls entity method — throws if already responded)
-    let updated;
-    if (action === 'accept') {
-        updated = await acceptAssignment(taskId);
-    } else {
-        updated = await declineAssignment(taskId, declineReason.trim());
+    // ── Fetch & verify ownership ──────────────────────────────────────────────
+    const task = await taskRepo.findTaskByID(taskId);
+    taskRepo.ensureTaskOwnership(task, studentId);
 
-        // Notify the assigning teacher
-        await sendNotificationUseCase({
-            userId:  task._assignedBy,
-            type:    NotificationType.TASK_DECLINED,
-            title:   'Task declined by student',
-            message: `${student.firstName} ${student.lastName} declined "${task._title}"`,
+    // ── Guard: must be PENDING_ACCEPTANCE ─────────────────────────────────────
+    if (task._assignmentStatus !== AssignmentStatus.PENDING_ACCEPTANCE) {
+        throw new TaskValidationError(
+            `Cannot respond — assignment is already "${task._assignmentStatus}"`
+        );
+    }
+
+    // ── Transition via entity ─────────────────────────────────────────────────
+    if (action === 'accept') {
+        task.acceptAssignment();
+    } else {
+        task.declineAssignment(declineReason.trim());
+    }
+
+    // ── Persist the updated assignmentStatus (and declineReason if declined) ──
+    const updated = await taskRepo.updateTask(taskId, {
+        assignmentStatus: task._assignmentStatus,
+        ...(action === 'decline' && { declineReason: task._declineReason }),
+    });
+
+    // ── Notify teacher ────────────────────────────────────────────────────────
+    if (task._assignedBy) {
+        const studentName = student.name ?? student._name ?? 'A student';
+        const isAccepted  = action === 'accept';
+
+        sendNotificationUseCase({
+            userId:  String(task._assignedBy),
+            type:    isAccepted
+                ? NotificationType.TASK_ASSIGNED   // closest available — use task_assigned for accept
+                : NotificationType.TASK_DECLINED,  // task_declined for reject
+            title:   isAccepted
+                ? 'Student accepted your task'
+                : 'Student declined your task',
+            message: isAccepted
+                ? `${studentName} accepted "${task._title}" and will start writing.`
+                : `${studentName} declined "${task._title}". Reason: ${declineReason?.trim()}`,
             metadata: {
-                taskId:       task._id,
-                studentId:    student.id,
-                studentName:  `${student.firstName} ${student.lastName}`,
-                declineReason: declineReason.trim(),
+                taskId,
+                studentId,
+                studentName,
+                action,
+                ...(action === 'decline' && { declineReason: declineReason?.trim() }),
             },
-        });
+        }).catch(err =>
+            console.error('[respondAssignmentUC] notification failed:', err.message)
+        );
     }
 
     return updated;
-}
+};

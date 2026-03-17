@@ -1,6 +1,5 @@
 /**
  * auth.js — session helpers + login/register page logic
- * Usage: import { getUser, isAdmin, logOut, saveSession } from './auth.js';
  */
 
 import { apiFetch } from './api.js';
@@ -8,7 +7,8 @@ import { apiFetch } from './api.js';
 // ── Session helpers ───────────────────────────────────────────────────────────
 export const getUser    = () => JSON.parse(localStorage.getItem('user') || 'null');
 export const getToken   = () => localStorage.getItem('token');
-export const isAdmin    = () => getUser()?.role === 'ADMIN';
+export const isAdmin    = () => getUser()?.role === 'admin';
+export const isTeacher  = () => getUser()?.role === 'teacher';
 export const isLoggedIn = () => !!getToken();
 
 export const saveSession = (token, user) => {
@@ -29,9 +29,9 @@ export const logOut = async () => {
 
 // ── Login page handler ────────────────────────────────────────────────────────
 export const initLoginPage = () => {
-    const form   = document.getElementById('login-form');
+    const form    = document.getElementById('login-form');
     const alertEl = document.getElementById('login-alert');
-    const btn    = document.getElementById('btn-submit');
+    const btn     = document.getElementById('btn-submit');
     if (!form) return;
 
     form.addEventListener('submit', async (e) => {
@@ -57,8 +57,8 @@ export const initLoginPage = () => {
                 method: 'POST',
                 body: JSON.stringify({ email, password }),
             });
-            saveSession(data.token, data.user);
-            window.location.href = '/pages/dashboard.html';
+            saveSession(data.token ?? data.data?.token, data.user ?? data.data?.user);
+            redirectAfterLogin(data.user ?? data.data?.user);
         } catch (err) {
             showAlert(alertEl, err.message || 'Invalid email or password.');
             setLoading(btn, false, 'Sign In');
@@ -104,14 +104,22 @@ export const initRegisterPage = () => {
                 method: 'POST',
                 body: JSON.stringify({ name, email, password }),
             });
-            saveSession(data.token, data.user);
-            window.location.href = '/pages/dashboard.html';
+            saveSession(data.token ?? data.data?.token, data.user ?? data.data?.user);
+            redirectAfterLogin(data.user ?? data.data?.user);
         } catch (err) {
             showAlert(alertEl, err.message || 'Registration failed. Please try again.');
             setLoading(btn, false, 'Create Account');
         }
     });
 };
+
+// ── Role-based redirect after login ──────────────────────────────────────────
+function redirectAfterLogin(user) {
+    if (!user) { window.location.href = '/pages/dashboard.html'; return; }
+    if (user.role === 'admin')   { window.location.href = '/pages/admin/dashboard.html'; return; }
+    if (user.role === 'teacher') { window.location.href = '/pages/teacher/dashboard.html'; return; }
+    window.location.href = '/pages/dashboard.html';
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function showFieldError(id, msg) {

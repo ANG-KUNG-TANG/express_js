@@ -24,8 +24,10 @@
                 <span id="task-type" style="font-family:var(--font-mono);font-size:12px;color:var(--text3)"></span>
             </div>
             <div class="review-card__body">
-                <div class="review-meta">
-                    <span class="review-meta__item"><strong>Word Count:</strong> <span id="task-wordcount">—</span></span>
+                <div class="review-meta" style="display:flex;flex-wrap:wrap;gap:18px;padding:12px 0 16px;border-bottom:1px solid var(--border);margin-bottom:16px;font-size:13px;color:var(--text2)">
+                    <span><strong>Student:</strong> <span id="task-student">—</span></span>
+                    <span><strong>Word Count:</strong> <span id="task-wordcount">—</span></span>
+                    <span><strong>Due:</strong> <span id="task-duedate">—</span></span>
                 </div>
 
                 <p class="review-section-title">Question Prompt</p>
@@ -36,12 +38,12 @@
             </div>
         </div>
 
-        <!-- Review section — teachers can only review, not score -->
+        <!-- Review section — teacher provides feedback + band score -->
         <div class="review-card" id="review-section">
             <div class="review-card__header">
-                <h2 class="review-card__title">Feedback</h2>
+                <h2 class="review-card__title">Feedback &amp; Score</h2>
                 <span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">
-                    Scoring is handled by admins
+                    IELTS band 0–9
                 </span>
             </div>
             <div class="review-card__body">
@@ -50,12 +52,19 @@
                     <textarea id="feedback-input" class="textarea"
                         placeholder="Write detailed feedback for the student…"></textarea>
                 </div>
-                <button id="review-btn" class="btn btn--warning">Save Review</button>
+                <div class="form-group" style="margin-bottom:20px">
+                    <label class="form-label">Band Score (0–9)</label>
+                    <input id="band-score-input" class="input" type="number"
+                        min="0" max="9" step="0.5"
+                        placeholder="e.g. 6.5"
+                        style="width:140px" />
+                </div>
+                <button id="review-btn" class="btn btn--warning">Save Review &amp; Score</button>
             </div>
         </div>
 
         <!-- Reviewed notice (shown when already reviewed) -->
-        <div class="review-card" id="reviewed-notice" style="display:none">
+        <div class="review-card" id="reviewed-section" style="display:none">
             <div class="review-card__body" style="display:flex;align-items:center;gap:12px">
                 <span class="badge badge--info">REVIEWED</span>
                 <span style="font-size:13px;color:var(--text2)">

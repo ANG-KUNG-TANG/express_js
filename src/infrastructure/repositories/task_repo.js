@@ -11,6 +11,7 @@ import {
     TaskOwnershipError,
 } from '../../core/errors/task.errors.js';
 import logger from '../../core/logger/logger.js';
+import { option, task } from "fp-ts";
 
 // ---------------------------------------------------------------------------
 // Mappers
@@ -35,6 +36,14 @@ const toDomain = (doc) => {
         reviewedAt:     doc.reviewedAt,
         createdAt:      doc.createdAt,
         updatedAt:      doc.updatedAt,
+        source:              doc.source             ?? undefined,
+        assignedBy:          doc.assignedBy         ? doc.assignedBy.toString()  : null,
+        assignedTo:          doc.assignedTo         ? doc.assignedTo.toString()  : null,
+        assignmentStatus:    doc.assignmentStatus   ?? null,
+        declineReason:       doc.declineReason      ?? null,
+        dueDate:             doc.dueDate            ?? null,
+        reminderSentAt:      doc.reminderSentAt     ?? null,
+        unstartedNotiSentAt: doc.unstartedNotiSentAt ?? null,
     });
 };
 
@@ -61,6 +70,14 @@ const toPersistence = (task) => {
         reviewedAt:     task._reviewedAt,
         createdAt:      task._createdAt,
         updatedAt:      task._updatedAt,
+        source:              task._source,
+        assignedBy:          task._assignedBy  ? new mongoose.Types.ObjectId(task._assignedBy)  : null,
+        assignedTo:          task._assignedTo  ? new mongoose.Types.ObjectId(task._assignedTo)  : null,
+        assignmentStatus:    task._assignmentStatus  ?? null,
+        declineReason:       task._declineReason     ?? null,
+        dueDate:             task._dueDate            ?? null,
+        reminderSentAt:      task._reminderSentAt     ?? null,
+        unstartedNotiSentAt: task._unstartedNotiSentAt ?? null,
     };
 };
 
@@ -155,8 +172,14 @@ export const updateTask = async (id, updates) => {
     if (updates.wordCount      !== undefined) task._wordCount      = updates.wordCount;
     if (updates.bandScore      !== undefined) task._bandScore      = updates.bandScore;
     if (updates.feedback       !== undefined) task._feedback       = updates.feedback;
-    if (updates.submittedAt    !== undefined) task._submittedAt    = updates.submittedAt;
-    if (updates.reviewedAt     !== undefined) task._reviewedAt     = updates.reviewedAt;
+    if (updates.submittedAt       !== undefined) task._submittedAt       = updates.submittedAt;
+    if (updates.reviewedAt        !== undefined) task._reviewedAt        = updates.reviewedAt;
+    if (updates.assignmentStatus  !== undefined) task._assignmentStatus  = updates.assignmentStatus;
+    if (updates.declineReason     !== undefined) task._declineReason     = updates.declineReason;
+    if (updates.dueDate           !== undefined) task._dueDate           = updates.dueDate;
+    if (updates.source            !== undefined) task._source            = updates.source;
+    if (updates.assignedBy        !== undefined) task._assignedBy        = updates.assignedBy;
+    if (updates.assignedTo        !== undefined) task._assignedTo        = updates.assignedTo;
     task._updatedAt = new Date();
 
     const doc = await WritingTaskModel.findByIdAndUpdate(
@@ -242,6 +265,108 @@ export const scoreTask = async (id, bandScore) => {
     });
 };
 
+export const acceptAssignment = async (taskId) => {
+    logger.debug("writingTaskRepo.acceptAssigment", { taskId});
+    const task = await findTaskByID(taskId);
+    task.acceptAssigment();
+    return await updateTask(taskId, {
+        assignmentStatus: task._assignmentStatus,
+    });
+};
+
+export const declineAssignment = async (taskid, reason) =>{
+    logger.debug('writingTaskRepo.declineAssigment', { taskId});
+    const task = await findTaskByID(taskId);
+    task.declineAssignment(reason);
+    return await updateTask(taskId, {
+        assignmentStatus: task._assignmentStatus,
+        declineReason: task._declineReason,
+        status: WritingStatus.ASSIGNED,
+    });
+};
+
+export const findDueSoon = async (withinHours = 24) => {
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + withinHours *60*60*1000);
+    const dedupe = new Date(now.getTime() - 20*60*60*1000);
+
+    logger.debug('WritingTAskRepo.findDueSoon', { withinHours, cutoff});
+    const docs = await WritingTaskModel.find({
+        dueDate: { $gt: now, $lte: cutoff},
+        status: { $nin: [WritingStatus.SUBMITTED, WritingStatus.REVIEWED, WritingStatus.SCORED]}, 
+        assignmentStatus: AssignmentStatus.ACCEPTED,
+        $or: [
+            {reminderSentAt: null},
+            {reminderSentAt: { $lte: dedupe}},
+        ]
+    }).lean();
+    logger.debug('writingTaskRepo.findDueSoon : result', { count: doc.length});
+    return toDomainList(docs);
+};
+
+export const findUnstarted = async (afterDays = 3) =>{
+    const staleCutoff = new Date();
+    staleCutoff.setDate(staleCutoff.getDate() - afterDays);
+    const dedupe = new Date(Date.now() - 24*60*60*1000);
+
+    logger.debug('writingTaskRepo.findUnstarted', { afterDays, staleCutoff});
+    const docs = await WritingTaskModel.find({
+        assignmentStatus: AssignmentStatus.ACCEPTED,
+        status: WritingStatus.ASSIGNED,
+        createdAt: { $lte: staleCutoff},
+        $or: [
+            {unstartedNotiSentAt: null},
+            { unstartedNotiSentAt: {$lte: dedupe}},
+        ],
+
+    }).lean();
+    logger.debug('writingTaskRepo.findUnstarted: resut', { count: docs.length});
+    return toDomainList(docs);
+};
+
+export const findByAssignedBy = async (teacherId, filter = {}, options = {}) =>{
+    if (!mongoose.Types.ObjectId.isValid(teacherId)) throw new TaskInvalidUserIdError(teacherId);
+    const { page =1, limit = 20, sort = { createdAt: -1}} = options;
+    const skip = (Math.max(1, Number(page)) -1 ) * Number(limit);
+
+    logger.debug('writingTaskRepo.FindByAssignedBy', { teacherId} );
+    const docs = await WritingTaskModel.find({
+        assignedBy: new mongoose.Types.ObjectId(teacherId),
+        ...filter,
+    }).skip(skip).limit(Number(limit)).sort(sort).lean();
+
+    return toDomainList(docs);
+};
+
+export const findByAssignedTo = async ( studentId, filter = {}, options = {}) => {
+    if (!mongoose.Types.ObjectId.isValid(studentId)) {throw new TaskInvalidIdError(studentId)};
+    const { page = 1, limit = 20, sort = { createdAt: -1}} = options; 
+    const skip = (Math.max(1,Number(page)) -1) * Number(limit);
+
+    logger.debug('writingTaskRepo.findByAssignedTo', { studentId});
+    const docs = await WritingTaskModel.find({
+        assignedTo: new mongoose.Types.ObjectId(studentId),
+        ...filter,
+    }).skip(skip).limit(Number(limit)).sort(sort).lean();
+
+    return toDomainList(docs);
+};
+
+export const markReminderSent = async (taskId) =>{
+    if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
+    logger.debug('writingTaskRepo.markReminderSent', { taskId});
+    await WritingTaskModel.findByIdAndUpdate(taskId, {
+        $set: { reminderSentAt: new Date(), updateAt: new Date()},
+    });
+};
+
+export const markUnstartedNotiSent = async (taskId) =>{
+    if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
+    logger.debug('writingTaskRepo.markUnstartedNotiSent', { taskId});
+    await WritingTaskModel.findByIdAndUpdate(taskId, {
+        $set: { unstartedNotiSentAt: new Date(), updateAt: new Date()},
+    });
+}
 // ---------------------------------------------------------------------------
 // Convenience finders
 // ---------------------------------------------------------------------------

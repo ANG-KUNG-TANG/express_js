@@ -1,17 +1,21 @@
-import { getDashboardStatsUC }   from '../../app/admin/stats.uc.js';
-import { adminListUsersUC }      from '../../app/admin/adm_list_user.uc.js';
-import { adminGetUserByEmailUC } from '../../app/admin/adm_getby_mail.uc.js';
-import { adminPromoteUserUC }    from '../../app/admin/adm_promote_user.uc.js';
-import { adminAssignTeacherUC }  from '../../app/admin/assign_teacher.uc.js';
-import { adminDeleteUserUC }     from '../../app/admin/adm_delete_user.uc.js';
-import { adminListTasksUC }      from '../../app/admin/adm_list_task.uc.js';
-import { adminSearchTasksUC }    from '../../app/admin/adm_search_task.uc.js';
-import { adminReviewTaskUC }     from '../../app/admin/adm_review_task.uc.js';
-import { adminScoreTaskUC }      from '../../app/admin/adm_score_task.uc.js';
-import { adminTransferTasksUC }  from '../../app/admin/adm_transfer_tasks.uc.js';
-import { sendSuccess }           from '../response_formatter.js';
-import { HTTP_STATUS }           from '../http_status.js';
-import auditLogger               from '../../core/logger/audit.logger.js';
+import { getDashboardStatsUC }             from '../../app/admin/stats.uc.js';
+import { adminListUsersUC }                from '../../app/admin/adm_list_user.uc.js';
+import { adminGetUserByEmailUC }           from '../../app/admin/adm_getby_mail.uc.js';
+import { adminPromoteUserUC }              from '../../app/admin/adm_promote_user.uc.js';
+import { adminAssignTeacherUC }            from '../../app/admin/assign_teacher.uc.js';
+import { adminDeleteUserUC }               from '../../app/admin/adm_delete_user.uc.js';
+import { adminListTasksUC }                from '../../app/admin/adm_list_task.uc.js';
+import { adminSearchTasksUC }              from '../../app/admin/adm_search_task.uc.js';
+import { adminReviewTaskUC }               from '../../app/admin/adm_review_task.uc.js';
+import { adminScoreTaskUC }                from '../../app/admin/adm_score_task.uc.js';
+import { adminTransferTasksUC }            from '../../app/admin/adm_transfer_tasks.uc.js';
+import {                                                               // ← new
+    adminLinkStudentToTeacherUC,
+    adminUnlinkStudentFromTeacherUC,
+} from '../../app/admin/adm_link_student.uc.js';
+import { sendSuccess }                     from '../response_formatter.js';
+import { HTTP_STATUS }                     from '../http_status.js';
+import auditLogger                         from '../../core/logger/audit.logger.js';
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
 export const getDashboardStats = async (req, res) => {
@@ -36,6 +40,7 @@ export const promoteUser = async (req, res) => {
     return sendSuccess(res, user, HTTP_STATUS.OK);
 };
 
+// Existing: promote a user TO the teacher role
 export const assignTeacher = async (req, res) => {
     const user = await adminAssignTeacherUC(req.params.id);
     auditLogger.log('admin.user.assigned_teacher', { targetUserId: req.params.id, requesterId: req.user?.id }, req);
@@ -46,6 +51,32 @@ export const deleteUser = async (req, res) => {
     const result = await adminDeleteUserUC(req.params.id);
     auditLogger.log('admin.user.deleted', { targetUserId: req.params.id, requesterId: req.user?.id }, req);
     return sendSuccess(res, result, HTTP_STATUS.OK);
+};
+
+// New: link a student to a specific teacher (sets student.assignedTeacher)
+// PATCH /admin/users/:id/link-teacher   body: { teacherId }
+export const linkStudentToTeacher = async (req, res) => {
+    const { id: studentId }  = req.params;
+    const { teacherId }      = req.body;
+    const user = await adminLinkStudentToTeacherUC(studentId, teacherId);
+    auditLogger.log('admin.user.linked_to_teacher', {
+        studentId,
+        teacherId,
+        requesterId: req.user?.id,
+    }, req);
+    return sendSuccess(res, user, HTTP_STATUS.OK);
+};
+
+// New: remove student → teacher link
+// PATCH /admin/users/:id/unlink-teacher
+export const unlinkStudentFromTeacher = async (req, res) => {
+    const { id: studentId } = req.params;
+    const user = await adminUnlinkStudentFromTeacherUC(studentId);
+    auditLogger.log('admin.user.unlinked_from_teacher', {
+        studentId,
+        requesterId: req.user?.id,
+    }, req);
+    return sendSuccess(res, user, HTTP_STATUS.OK);
 };
 
 // ── Tasks ──────────────────────────────────────────────────────────────────

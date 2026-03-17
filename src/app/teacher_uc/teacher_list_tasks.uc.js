@@ -1,35 +1,24 @@
-import { findTasks } from '../../infrastructure/repositories/task_repo.js';
-import logger from '../../core/logger/logger.js';
+// src/app/teacher_uc/teacher_list_tasks.uc.js
+import { findByAssignedBy } from '../../infrastructure/repositories/task_repo.js';
+import { WritingStatus }    from '../../domain/base/task_enums.js';
+import logger               from '../../core/logger/logger.js';
 
-const TEACHER_ALLOWED_STATUSES = ['SUBMITTED', 'REVIEWED'];
+// Teacher dashboard default view: all statuses for tasks THEY assigned
+// Plus the old admin-pool view (SUBMITTED/REVIEWED) for tasks NOT assigned by them
+// The controller passes teacher from req.user, so we receive it here.
 
-/**
- * Teachers only see SUBMITTED + REVIEWED tasks — never DRAFT or SCORED.
- * Delegates to repo.findTasks() with status scoping enforced here in the UC.
- */
-export const teacherListTasksUC = async ({ status, page, limit } = {}) => {
-    logger.debug('teacherListTasksUC', { status });
+export const teacherListTasksUC = async ({ teacherId, status, page, limit } = {}) => {
+    logger.debug('teacherListTasksUC', { teacherId, status });
 
-    // If a specific status is requested, only honour it if it's in the allowed set
-    const resolvedStatus = status && TEACHER_ALLOWED_STATUSES.includes(status)
-        ? status
-        : undefined;
-
-    // Query each allowed status and merge if no specific status requested
-    if (resolvedStatus) {
-        const tasks = await findTasks({}, { status: resolvedStatus, page, limit });
-        return tasks;
+    // Build a mongo filter for optional status
+    const filter = {};
+    if (status && Object.values(WritingStatus).includes(status)) {
+        filter.status = status;
     }
 
-    // No valid status filter — fetch SUBMITTED and REVIEWED separately and merge
-    const [submitted, reviewed] = await Promise.all([
-        findTasks({}, { status: 'SUBMITTED', page, limit }),
-        findTasks({}, { status: 'REVIEWED',  page, limit }),
-    ]);
+    // Only return tasks this teacher assigned — never other teachers' tasks
+    const tasks = await findByAssignedBy(teacherId, filter, { page, limit });
 
-    const merged = [...submitted, ...reviewed]
-        .sort((a, b) => new Date(b._updatedAt) - new Date(a._updatedAt));
-
-    logger.debug('teacherListTasksUC: done', { count: merged.length });
-    return merged;
+    logger.debug('teacherListTasksUC: done', { count: tasks.length });
+    return tasks;
 };

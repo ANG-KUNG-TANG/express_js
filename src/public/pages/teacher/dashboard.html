@@ -6,18 +6,143 @@
     <title>Teacher Dashboard</title>
     <link rel="stylesheet" href="/css/base.css" />
     <link rel="stylesheet" href="/css/pages/admin.css" />
+    <style>
+        /* ── Queue rows ── */
+        .queue-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .queue-row:last-child { border-bottom: none; }
+        .queue-row__info { flex: 1; min-width: 0; }
+        .queue-row__title {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text1);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .queue-row__meta {
+            display: block;
+            font-size: 12px;
+            color: var(--text3);
+            margin-top: 3px;
+        }
+
+        /* ── Data table ── */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--text3);
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table td {
+            padding: 11px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text2);
+            vertical-align: middle;
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table .col-title {
+            color: var(--text1);
+            font-weight: 500;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .data-table .col-mono { font-family: var(--font-mono); font-size: 12px; }
+        .data-table .actions-cell { white-space: nowrap; }
+
+        /* ── Student cards ── */
+        .student-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .student-card:last-child { border-bottom: none; }
+        .student-card__avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--teal, #2dd4bf), #06b6d4);
+            color: #fff;
+            font-weight: 700; font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .student-card__info { flex: 1; min-width: 0; }
+        .student-card__name {
+            display: block;
+            font-size: 14px; font-weight: 600;
+            color: var(--text1);
+        }
+        .student-card__email {
+            display: block;
+            font-size: 12px; color: var(--text3);
+        }
+        .student-card__stats { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .stat-pill {
+            font-size: 11px;
+            padding: 2px 9px;
+            border-radius: 20px;
+            background: var(--surface2, #f3f4f6);
+            color: var(--text2);
+            border: 1px solid var(--border);
+        }
+        .stat-pill--warning {
+            background: rgba(245,158,11,.1);
+            color: var(--amber, #d97706);
+            border-color: rgba(245,158,11,.25);
+        }
+        .stat-pill--success {
+            background: rgba(16,185,129,.1);
+            color: var(--green, #059669);
+            border-color: rgba(16,185,129,.25);
+        }
+
+        /* ── Empty / error ── */
+        .empty-state  { padding: 32px 0; text-align: center; color: var(--text3); font-size: 14px; }
+        .error-state  { padding: 16px; color: var(--red, #dc2626); font-size: 13px; }
+
+        /* ── Spinner (used in submit button) ── */
+        .spinner {
+            display: inline-block;
+            width: 12px; height: 12px;
+            border: 2px solid rgba(255,255,255,.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin .6s linear infinite;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
     <div id="navbar"></div>
     <main class="admin-layout">
 
         <header class="admin-header">
-            <h1 class="admin-header__title">Dashboard</h1>
-            <span class="admin-header__sub">Your review queue</span>
-            <span class="admin-header__badge" style="border-color:var(--teal);color:var(--teal);background:rgba(45,212,191,.1)">TEACHER</span>
+            <h1 class="admin-header__title">Teacher Dashboard</h1>
+            <span class="admin-header__sub">Manage your students and review queue</span>
+            <span class="admin-header__badge"
+                  style="border-color:var(--teal);color:var(--teal);background:rgba(45,212,191,.1)">
+                TEACHER
+            </span>
         </header>
 
-        <!-- Stats -->
+        <!-- ── Stats ── -->
         <section class="stats-bar" style="grid-template-columns:repeat(3,1fr)">
             <div class="stat-card stat-card--warning" id="stat-submitted">
                 <span class="stat-card__value">—</span>
@@ -33,7 +158,18 @@
             </div>
         </section>
 
-        <!-- Pending queue -->
+        <!-- ── Students — assign tasks here ── -->
+        <section class="admin-panel">
+            <div class="admin-panel__header">
+                <div>
+                    <h2 class="admin-panel__title">👩‍🎓 Your Students</h2>
+                    <span class="admin-panel__sub">Click "+ Assign Task" to send a task and notify the student</span>
+                </div>
+            </div>
+            <div id="students-list"><p class="loading">Loading…</p></div>
+        </section>
+
+        <!-- ── Pending review queue ── -->
         <section class="admin-panel">
             <div class="admin-panel__header">
                 <div>
@@ -44,17 +180,18 @@
             <div id="pending-list"><p class="loading">Loading…</p></div>
         </section>
 
-        <!-- All tasks -->
+        <!-- ── All tasks ── -->
         <section class="admin-panel">
             <div class="admin-panel__header">
                 <h2 class="admin-panel__title">All Tasks</h2>
                 <div class="admin-panel__controls">
                     <input id="task-search" type="text" class="input input--sm"
                         placeholder="Search by title…" style="width:200px" />
-                    <select id="task-status-filter" class="select select--sm" style="width:150px">
-                        <option value="">Submitted + Reviewed</option>
+                    <select id="task-status-filter" class="select select--sm" style="width:160px">
+                        <option value="">All statuses</option>
                         <option value="SUBMITTED">Submitted</option>
                         <option value="REVIEWED">Reviewed</option>
+                        <option value="SCORED">Scored</option>
                     </select>
                 </div>
             </div>

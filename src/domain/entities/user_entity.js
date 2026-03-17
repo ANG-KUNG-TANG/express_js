@@ -27,7 +27,8 @@ export class User{
         examDate = null,
         attachments = [],
         createdAt = new Date(),
-        updatedAt = new Date()
+        updatedAt = new Date(),
+        assignedTeacher = null,
     }){
         this._validateName(name);
         this._validateEmail(email);
@@ -46,6 +47,7 @@ export class User{
         this._examDate = examDate;
         this._createdAt = createdAt;
         this._updatedAt = updatedAt;
+        this._assignedTeacher = assignedTeacher ?? null;
     }
 
     _validateName(name){
@@ -86,5 +88,6 @@ export class User{
     get examDate()    { return this._examDate; }
     get attachments() { return this._attachments; }
     get createdAt(){ return this._createdAt }
-    get updatedAt(){ return this._updatedAt }
+    get updatedAt()         { return this._updatedAt }
+    get assignedTeacher()   { return this._assignedTeacher }
 }

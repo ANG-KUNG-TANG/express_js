@@ -1,79 +1,110 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Review Task</title>
-    <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/pages/admin.css" />
-</head>
-<body>
-    <div id="navbar"></div>
-    <main class="review-layout">
+import { requireAdmin, getParam } from '../../core/router.js';
+import { apiFetch }               from '../../core/api.js';
+import { initNavbar }             from '../../../components/navbar.js';
+import { statusBadge }            from '../../../components/statusBadge.js';
+import { toast }                  from '../../core/toast.js';
 
-        <header class="admin-header">
-            <a href="/pages/admin/tasks.html" class="back-link">All Tasks</a>
-            <h1 class="admin-header__title">Review Task</h1>
-            <div id="task-status"></div>
-        </header>
+requireAdmin();
+initNavbar();
 
-        <!-- Task info -->
-        <div class="review-card">
-            <div class="review-card__header">
-                <h2 class="review-card__title" id="task-title">Loading…</h2>
-                <span id="task-type" style="font-family:var(--font-mono);font-size:12px;color:var(--text3)"></span>
-            </div>
-            <div class="review-card__body">
-                <div class="review-meta">
-                    <span class="review-meta__item"><strong>Word Count:</strong> <span id="task-wordcount">—</span></span>
-                </div>
+const id = getParam('id');
+if (!id) window.location.href = '/pages/admin/tasks.html';
 
-                <p class="review-section-title">Question Prompt</p>
-                <div class="review-prose" id="task-prompt" style="margin-bottom:20px;max-height:160px">—</div>
+const statusEl      = document.getElementById('task-status');
+const titleEl       = document.getElementById('task-title');
+const typeEl        = document.getElementById('task-type');
+const promptEl      = document.getElementById('task-prompt');
+const submissionEl  = document.getElementById('task-submission');
+const wordCountEl   = document.getElementById('task-wordcount');
+const feedbackEl    = document.getElementById('feedback-input');
+const reviewBtn     = document.getElementById('review-btn');
+const scoreInput    = document.getElementById('score-input');
+const scoreBtn      = document.getElementById('score-btn');
+const reviewSection = document.getElementById('review-section');
+const scoreSection  = document.getElementById('score-section');
 
-                <p class="review-section-title">Student Submission</p>
-                <div class="review-prose" id="task-submission">—</div>
-            </div>
-        </div>
+// FIX: was double-fetching — now just fetches the single task directly
+const loadTask = async () => {
+    try {
+        const res = await apiFetch(`/api/writing-tasks/${id}`);
+        renderTask(res?.data ?? res);
+    } catch (err) {
+        toast(err.message, 'error');
+    }
+};
 
-        <!-- Review section -->
-        <div class="review-card" id="review-section">
-            <div class="review-card__header">
-                <h2 class="review-card__title">Feedback</h2>
-            </div>
-            <div class="review-card__body">
-                <div class="form-group" style="margin-bottom:16px">
-                    <label class="form-label">Your Feedback</label>
-                    <textarea id="feedback-input" class="textarea"
-                        placeholder="Write detailed feedback for the student…"></textarea>
-                </div>
-                <button id="review-btn" class="btn btn--warning">Save Review</button>
-            </div>
-        </div>
+const renderTask = (task) => {
+    if (!task) { toast('Task not found', 'error'); return; }
 
-        <!-- Score section -->
-        <div class="review-card" id="score-section">
-            <div class="review-card__header">
-                <h2 class="review-card__title">Band Score</h2>
-            </div>
-            <div class="review-card__body">
-                <div id="final-score" class="band-score-display" style="display:none;margin-bottom:16px">
-                    Band —
-                </div>
-                <div style="display:flex;gap:12px;align-items:flex-end">
-                    <div class="form-group">
-                        <label class="form-label">Score (0–9)</label>
-                        <input id="score-input" type="number" class="input"
-                            min="0" max="9" step="0.5" style="width:120px"
-                            placeholder="e.g. 6.5" />
-                    </div>
-                    <button id="score-btn" class="btn btn--primary">Save Score</button>
-                </div>
-            </div>
-        </div>
+    titleEl.textContent      = task._title          ?? task.title          ?? '—';
+    typeEl.textContent       = `${task._taskType    ?? task.taskType       ?? '—'} | ${task._examType ?? task.examType ?? '—'}`;
+    statusEl.innerHTML       = statusBadge(task._status ?? task.status);
+    promptEl.textContent     = task._questionPrompt ?? task.questionPrompt ?? '—';
+    submissionEl.textContent = task._submissionText ?? task.submissionText ?? '(No submission yet)';
+    wordCountEl.textContent  = (task._wordCount ?? task.wordCount)
+        ? `${task._wordCount ?? task.wordCount} words` : '—';
 
-    </main>
-    <div id="toast-container"></div>
-    <script type="module" src="/js/pages/admin/review.js"></script>
-</body>
-</html>
+    const feedback = task._feedback ?? task.feedback;
+    if (feedback) feedbackEl.value = feedback;
+
+    const status    = task._status ?? task.status;
+    const canReview = status === 'SUBMITTED';
+    const canScore  = status === 'REVIEWED';
+    const isScored  = status === 'SCORED';
+
+    reviewSection.style.display = (canReview || feedback) ? 'block' : 'none';
+    scoreSection.style.display  = (canScore || isScored)  ? 'block' : 'none';
+    reviewBtn.disabled          = !canReview;
+    scoreBtn.disabled           = !canScore;
+
+    if (isScored) {
+        const score = task._bandScore ?? task.bandScore;
+        scoreInput.value    = score;
+        scoreInput.disabled = true;
+        const finalEl = document.getElementById('final-score');
+        if (finalEl) { finalEl.textContent = `Band ${score}`; finalEl.style.display = 'flex'; }
+    }
+};
+
+reviewBtn?.addEventListener('click', async () => {
+    const feedback = feedbackEl.value.trim();
+    if (!feedback) { toast('Please enter feedback before reviewing.', 'error'); return; }
+    reviewBtn.disabled    = true;
+    reviewBtn.textContent = 'Saving…';
+    try {
+        await apiFetch(`/api/admin/writing-tasks/${id}/review`, {
+            method: 'PATCH',
+            body: JSON.stringify({ feedback }),
+        });
+        toast('Review saved! You can now score this task.');
+        loadTask();
+    } catch (err) {
+        toast(err.message, 'error');
+        reviewBtn.disabled    = false;
+        reviewBtn.textContent = 'Save Review';
+    }
+});
+
+scoreBtn?.addEventListener('click', async () => {
+    const bandScore = parseFloat(scoreInput.value);
+    if (isNaN(bandScore) || bandScore < 0 || bandScore > 9) {
+        toast('Band score must be between 0 and 9.', 'error'); return;
+    }
+    scoreBtn.disabled    = true;
+    scoreBtn.textContent = 'Saving…';
+    try {
+        await apiFetch(`/api/admin/writing-tasks/${id}/score`, {
+            method: 'PATCH',
+            body: JSON.stringify({ bandScore }),
+        });
+        toast(`Task scored: Band ${bandScore}`);
+        loadTask();
+    } catch (err) {
+        toast(err.message, 'error');
+        scoreBtn.disabled    = false;
+        scoreBtn.textContent = 'Save Score';
+    }
+});
+
+// FIX: dashboard.js also had wrong navbar import path — add to dashboard.js fix list
+loadTask();

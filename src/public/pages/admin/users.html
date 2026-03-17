@@ -1,37 +1,205 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>User Management</title>
-    <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/pages/admin.css" />
-</head>
-<body>
-    <div id="navbar"></div>
-    <main class="admin-layout">
+/**
+ * admin/users.js — extended with link-teacher functionality
+ *
+ * New: "Link to teacher" button on student rows opens a prompt
+ * to enter the teacher's userId and calls
+ * PATCH /api/admin/users/:studentId/link-teacher { teacherId }
+ */
 
-        <header class="admin-header">
-            <a href="/pages/admin/dashboard.html" class="back-link">Dashboard</a>
-            <h1 class="admin-header__title">User Management</h1>
-            <span class="admin-header__badge">ADMIN</span>
-        </header>
+import { requireAdmin } from '../../core/router.js';
+import { apiFetch }     from '../../core/api.js';
+import { initNavbar }   from '../../../components/navbar.js';
+import { toast }        from '../../core/toast.js';
 
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <h2 class="admin-panel__title">All Users</h2>
-                <div class="admin-panel__controls">
-                    <input id="search-email" type="text" class="input input--sm"
-                        placeholder="Search by email…" style="width:240px" />
-                    <button id="search-btn"       class="btn btn--secondary btn--sm">Search</button>
-                    <button id="clear-search-btn" class="btn btn--ghost btn--sm">Clear</button>
-                </div>
+requireAdmin();
+initNavbar();
+
+const fmt = d => d
+    ? new Date(d).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' })
+    : '—';
+
+const roleBadge = r => {
+    const cls = { admin:'badge--admin', teacher:'badge--teacher', user:'badge--default' };
+    return `<span class="badge ${cls[r] ?? 'badge--default'}">${(r ?? '—').toUpperCase()}</span>`;
+};
+
+// ── Load all users ────────────────────────────────────────────────────────────
+
+const loadUsers = async () => {
+    const el = document.getElementById('users-list');
+    el.innerHTML = '<p class="loading">Loading…</p>';
+    try {
+        const { data: users } = await apiFetch('/api/admin/users');
+        renderUsers(users ?? []);
+    } catch (err) {
+        el.innerHTML = '<p class="error-state">Failed to load users.</p>';
+        toast(err.message, 'error');
+    }
+};
+
+// ── Search by email ───────────────────────────────────────────────────────────
+
+const searchByEmail = async () => {
+    const email = document.getElementById('search-email').value.trim();
+    if (!email) { loadUsers(); return; }
+    try {
+        const { data: user } = await apiFetch(`/api/admin/users/email/${encodeURIComponent(email)}`);
+        renderUsers(user ? [user] : []);
+    } catch {
+        document.getElementById('users-list').innerHTML = '<p class="empty-state">No user found with that email.</p>';
+    }
+};
+
+// ── Render table ──────────────────────────────────────────────────────────────
+
+const renderUsers = (users) => {
+    const el = document.getElementById('users-list');
+    if (!users.length) { el.innerHTML = '<p class="empty-state">No users found.</p>'; return; }
+
+    el.innerHTML = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th><th>Email</th><th>Role</th><th>Assigned Teacher</th><th>Joined</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${users.map(u => {
+                    const uid  = u.id ?? u._id;
+                    const role = u.role ?? u._role;
+                    const hasTeacher = !!(u.assignedTeacher);
+                    return `
+                    <tr data-id="${uid}">
+                        <td class="col-title">${u.name ?? u._name}</td>
+                        <td class="col-mono">${u.email}</td>
+                        <td>${roleBadge(role)}</td>
+                        <td style="font-size:.75rem;color:var(--text3)">
+                            ${hasTeacher
+                                ? `<span style="color:var(--green);font-weight:600">Linked</span>`
+                                : `<span style="color:var(--text3)">—</span>`}
+                        </td>
+                        <td class="col-mono">${fmt(u.createdAt ?? u._createdAt)}</td>
+                        <td class="actions-cell">
+                            ${role !== 'admin' ? `
+                                <button class="btn btn--secondary btn--xs" data-action="promote" data-id="${uid}">→ Admin</button>` : ''}
+                            ${role === 'user' ? `
+                                <button class="btn btn--info btn--xs" data-action="assign-teacher" data-id="${uid}">→ Teacher</button>
+                                <button class="btn btn--xs" style="background:var(--green-dim);color:var(--green);border-color:rgba(5,150,105,.3)"
+                                    data-action="link-teacher" data-id="${uid}">Link teacher</button>` : ''}
+                            ${role === 'user' && hasTeacher ? `
+                                <button class="btn btn--ghost btn--xs" data-action="unlink-teacher" data-id="${uid}">Unlink</button>` : ''}
+                            ${role !== 'admin' ? `
+                                <button class="btn btn--danger btn--xs" data-action="delete" data-id="${uid}">Delete</button>` : ''}
+                        </td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>`;
+
+    el.querySelectorAll('[data-action]').forEach(btn =>
+        btn.addEventListener('click', () => {
+            const { action, id } = btn.dataset;
+            if (action === 'promote')        promoteUser(id);
+            if (action === 'assign-teacher') assignTeacherRole(id);
+            if (action === 'link-teacher')   openLinkTeacherModal(id);
+            if (action === 'unlink-teacher') unlinkTeacher(id);
+            if (action === 'delete')         deleteUser(id);
+        })
+    );
+};
+
+// ── Actions ───────────────────────────────────────────────────────────────────
+
+const promoteUser = async (id) => {
+    if (!confirm('Promote to Admin? This cannot be undone.')) return;
+    try { await apiFetch(`/api/admin/users/${id}/promote`, { method:'PATCH' }); toast('Promoted to Admin.'); loadUsers(); }
+    catch (err) { toast(err.message, 'error'); }
+};
+
+const assignTeacherRole = async (id) => {
+    if (!confirm('Assign Teacher role to this user?')) return;
+    try { await apiFetch(`/api/admin/users/${id}/assign-teacher`, { method:'PATCH' }); toast('Teacher role assigned.'); loadUsers(); }
+    catch (err) { toast(err.message, 'error'); }
+};
+
+const deleteUser = async (id) => {
+    if (!confirm('Delete this user? Cannot be undone.')) return;
+    try { await apiFetch(`/api/admin/users/${id}`, { method:'DELETE' }); toast('User deleted.'); loadUsers(); }
+    catch (err) { toast(err.message, 'error'); }
+};
+
+const unlinkTeacher = async (studentId) => {
+    if (!confirm('Remove this student from their teacher?')) return;
+    try {
+        await apiFetch(`/api/admin/users/${studentId}/unlink-teacher`, { method:'PATCH' });
+        toast('Student unlinked from teacher.');
+        loadUsers();
+    } catch (err) { toast(err.message, 'error'); }
+};
+
+// ── Link teacher modal ────────────────────────────────────────────────────────
+
+const openLinkTeacherModal = (studentId) => {
+    // Remove any existing modal
+    document.getElementById('link-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'link-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:flex;align-items:center;justify-content:center';
+    modal.innerHTML = `
+        <div style="background:var(--surface);border-radius:14px;padding:28px;width:100%;max-width:420px;box-shadow:var(--sh-lg)">
+            <h2 style="font-size:1.1rem;margin:0 0 6px">Link student to a teacher</h2>
+            <p style="font-size:.82rem;color:var(--text2);margin:0 0 20px">
+                Enter the teacher's user ID. The student will then appear in that teacher's student list.
+            </p>
+            <div class="form-group">
+                <label class="form-label">Teacher user ID (ObjectId)</label>
+                <input id="link-teacher-id" type="text" class="input" placeholder="e.g. 64abc123..." />
             </div>
-            <div id="users-list"><p class="loading">Loading…</p></div>
-        </section>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+                <button id="link-cancel" class="btn btn--ghost btn--sm">Cancel</button>
+                <button id="link-confirm" class="btn btn--primary btn--sm">Link</button>
+            </div>
+        </div>`;
 
-    </main>
-    <div id="toast-container"></div>
-    <script type="module" src="/js/pages/admin/users.js"></script>
-</body>
-</html>
+    document.body.appendChild(modal);
+
+    document.getElementById('link-cancel').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+
+    document.getElementById('link-confirm').addEventListener('click', async () => {
+        const teacherId = document.getElementById('link-teacher-id').value.trim();
+        if (!teacherId) { toast('Please enter a teacher ID.', 'error'); return; }
+
+        const btn = document.getElementById('link-confirm');
+        btn.disabled = true; btn.textContent = 'Linking…';
+
+        try {
+            await apiFetch(`/api/admin/users/${studentId}/link-teacher`, {
+                method: 'PATCH',
+                body: JSON.stringify({ teacherId }),
+            });
+            toast('Student linked to teacher successfully.');
+            modal.remove();
+            loadUsers();
+        } catch (err) {
+            toast(err.message, 'error');
+            btn.disabled = false; btn.textContent = 'Link';
+        }
+    });
+};
+
+// ── Event listeners ───────────────────────────────────────────────────────────
+
+document.getElementById('search-btn').addEventListener('click', searchByEmail);
+document.getElementById('search-email').addEventListener('keydown', e => {
+    if (e.key === 'Enter') searchByEmail();
+});
+document.getElementById('clear-search-btn').addEventListener('click', () => {
+    document.getElementById('search-email').value = '';
+    loadUsers();
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+loadUsers();

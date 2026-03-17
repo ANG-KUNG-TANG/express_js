@@ -10,8 +10,10 @@ export const initNavbar = () => {
     const user = getUser();
     if (!user) return;
 
-    const initial = user.name?.[0]?.toUpperCase() || 'U';
-    const roleTxt = isAdmin() ? 'Admin' : 'Student';
+    const initial  = user.name?.[0]?.toUpperCase() || 'U';
+    const role     = user.role ?? user._role ?? '';
+    const isTeacher = () => role === 'teacher';
+    const roleTxt  = isAdmin() ? 'Admin' : isTeacher() ? 'Teacher' : 'Student';
 
     const nav = document.createElement('header');
     nav.className = 'topnav';
@@ -46,6 +48,11 @@ export const initNavbar = () => {
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
                     Admin
                 </a>` : ''}
+                ${isTeacher() ? `
+                <a href="/pages/teacher/dashboard.html" class="topnav-tab" data-path="/pages/teacher">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Teacher
+                </a>` : ''}
             </nav>
         </div>
 
@@ -77,7 +84,7 @@ export const initNavbar = () => {
                     <div class="profile-dropdown-identity">
                         <span class="profile-dropdown-name">${user.name || 'User'}</span>
                         <span class="profile-dropdown-email">${user.email || ''}</span>
-                        <span class="profile-dropdown-badge ${isAdmin() ? 'badge-admin' : 'badge-student'}">${roleTxt}</span>
+                        <span class="profile-dropdown-badge ${isAdmin() ? 'badge-admin' : isTeacher() ? 'badge-teacher' : 'badge-student'}">${roleTxt}</span>
                     </div>
                 </div>
 
@@ -124,6 +131,13 @@ export const initNavbar = () => {
                         <a href="/pages/admin/dashboard.html" class="profile-menu-item" role="menuitem">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
                             Admin Panel
+                        </a>
+                    </li>` : ''}
+                    ${isTeacher() ? `
+                    <li role="none">
+                        <a href="/pages/teacher/dashboard.html" class="profile-menu-item" role="menuitem">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            Teacher Panel
                         </a>
                     </li>` : ''}
                 </ul>
@@ -201,131 +215,37 @@ export const initNavbar = () => {
                 border-bottom: 1px solid rgba(0,0,0,0.06);
             }
             .profile-dropdown-avatar {
-                width: 46px;
-                height: 46px;
+                width: 46px; height: 46px;
                 border-radius: 50%;
                 background: linear-gradient(135deg, #4f6ef7, #8b5cf6);
-                color: #fff;
-                font-size: 18px;
-                font-weight: 700;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                color: #fff; font-size: 18px; font-weight: 700;
+                display: flex; align-items: center; justify-content: center;
                 flex-shrink: 0;
                 box-shadow: 0 2px 8px rgba(79,110,247,0.35);
                 letter-spacing: -0.5px;
             }
-            .profile-dropdown-identity {
-                display: flex;
-                flex-direction: column;
-                gap: 2px;
-                min-width: 0;
-            }
-            .profile-dropdown-name {
-                font-size: 14px;
-                font-weight: 700;
-                color: #1a1a2e;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .profile-dropdown-email {
-                font-size: 11.5px;
-                color: #666;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .profile-dropdown-badge {
-                display: inline-block;
-                font-size: 10px;
-                font-weight: 600;
-                padding: 1px 7px;
-                border-radius: 20px;
-                letter-spacing: 0.4px;
-                width: fit-content;
-                margin-top: 2px;
-            }
-            .badge-admin { background: #fef3cd; color: #92600a; border: 1px solid #f5d78e; }
+            .profile-dropdown-identity { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+            .profile-dropdown-name { font-size: 14px; font-weight: 700; color: #1a1a2e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .profile-dropdown-email { font-size: 11.5px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .profile-dropdown-badge { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 20px; letter-spacing: 0.4px; width: fit-content; margin-top: 2px; }
+            .badge-admin   { background: #fef3cd; color: #92600a; border: 1px solid #f5d78e; }
+            .badge-teacher { background: #e0fdf4; color: #065f46; border: 1px solid #6ee7b7; }
             .badge-student { background: #e0eaff; color: #3451c7; border: 1px solid #c7d7f9; }
-            .profile-dropdown-stats {
-                display: flex;
-                align-items: center;
-                padding: 12px 18px;
-                border-bottom: 1px solid rgba(0,0,0,0.06);
-            }
-            .profile-stat {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 1px;
-            }
-            .profile-stat-value {
-                font-size: 16px;
-                font-weight: 700;
-                color: #1a1a2e;
-                line-height: 1;
-            }
-            .profile-stat-label {
-                font-size: 10.5px;
-                color: #888;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            .profile-stat-divider {
-                width: 1px;
-                height: 28px;
-                background: rgba(0,0,0,0.08);
-            }
-            .profile-dropdown-menu {
-                list-style: none;
-                margin: 0;
-                padding: 6px 0;
-            }
-            .profile-menu-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 9px 18px;
-                font-size: 13px;
-                color: #333;
-                text-decoration: none;
-                transition: background 0.12s, color 0.12s;
-            }
-            .profile-menu-item:hover {
-                background: #f0f4ff;
-                color: #4f6ef7;
-            }
+            .profile-dropdown-stats { display: flex; align-items: center; padding: 12px 18px; border-bottom: 1px solid rgba(0,0,0,0.06); }
+            .profile-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+            .profile-stat-value { font-size: 16px; font-weight: 700; color: #1a1a2e; line-height: 1; }
+            .profile-stat-label { font-size: 10.5px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+            .profile-stat-divider { width: 1px; height: 28px; background: rgba(0,0,0,0.08); }
+            .profile-dropdown-menu { list-style: none; margin: 0; padding: 6px 0; }
+            .profile-menu-item { display: flex; align-items: center; gap: 10px; padding: 9px 18px; font-size: 13px; color: #333; text-decoration: none; transition: background 0.12s, color 0.12s; }
+            .profile-menu-item:hover { background: #f0f4ff; color: #4f6ef7; }
             .profile-menu-item svg { opacity: 0.6; flex-shrink: 0; transition: opacity 0.12s; }
             .profile-menu-item:hover svg { opacity: 1; }
-            .profile-dropdown-footer {
-                padding: 6px 8px 8px;
-                border-top: 1px solid rgba(0,0,0,0.06);
-            }
-            .profile-logout-btn {
-                width: 100%;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 9px 10px;
-                font-size: 13px;
-                color: #d0321e;
-                background: none;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                transition: background 0.12s;
-                text-align: left;
-            }
+            .profile-dropdown-footer { padding: 6px 8px 8px; border-top: 1px solid rgba(0,0,0,0.06); }
+            .profile-logout-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 10px; font-size: 13px; color: #d0321e; background: none; border: none; border-radius: 8px; cursor: pointer; transition: background 0.12s; text-align: left; }
             .profile-logout-btn:hover { background: #fff0ee; }
             .profile-logout-btn svg { opacity: 0.75; }
-            .profile-backdrop {
-                display: none;
-                position: fixed;
-                inset: 0;
-                z-index: 998;
-            }
+            .profile-backdrop { display: none; position: fixed; inset: 0; z-index: 998; }
             .profile-backdrop.open { display: block; }
         `;
         document.head.appendChild(style);
@@ -335,9 +255,7 @@ export const initNavbar = () => {
     const path = window.location.pathname;
     nav.querySelectorAll('.topnav-tab').forEach(tab => {
         const tabPath = tab.dataset.path;
-        if (tabPath && path.startsWith(tabPath)) {
-            tab.classList.add('active');
-        }
+        if (tabPath && path.startsWith(tabPath)) tab.classList.add('active');
     });
 
     // ── Profile dropdown logic ──
@@ -345,18 +263,8 @@ export const initNavbar = () => {
     const dropdown = document.getElementById('profile-dropdown');
     const backdrop = document.getElementById('profile-backdrop');
 
-    const openProfile  = () => {
-        dropdown.classList.add('open');
-        backdrop.classList.add('open');
-        trigger.setAttribute('aria-expanded', 'true');
-        dropdown.setAttribute('aria-hidden', 'false');
-    };
-    const closeProfile = () => {
-        dropdown.classList.remove('open');
-        backdrop.classList.remove('open');
-        trigger.setAttribute('aria-expanded', 'false');
-        dropdown.setAttribute('aria-hidden', 'true');
-    };
+    const openProfile  = () => { dropdown.classList.add('open'); backdrop.classList.add('open'); trigger.setAttribute('aria-expanded', 'true'); dropdown.setAttribute('aria-hidden', 'false'); };
+    const closeProfile = () => { dropdown.classList.remove('open'); backdrop.classList.remove('open'); trigger.setAttribute('aria-expanded', 'false'); dropdown.setAttribute('aria-hidden', 'true'); };
     const toggleProfile = () => dropdown.classList.contains('open') ? closeProfile() : openProfile();
 
     trigger.addEventListener('click', toggleProfile);
@@ -367,7 +275,6 @@ export const initNavbar = () => {
     backdrop.addEventListener('click', closeProfile);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeProfile(); });
 
-    // Populate stats from user.stats if available
     if (user.stats) {
         const sv = v => v != null ? v : '—';
         const taskEl   = document.getElementById('stat-tasks');
@@ -378,30 +285,46 @@ export const initNavbar = () => {
         if (streakEl) streakEl.textContent = user.stats.streak != null ? `${user.stats.streak}d` : '—';
     }
 
-    document.getElementById('logout-btn').addEventListener('click', () => {
-        closeProfile();
-        logOut();
-    });
+    document.getElementById('logout-btn').addEventListener('click', () => { closeProfile(); logOut(); });
 
-    // ── Notification bell ────────────────────────────────────────────────────
+    // ── Notification bell ─────────────────────────────────────────────────
     _initNotificationBell();
 };
 
-// ── Notification system (self-contained, no extra imports needed) ─────────────
+// ── Notification system (self-contained) ─────────────────────────────────────
 function _initNotificationBell() {
     const TYPE_ICONS = {
+        // ── existing ──
         test_result:      '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm2 10a1 1 0 10-2 0v3a1 1 0 102 0v-3zm2-3a1 1 0 011 1v5a1 1 0 11-2 0v-5a1 1 0 011-1zm4-1a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd"/></svg>',
         exam_reminder:    '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>',
         score_available:  '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>',
         practice_ready:   '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>',
         password_changed: '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>',
         account_alert:    '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>',
+        // ── teacher assignment flow ── NEW
+        task_assigned:    '<svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>',
+        task_accepted:    '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>',
+        task_declined:    '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>',
+        task_submitted:   '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>',
+        task_reminder:    '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>',
     };
+
     const TYPE_COLORS = {
-        test_result: '#eff6ff:#2563eb', exam_reminder: '#fff7ed:#ea580c',
-        score_available: '#f0fdf4:#16a34a', practice_ready: '#fdf4ff:#9333ea',
-        password_changed: '#f0f9ff:#0284c7', account_alert: '#fff1f2:#e11d48',
+        // ── existing ──
+        test_result:      '#eff6ff:#2563eb',
+        exam_reminder:    '#fff7ed:#ea580c',
+        score_available:  '#f0fdf4:#16a34a',
+        practice_ready:   '#fdf4ff:#9333ea',
+        password_changed: '#f0f9ff:#0284c7',
+        account_alert:    '#fff1f2:#e11d48',
+        // ── teacher assignment flow ── NEW
+        task_assigned:    '#fffbeb:#d97706',
+        task_accepted:    '#f0fdf4:#16a34a',
+        task_declined:    '#fff1f2:#e11d48',
+        task_submitted:   '#eff6ff:#2563eb',
+        task_reminder:    '#fff7ed:#ea580c',
     };
+
     const timeAgo = (d) => {
         const m = Math.floor((Date.now() - new Date(d)) / 60000);
         if (m < 1) return 'Just now'; if (m < 60) return m + 'm ago';
@@ -412,13 +335,13 @@ function _initNotificationBell() {
 
     let notis = [], unread = 0, open = false;
 
-    const bell   = document.getElementById('notiBell');
-    const badge  = document.getElementById('notiBadge');
+    const bell  = document.getElementById('notiBell');
+    const badge = document.getElementById('notiBadge');
     if (!bell) return;
 
     const updateBadge = () => {
-        badge.textContent = unread > 99 ? '99+' : unread;
-        badge.style.display = unread > 0 ? '' : 'none';
+        badge.textContent    = unread > 99 ? '99+' : unread;
+        badge.style.display  = unread > 0 ? '' : 'none';
     };
 
     // ── Inject bell + panel styles once ──
@@ -445,8 +368,7 @@ function _initNotificationBell() {
             .noti-panel-head{display:flex;align-items:center;justify-content:space-between;
                 padding:14px 16px 10px;border-bottom:1px solid #f1f5f9;flex-shrink:0;}
             .noti-panel-title{font-size:13.5px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:7px;}
-            .noti-chip{font-size:10.5px;font-weight:700;background:#eff2ff;color:#4f6ef7;
-                padding:1px 7px;border-radius:99px;}
+            .noti-chip{font-size:10.5px;font-weight:700;background:#eff2ff;color:#4f6ef7;padding:1px 7px;border-radius:99px;}
             .noti-markall{font-size:11.5px;color:#4f6ef7;background:none;border:none;cursor:pointer;
                 font-weight:500;padding:3px 7px;border-radius:6px;transition:background .13s;}
             .noti-markall:hover{background:#eff2ff;} .noti-markall:disabled{opacity:.4;cursor:default;}
@@ -458,12 +380,10 @@ function _initNotificationBell() {
             .noti-item.unread{background:#fafbff;}
             .noti-item.unread::before{content:'';position:absolute;left:5px;top:50%;transform:translateY(-50%);
                 width:5px;height:5px;background:#4f6ef7;border-radius:50%;}
-            .noti-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;
-                justify-content:center;flex-shrink:0;}
+            .noti-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
             .noti-ico svg{width:16px;height:16px;}
             .noti-body{flex:1;min-width:0;}
-            .noti-t{font-size:12.5px;font-weight:600;color:#0f172a;margin:0 0 2px;
-                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+            .noti-t{font-size:12.5px;font-weight:600;color:#0f172a;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
             .noti-m{font-size:11.5px;color:#64748b;margin:0;line-height:1.4;
                 display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
             .noti-time{font-size:10.5px;color:#94a3b8;margin-top:3px;display:block;}
@@ -517,7 +437,7 @@ function _initNotificationBell() {
             return;
         }
         list.innerHTML = notis.map(n => `
-            <div class="noti-item ${n.isRead ? '' : 'unread'}" data-id="${n.id}">
+            <div class="noti-item ${n.isRead ? '' : 'unread'}" data-id="${n._id ?? n.id}">
                 ${iconFor(n.type)}
                 <div class="noti-body">
                     <p class="noti-t">${n.title}</p>
@@ -553,7 +473,7 @@ function _initNotificationBell() {
     };
 
     const markOne = async (id) => {
-        const n = notis.find(x => x.id === id);
+        const n = notis.find(x => (x._id ?? x.id) === id);
         if (!n || n.isRead) return;
         try {
             await fetch(apiBase + '/notifications/' + id + '/read', { method: 'PATCH', headers: authHeader() });

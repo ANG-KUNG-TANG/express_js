@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>IELTS Backend System Map</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#1a1a2e;font-family:Arial,sans-serif;overflow:hidden;height:100vh}
+#wrap{width:100vw;height:100vh;position:relative;overflow:hidden;cursor:grab}
+#wrap:active{cursor:grabbing}
+canvas{display:block;position:absolute;top:0;left:0}
+#ui{position:absolute;top:12px;left:12px;z-index:10;display:flex;flex-direction:column;gap:8px}
+#legend{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 14px;backdrop-filter:blur(4px)}
+.leg{display:flex;align-items:center;gap:8px;font-size:12px;color:#ddd;cursor:pointer;padding:3px 0;user-select:none}
+.leg:hover{color:#fff}
+.leg.dim{opacity:.3}
+.ldot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+#controls{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:8px 12px;backdrop-filter:blur(4px);display:flex;flex-direction:column;gap:6px}
+.ctrl-btn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:#ddd;font-size:12px;padding:5px 12px;cursor:pointer;text-align:center}
+.ctrl-btn:hover{background:rgba(255,255,255,0.2);color:#fff}
+#hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(255,255,255,0.4);background:rgba(0,0,0,0.3);padding:4px 12px;border-radius:99px;pointer-events:none;white-space:nowrap}
+#tooltip{position:absolute;pointer-events:none;background:rgba(20,20,40,0.95);border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#eee;max-width:220px;opacity:0;transition:opacity .15s;z-index:20;line-height:1.6}
+#tooltip .tt-name{font-weight:700;font-size:13px;margin-bottom:2px}
+#tooltip .tt-layer{font-size:10px;margin-bottom:4px;opacity:.6}
+#tooltip .tt-desc{font-size:11px;opacity:.8}
+#search{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:6px 10px;backdrop-filter:blur(4px)}
+#search input{background:transparent;border:none;outline:none;color:#fff;font-size:12px;width:140px;placeholder-color:#aaa}
+#search input::placeholder{color:rgba(255,255,255,.4)}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="tooltip"><div class="tt-name"></div><div class="tt-layer"></div><div class="tt-desc"></div></div>
+  <div id="ui">
+    <div id="legend"></div>
+    <div id="search"><input id="q" type="text" placeholder="search node..."/></div>
+    <div id="controls">
+      <div class="ctrl-btn" onclick="resetView()">reset view</div>
+      <div class="ctrl-btn" onclick="relayout()">shuffle layout</div>
+    </div>
+  </div>
+  <div id="hint">scroll to zoom · drag to pan · hover node · click legend to isolate</div>
+</div>
+
+<script>
+const LAYERS=[
+  {id:'interfaces', label:'Interfaces',     color:'#7B68EE', bg:'rgba(123,104,238,0.12)'},
+  {id:'app',        label:'App / UCs',      color:'#00CED1', bg:'rgba(0,206,209,0.10)'},
+  {id:'domain',     label:'Domain',         color:'#FF6B6B', bg:'rgba(255,107,107,0.10)'},
+  {id:'infra',      label:'Infrastructure', color:'#FFA500', bg:'rgba(255,165,0,0.10)'},
+  {id:'core',       label:'Core / Services',color:'#3CB371', bg:'rgba(60,179,113,0.10)'},
+  {id:'middleware',  label:'Middleware',     color:'#DA70D6', bg:'rgba(218,112,214,0.10)'},
+];
+
+const NODES=[
+  // interfaces — routers
+  {id:'task_router',     layer:'interfaces', label:'task.router',        desc:'writing tasks + respond-assignment', shape:'rect'},
+  {id:'teacher_router',  layer:'interfaces', label:'teacher.router',     desc:'assign, students, review', shape:'rect'},
+  {id:'admin_router',    layer:'interfaces', label:'admin.router',       desc:'users, tasks, link-teacher', shape:'rect'},
+  {id:'auth_router',     layer:'interfaces', label:'auth.router',        desc:'Google + GitHub OAuth', shape:'rect'},
+  {id:'noti_router',     layer:'interfaces', label:'noti.router',        desc:'get, mark read', shape:'rect'},
+  // interfaces — controllers
+  {id:'task_ctrl',       layer:'interfaces', label:'task.controller',    desc:'13 handlers incl. respondAssignment', shape:'rect'},
+  {id:'teacher_ctrl',    layer:'interfaces', label:'teacher.controller', desc:'assignTask, listStudents, reviewTask', shape:'rect'},
+  {id:'admin_ctrl',      layer:'interfaces', label:'admin.controller',   desc:'users + tasks + linkStudent', shape:'rect'},
+  {id:'auth_ctrl',       layer:'interfaces', label:'auth.controller',    desc:'login, register, refresh', shape:'rect'},
+  {id:'noti_ctrl',       layer:'interfaces', label:'noti.controller',    desc:'getNotifications, markRead', shape:'rect'},
+  // app — task UCs
+  {id:'create_task',     layer:'app', label:'create_task.uc',       desc:'create new writing task', shape:'rect'},
+  {id:'complete_task',   layer:'app', label:'complete_task.uc',     desc:'submit + route noti to teacher', shape:'rect'},
+  {id:'respond_assign',  layer:'app', label:'respond_assignment.uc',desc:'student accept / decline', shape:'rect'},
+  {id:'start_task',      layer:'app', label:'start_task.uc',        desc:'ASSIGNED → WRITING', shape:'rect'},
+  {id:'review_task_uc',  layer:'app', label:'review_task.uc',       desc:'admin review task', shape:'rect'},
+  {id:'score_task_uc',   layer:'app', label:'score_task.uc',        desc:'admin score task', shape:'rect'},
+  // app — teacher UCs
+  {id:'teacher_assign',  layer:'app', label:'teacher_assign.uc',    desc:'3 modes: new/existing/topic', shape:'rect'},
+  {id:'teacher_review',  layer:'app', label:'teacher_review.uc',    desc:'SUBMITTED→REVIEWED→SCORED', shape:'rect'},
+  {id:'teacher_students',layer:'app', label:'teacher_students.uc',  desc:'list students with task stats', shape:'rect'},
+  {id:'teacher_list_a',  layer:'app', label:'teacher_list_assigned',desc:'filterable assigned tasks', shape:'rect'},
+  // app — admin UCs
+  {id:'adm_link',        layer:'app', label:'adm_link_student.uc',  desc:'set assignedTeacher on user', shape:'rect'},
+  {id:'adm_assign_t',    layer:'app', label:'assign_teacher.uc',    desc:'promote user → teacher role', shape:'rect'},
+  {id:'adm_promote',     layer:'app', label:'adm_promote_user.uc',  desc:'promote → admin', shape:'rect'},
+  // app — notification UCs
+  {id:'send_noti',       layer:'app', label:'send_noti.uc',         desc:'persist + email dispatch', shape:'rect'},
+  {id:'get_noti_uc',     layer:'app', label:'get_noti.uc',          desc:'paginated + unread count', shape:'rect'},
+  {id:'mark_noti_uc',    layer:'app', label:'mark_noti.uc',         desc:'mark one or all read', shape:'rect'},
+  {id:'oauth_uc',        layer:'app', label:'oauth_user.uc',        desc:'find or create OAuth user', shape:'rect'},
+  // domain — entities
+  {id:'task_entity',     layer:'domain', label:'task_entity',        desc:'WritingTask + 8 assignment fields', shape:'diamond'},
+  {id:'user_entity',     layer:'domain', label:'user_entity',        desc:'User domain object', shape:'diamond'},
+  {id:'noti_entity',     layer:'domain', label:'notification_entity',desc:'6 assignment noti types added', shape:'diamond'},
+  // domain — models
+  {id:'task_model',      layer:'domain', label:'task_model',         desc:'8 new schema fields + 4 indexes', shape:'rect'},
+  {id:'user_model',      layer:'domain', label:'user_model',         desc:'assignedTeacher field added', shape:'rect'},
+  {id:'noti_model',      layer:'domain', label:'notification_model', desc:'enum synced from entity', shape:'rect'},
+  // domain — enums
+  {id:'task_enums',      layer:'domain', label:'task_enums',         desc:'WritingStatus, TaskType, ExamType', shape:'pill'},
+  {id:'assign_enums',    layer:'domain', label:'assignment_enums',   desc:'TaskSource, AssignmentStatus', shape:'pill'},
+  {id:'user_enums',      layer:'domain', label:'user_enums',         desc:'UserRole', shape:'pill'},
+  // infra
+  {id:'task_repo',       layer:'infra', label:'task_repo',           desc:'CRUD + 8 new query functions', shape:'rect'},
+  {id:'user_repo',       layer:'infra', label:'user_repo',           desc:'findById, findByEmail, updateById', shape:'rect'},
+  {id:'noti_repo',       layer:'infra', label:'notification_repo',   desc:'create, findByUserId, markRead', shape:'rect'},
+  {id:'find_due',        layer:'infra', label:'findDueSoon()',        desc:'cron: tasks due in 24h', shape:'pill'},
+  {id:'find_unstrt',     layer:'infra', label:'findUnstarted()',      desc:'cron: ASSIGNED 3+ days', shape:'pill'},
+  {id:'accept_repo',     layer:'infra', label:'acceptAssignment()',   desc:'calls entity.acceptAssignment()', shape:'pill'},
+  {id:'decline_repo',    layer:'infra', label:'declineAssignment()',  desc:'calls entity.declineAssignment()', shape:'pill'},
+  // core
+  {id:'email_svc',       layer:'core', label:'email.service',        desc:'nodemailer Gmail SMTP', shape:'rect'},
+  {id:'jwt_svc',         layer:'core', label:'jwt.service',          desc:'access + refresh token pair', shape:'rect'},
+  {id:'token_store',     layer:'core', label:'token_store',          desc:'refresh JTI revocation map', shape:'rect'},
+  {id:'reminder_job',    layer:'core', label:'task_reminder.job',    desc:'due-soon + unstarted cron jobs', shape:'rect'},
+  {id:'base_errors',     layer:'core', label:'base.errors',          desc:'AppError + 6 subclasses', shape:'pill'},
+  {id:'passport_cfg',    layer:'core', label:'passport.config',      desc:'Google + GitHub strategies', shape:'rect'},
+  // middleware
+  {id:'auth_mw',         layer:'middleware', label:'auth.middleware',    desc:'verify JWT, attach req.user', shape:'rect'},
+  {id:'role_mw',         layer:'middleware', label:'role.middleware',    desc:'requireRole(...roles)', shape:'rect'},
+  {id:'error_mw',        layer:'middleware', label:'error.handler',      desc:'AppError → HTTP response', shape:'rect'},
+  {id:'upload_mw',       layer:'middleware', label:'upload.middleware',  desc:'multer file uploads', shape:'rect'},
+  {id:'logger_mw',       layer:'middleware', label:'logger.middleware',  desc:'request logging', shape:'rect'},
+];
+
+const EDGES=[
+  ['task_router','task_ctrl'],['teacher_router','teacher_ctrl'],
+  ['admin_router','admin_ctrl'],['auth_router','auth_ctrl'],['noti_router','noti_ctrl'],
+  ['task_ctrl','create_task'],['task_ctrl','complete_task'],['task_ctrl','respond_assign'],
+  ['task_ctrl','start_task'],['task_ctrl','review_task_uc'],['task_ctrl','score_task_uc'],
+  ['teacher_ctrl','teacher_assign'],['teacher_ctrl','teacher_review'],
+  ['teacher_ctrl','teacher_students'],['teacher_ctrl','teacher_list_a'],
+  ['admin_ctrl','adm_link'],['admin_ctrl','adm_assign_t'],['admin_ctrl','adm_promote'],
+  ['auth_ctrl','oauth_uc'],['noti_ctrl','get_noti_uc'],['noti_ctrl','mark_noti_uc'],
+  ['create_task','task_repo'],['complete_task','task_repo'],['respond_assign','task_repo'],
+  ['start_task','task_repo'],['review_task_uc','task_repo'],['score_task_uc','task_repo'],
+  ['teacher_assign','task_repo'],['teacher_assign','user_repo'],
+  ['teacher_review','task_repo'],['teacher_students','user_repo'],
+  ['teacher_students','task_repo'],['teacher_list_a','task_repo'],
+  ['adm_link','user_repo'],['adm_assign_t','user_repo'],['adm_promote','user_repo'],
+  ['oauth_uc','user_repo'],
+  ['get_noti_uc','noti_repo'],['mark_noti_uc','noti_repo'],
+  ['send_noti','noti_repo'],['send_noti','email_svc'],
+  ['complete_task','send_noti'],['teacher_assign','send_noti'],
+  ['teacher_review','send_noti'],['respond_assign','send_noti'],
+  ['reminder_job','task_repo'],['reminder_job','send_noti'],
+  ['task_repo','task_entity'],['task_repo','task_model'],
+  ['user_repo','user_entity'],['user_repo','user_model'],
+  ['noti_repo','noti_entity'],['noti_repo','noti_model'],
+  ['task_entity','task_enums'],['task_entity','assign_enums'],
+  ['user_entity','user_enums'],['noti_entity','assign_enums'],
+  ['task_repo','find_due'],['task_repo','find_unstrt'],
+  ['task_repo','accept_repo'],['task_repo','decline_repo'],
+  ['auth_router','passport_cfg'],['auth_ctrl','jwt_svc'],['auth_ctrl','token_store'],
+  ['task_router','auth_mw'],['task_router','role_mw'],
+  ['teacher_router','auth_mw'],['teacher_router','role_mw'],
+  ['admin_router','auth_mw'],['admin_router','role_mw'],
+  ['task_ctrl','base_errors'],['teacher_ctrl','base_errors'],['admin_ctrl','base_errors'],
+];
+
+// --- layout seed positions ---
+const seed = {
+  task_router:{x:120,y:80},teacher_router:{x:120,y:140},admin_router:{x:120,y:200},
+  auth_router:{x:120,y:260},noti_router:{x:120,y:320},
+  task_ctrl:{x:290,y:80},teacher_ctrl:{x:290,y:150},admin_ctrl:{x:290,y:220},
+  auth_ctrl:{x:290,y:290},noti_ctrl:{x:290,y:360},
+  create_task:{x:480,y:50},complete_task:{x:480,y:110},respond_assign:{x:480,y:170},
+  start_task:{x:480,y:230},review_task_uc:{x:480,y:290},score_task_uc:{x:480,y:350},
+  teacher_assign:{x:620,y:80},teacher_review:{x:620,y:140},
+  teacher_students:{x:620,y:200},teacher_list_a:{x:620,y:260},
+  adm_link:{x:620,y:320},adm_assign_t:{x:620,y:380},adm_promote:{x:620,y:440},
+  send_noti:{x:760,y:200},get_noti_uc:{x:760,y:260},mark_noti_uc:{x:760,y:320},
+  oauth_uc:{x:760,y:380},
+  task_entity:{x:900,y:80},user_entity:{x:900,y:160},noti_entity:{x:900,y:240},
+  task_model:{x:1040,y:80},user_model:{x:1040,y:160},noti_model:{x:1040,y:240},
+  task_enums:{x:900,y:330},assign_enums:{x:900,y:390},user_enums:{x:900,y:450},
+  task_repo:{x:760,y:500},user_repo:{x:880,y:540},noti_repo:{x:1000,y:500},
+  find_due:{x:680,y:580},find_unstrt:{x:780,y:600},
+  accept_repo:{x:880,y:620},decline_repo:{x:980,y:620},
+  email_svc:{x:480,y:480},jwt_svc:{x:580,y:520},token_store:{x:480,y:560},
+  reminder_job:{x:640,y:560},base_errors:{x:360,y:520},passport_cfg:{x:200,y:480},
+  auth_mw:{x:140,y:420},role_mw:{x:240,y:460},error_mw:{x:340,y:460},
+  upload_mw:{x:140,y:500},logger_mw:{x:240,y:520},
+};
+
+const nodeById={};
+NODES.forEach(n=>{
+  n.x=seed[n.id]?seed[n.id].x:Math.random()*900+100;
+  n.y=seed[n.id]?seed[n.id].y:Math.random()*500+100;
+  n.vx=0;n.vy=0;n.w=0;n.h=0;
+  nodeById[n.id]=n;
+});
+
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+let W,H;
+function resize(){
+  W=canvas.width=window.innerWidth;
+  H=canvas.height=window.innerHeight;
+  draw();
+}
+window.addEventListener('resize',resize);
+
+let pan={x:W/2||400,y:H/2||300},zoom=0.72,dragging=false,lastM={x:0,y:0};
+let hoveredNode=null;
+const dimLayers=new Set();
+let searchTerm='';
+
+function lColor(id){return LAYERS.find(l=>l.id===id)?.color||'#aaa';}
+function lBg(id){return LAYERS.find(l=>l.id===id)?.bg||'rgba(100,100,100,0.1)';}
+
+function drawNode(n,alpha){
+  const col=lColor(n.layer);
+  const isHov=n===hoveredNode;
+  const isDim=dimLayers.has(n.layer);
+  const isSearch=searchTerm&&n.label.toLowerCase().includes(searchTerm);
+  ctx.save();
+  ctx.globalAlpha=isDim?0.12:(isHov||isSearch?1:alpha);
+  const pad=isHov?5:4;
+  ctx.font=`${isHov?'bold ':''}11px Arial,sans-serif`;
+  const tw=ctx.measureText(n.label).width;
+  const bw=tw+pad*2+8, bh=20;
+  n.w=bw;n.h=bh;
+  const x=n.x-bw/2,y=n.y-bh/2;
+  if(n.shape==='diamond'){
+    const hw=bw/2+2,hh=bh/2+2;
+    ctx.beginPath();
+    ctx.moveTo(n.x,n.y-hh);ctx.lineTo(n.x+hw,n.y);
+    ctx.lineTo(n.x,n.y+hh);ctx.lineTo(n.x-hw,n.y);
+    ctx.closePath();
+    ctx.fillStyle=isHov?col:col+'33';
+    ctx.fill();
+    ctx.strokeStyle=col;
+    ctx.lineWidth=isHov?2:1;
+    ctx.stroke();
+  } else if(n.shape==='pill'){
+    const r=bh/2;
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);ctx.lineTo(x+bw-r,y);
+    ctx.arc(x+bw-r,y+bh/2,r,-Math.PI/2,Math.PI/2);
+    ctx.lineTo(x+r,y+bh);
+    ctx.arc(x+r,y+bh/2,r,Math.PI/2,Math.PI*1.5);
+    ctx.closePath();
+    ctx.fillStyle=isHov?col:col+'22';
+    ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=isHov?2:1;ctx.stroke();
+  } else {
+    const r=4;
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);ctx.lineTo(x+bw-r,y);ctx.arcTo(x+bw,y,x+bw,y+r,r);
+    ctx.lineTo(x+bw,y+bh-r);ctx.arcTo(x+bw,y+bh,x+bw-r,y+bh,r);
+    ctx.lineTo(x+r,y+bh);ctx.arcTo(x,y+bh,x,y+bh-r,r);
+    ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);
+    ctx.closePath();
+    ctx.fillStyle=isHov?col:col+'2a';
+    ctx.fill();ctx.strokeStyle=isSearch?'#fff':col;
+    ctx.lineWidth=isHov||isSearch?2:1;ctx.stroke();
+  }
+  ctx.fillStyle=isHov?'#fff':col;
+  ctx.font=`${isHov?'bold ':''}11px Arial,sans-serif`;
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(n.label,n.x,n.y);
+  ctx.restore();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  ctx.translate(pan.x,pan.y);ctx.scale(zoom,zoom);
+
+  // cluster bg
+  LAYERS.forEach(l=>{
+    const ns=NODES.filter(n=>n.layer===l.id&&n.w>0);
+    if(!ns.length)return;
+    let minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;
+    ns.forEach(n=>{minx=Math.min(minx,n.x-n.w/2-20);miny=Math.min(miny,n.y-n.h/2-20);
+      maxx=Math.max(maxx,n.x+n.w/2+20);maxy=Math.max(maxy,n.y+n.h/2+20);});
+    const isDim=dimLayers.has(l.id);
+    ctx.save();
+    ctx.globalAlpha=isDim?0.05:0.18;
+    const r=16;const bw=maxx-minx,bh=maxy-miny;
+    ctx.beginPath();
+    ctx.moveTo(minx+r,miny);ctx.lineTo(maxx-r,miny);ctx.arcTo(maxx,miny,maxx,miny+r,r);
+    ctx.lineTo(maxx,maxy-r);ctx.arcTo(maxx,maxy,maxx-r,maxy,r);
+    ctx.lineTo(minx+r,maxy);ctx.arcTo(minx,maxy,minx,maxy-r,r);
+    ctx.lineTo(minx,miny+r);ctx.arcTo(minx,miny,minx+r,miny,r);
+    ctx.closePath();
+    ctx.fillStyle=l.color;ctx.fill();
+    ctx.globalAlpha=isDim?0.05:0.35;
+    ctx.strokeStyle=l.color;ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha=isDim?0.1:0.6;
+    ctx.fillStyle=l.color;ctx.font='bold 12px Arial';
+    ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.fillText(l.label,minx+8,miny+6);
+    ctx.restore();
+  });
+
+  // edges
+  const connToHov=new Set();
+  if(hoveredNode){
+    EDGES.forEach(([a,b])=>{
+      if(a===hoveredNode.id)connToHov.add(b);
+      if(b===hoveredNode.id)connToHov.add(a);
+    });
+  }
+
+  EDGES.forEach(([a,b])=>{
+    const na=nodeById[a],nb=nodeById[b];
+    if(!na||!nb)return;
+    const aDim=dimLayers.has(na.layer),bDim=dimLayers.has(nb.layer);
+    const isHovEdge=hoveredNode&&(a===hoveredNode.id||b===hoveredNode.id);
+    ctx.save();
+    ctx.globalAlpha=aDim||bDim?0.03:(isHovEdge?0.9:(hoveredNode?0.08:0.25));
+    const col=isHovEdge?lColor(hoveredNode.layer):'#aaa';
+    ctx.strokeStyle=col;ctx.lineWidth=isHovEdge?1.5:0.7;
+    ctx.beginPath();
+    const dx=nb.x-na.x,dy=nb.y-na.y;
+    const cx1=na.x+dx*0.4,cy1=na.y,cx2=nb.x-dx*0.4,cy2=nb.y;
+    ctx.moveTo(na.x,na.y);ctx.bezierCurveTo(cx1,cy1,cx2,cy2,nb.x,nb.y);
+    ctx.stroke();
+    if(isHovEdge){
+      const t=0.85;
+      const ex=Math.pow(1-t,3)*na.x+3*Math.pow(1-t,2)*t*cx1+3*(1-t)*t*t*cx2+Math.pow(t,3)*nb.x;
+      const ey=Math.pow(1-t,3)*na.y+3*Math.pow(1-t,2)*t*cy1+3*(1-t)*t*t*cy2+Math.pow(t,3)*nb.y;
+      const ex2=Math.pow(1-0.92,3)*na.x+3*Math.pow(1-0.92,2)*0.92*cx1+3*(1-0.92)*0.92*0.92*cx2+Math.pow(0.92,3)*nb.x;
+      const ey2=Math.pow(1-0.92,3)*na.y+3*Math.pow(1-0.92,2)*0.92*cy1+3*(1-0.92)*0.92*0.92*cy2+Math.pow(0.92,3)*nb.y;
+      const angle=Math.atan2(ey-ey2,ex-ex2);
+      ctx.beginPath();ctx.moveTo(ex,ey);
+      ctx.lineTo(ex-8*Math.cos(angle-0.4),ey-8*Math.sin(angle-0.4));
+      ctx.lineTo(ex-8*Math.cos(angle+0.4),ey-8*Math.sin(angle+0.4));
+      ctx.closePath();ctx.fillStyle=col;ctx.globalAlpha=0.9;ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  // nodes
+  NODES.forEach(n=>{
+    const isDim=dimLayers.has(n.layer);
+    const isConn=hoveredNode&&(connToHov.has(n.id)||n===hoveredNode);
+    drawNode(n,hoveredNode?(isConn?1:0.2):(isDim?0.1:0.85));
+  });
+
+  ctx.restore();
+}
+
+function toWorld(mx,my){
+  return{x:(mx-pan.x)/zoom,y:(my-pan.y)/zoom};
+}
+
+function findNode(mx,my){
+  const{x,y}=toWorld(mx,my);
+  for(let i=NODES.length-1;i>=0;i--){
+    const n=NODES[i];
+    if(Math.abs(x-n.x)<n.w/2+4&&Math.abs(y-n.y)<n.h/2+4)return n;
+  }
+  return null;
+}
+
+const wrap=document.getElementById('wrap');
+wrap.addEventListener('mousemove',e=>{
+  if(dragging){
+    pan.x+=e.clientX-lastM.x;pan.y+=e.clientY-lastM.y;
+    lastM={x:e.clientX,y:e.clientY};draw();return;
+  }
+  const n=findNode(e.clientX,e.clientY);
+  hoveredNode=n;
+  const tt=document.getElementById('tooltip');
+  if(n){
+    wrap.style.cursor='pointer';
+    tt.querySelector('.tt-name').textContent=n.label;
+    tt.querySelector('.tt-layer').textContent=LAYERS.find(l=>l.id===n.layer)?.label||'';
+    tt.querySelector('.tt-desc').textContent=n.desc||'';
+    let tx=e.clientX+14,ty=e.clientY-10;
+    if(tx+230>W)tx=e.clientX-230;
+    if(ty+80>H)ty=e.clientY-80;
+    tt.style.left=tx+'px';tt.style.top=ty+'px';tt.style.opacity='1';
+  } else {
+    wrap.style.cursor='grab';tt.style.opacity='0';
+  }
+  draw();
+});
+
+wrap.addEventListener('mousedown',e=>{
+  dragging=true;lastM={x:e.clientX,y:e.clientY};wrap.style.cursor='grabbing';
+});
+wrap.addEventListener('mouseup',()=>{dragging=false;wrap.style.cursor='grab';});
+wrap.addEventListener('mouseleave',()=>{dragging=false;hoveredNode=null;document.getElementById('tooltip').style.opacity='0';draw();});
+
+wrap.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const delta=e.deltaY>0?0.88:1.14;
+  const nz=Math.min(4,Math.max(0.2,zoom*delta));
+  pan.x=e.clientX-(e.clientX-pan.x)*(nz/zoom);
+  pan.y=e.clientY-(e.clientY-pan.y)*(nz/zoom);
+  zoom=nz;draw();
+},{passive:false});
+
+// legend
+const legend=document.getElementById('legend');
+LAYERS.forEach(l=>{
+  const el=document.createElement('div');
+  el.className='leg';
+  el.innerHTML=`<div class="ldot" style="background:${l.color}"></div>${l.label}`;
+  el.addEventListener('click',()=>{
+    const allOther=LAYERS.filter(x=>x.id!==l.id).map(x=>x.id);
+    if(dimLayers.has(l.id)){
+      dimLayers.clear();
+      document.querySelectorAll('.leg').forEach(e=>e.classList.remove('dim'));
+    } else {
+      if(allOther.every(id=>dimLayers.has(id))){
+        dimLayers.clear();
+        document.querySelectorAll('.leg').forEach(e=>e.classList.remove('dim'));
+      } else {
+        dimLayers.clear();
+        allOther.forEach(id=>dimLayers.add(id));
+        document.querySelectorAll('.leg').forEach(e=>e.classList.add('dim'));
+        el.classList.remove('dim');
+        dimLayers.delete(l.id);
+      }
+    }
+    draw();
+  });
+  legend.appendChild(el);
+});
+
+document.getElementById('q').addEventListener('input',e=>{
+  searchTerm=e.target.value.trim().toLowerCase();draw();
+});
+
+function resetView(){pan={x:W*0.06,y:H*0.08};zoom=0.72;draw();}
+
+function relayout(){
+  const rng=()=>Math.random();
+  NODES.forEach(n=>{n.x+=( rng()-0.5)*120;n.y+=(rng()-0.5)*80;});
+  draw();
+}
+
+// touch
+wrap.addEventListener('touchstart',e=>{const t=e.touches[0];dragging=true;lastM={x:t.clientX,y:t.clientY};});
+wrap.addEventListener('touchmove',e=>{e.preventDefault();if(!dragging)return;const t=e.touches[0];pan.x+=t.clientX-lastM.x;pan.y+=t.clientY-lastM.y;lastM={x:t.clientX,y:t.clientY};draw();},{passive:false});
+wrap.addEventListener('touchend',()=>{dragging=false;});
+
+resize();
+setTimeout(()=>{pan={x:W*0.04,y:H*0.05};zoom=0.68;draw();},50);
+</script>
+</body>
+</html>

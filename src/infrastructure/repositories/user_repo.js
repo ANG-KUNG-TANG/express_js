@@ -29,8 +29,9 @@ const toDomain = (doc) => {
         targetBand:  doc.targetBand  ?? null,
         examDate:    doc.examDate    ?? null,
         attachments: doc.attachments ?? [],
-        createdAt:   doc.createdAt,
-        updatedAt:   doc.updatedAt,
+        createdAt:       doc.createdAt,
+        updatedAt:       doc.updatedAt,
+        assignedTeacher: doc.assignedTeacher ? doc.assignedTeacher.toString() : null,
     });
 };
 
@@ -47,8 +48,9 @@ const toPersistence = (user) => {
         targetBand:  user._targetBand,
         examDate:    user._examDate,
         attachments: user._attachments,
-        createdAt:   user._createdAt,
-        updatedAt:   user._updatedAt,
+        createdAt:       user._createdAt,
+        updatedAt:       user._updatedAt,
+        assignedTeacher: user._assignedTeacher ?? null,
     };
     if (user._id && mongoose.Types.ObjectId.isValid(user._id)) {
         persistence._id = new mongoose.Types.ObjectId(user._id);
@@ -69,8 +71,9 @@ export const sanitizeUser = (user) => {
         targetBand:  user._targetBand ?? null,
         examDate:    user._examDate   ?? null,
         attachments: user._attachments ?? [],
-        createdAt:   user._createdAt,
-        updatedAt:   user._updatedAt,
+        createdAt:       user._createdAt,
+        updatedAt:       user._updatedAt,
+        assignedTeacher: user._assignedTeacher ?? null,
     };
 };
 
@@ -111,6 +114,29 @@ export const lisAllUsers = async () => {
     return docs.map(toDomain);
 };
 
+/**
+ * findAll({ assignedTeacher?, role? })
+ * Used by teacher_list_students.uc.js to get all students linked to a teacher.
+ */
+export const findAll = async (filter = {}) => {
+    const query = {};
+    if (filter.assignedTeacher) {
+        if (!mongoose.Types.ObjectId.isValid(filter.assignedTeacher)) {
+            throw new UserValidationError('invalid assignedTeacher id format');
+        }
+        query.assignedTeacher = new mongoose.Types.ObjectId(filter.assignedTeacher);
+    }
+    if (filter.role) query.role = filter.role;
+
+    logger.debug('userRepo.findAll', { filter });
+    const docs = await UserModel.find(query).select('-password').lean();
+    logger.debug('userRepo.findAll: result', { count: docs.length });
+    return docs.map(toDomain);
+};
+
+// Alias used by send_noti_uc.js (imported as * as userRepo → userRepo.findById)
+export const findById = findUserById;
+
 // ---------------------------------------------------------------------------
 // Writes
 // ---------------------------------------------------------------------------
@@ -148,7 +174,8 @@ export const updateUser = async (id, updates) => {
     if (updates.coverUrl   !== undefined) user._coverUrl   = updates.coverUrl;
     if (updates.bio        !== undefined) user._bio        = updates.bio;
     if (updates.targetBand !== undefined) user._targetBand = updates.targetBand;
-    if (updates.examDate   !== undefined) user._examDate   = updates.examDate;
+    if (updates.examDate        !== undefined) user._examDate        = updates.examDate;
+    if (updates.assignedTeacher !== undefined) user._assignedTeacher = updates.assignedTeacher;
     user._updatedAt = new Date();
 
     const persistence = toPersistence(user);

@@ -1,15 +1,20 @@
-import { searchTasksByTitle } from '../../infrastructure/repositories/task_repo.js';
-import logger from '../../core/logger/logger.js';
-
-const TEACHER_ALLOWED_STATUSES = ['SUBMITTED', 'REVIEWED'];
+// src/app/teacher_uc/teacher_search_tasks.uc.js
+import { findByAssignedBy } from '../../infrastructure/repositories/task_repo.js';
+import logger                from '../../core/logger/logger.js';
 
 /**
- * Search tasks by title, scoped to statuses teachers are allowed to see.
+ * Search tasks by title scoped to THIS teacher's assigned tasks only.
+ * Uses a case-insensitive regex on the DB side via findByAssignedBy filter.
  */
-export const teacherSearchTasksUC = async ({ q } = {}) => {
-    logger.debug('teacherSearchTasksUC', { q });
-    const tasks = await searchTasksByTitle(q ?? '');
-    const filtered = tasks.filter(t => TEACHER_ALLOWED_STATUSES.includes(t._status));
-    logger.debug('teacherSearchTasksUC: done', { count: filtered.length });
-    return filtered;
+export const teacherSearchTasksUC = async ({ teacherId, q } = {}) => {
+    logger.debug('teacherSearchTasksUC', { teacherId, q });
+
+    const filter = q?.trim()
+        ? { title: { $regex: q.trim(), $options: 'i' } }
+        : {};
+
+    const tasks = await findByAssignedBy(teacherId, filter);
+
+    logger.debug('teacherSearchTasksUC: done', { count: tasks.length });
+    return tasks;
 };

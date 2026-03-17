@@ -1,10 +1,11 @@
 /**
  * router.js — client-side route guards.
- * Usage: import { requireAuth } from './router.js';
- *        requireAuth();
+ * Usage: import { requireAuth, requireTeacher, requireRole } from './router.js';
  */
 
-import { isLoggedIn, isAdmin } from './auth.js';
+import { isLoggedIn, isAdmin, getUser } from './auth.js';
+
+export const isTeacher = () => getUser()?.role === 'teacher';
 
 /** Redirect unauthenticated users to login. */
 export const requireAuth = () => {
@@ -21,7 +22,28 @@ export const requireAdmin = () => {
     }
 };
 
-/** Redirect already-logged-in users away from guest-only pages (login, register). */
+/** Redirect non-teachers (and non-admins) away from teacher pages. */
+export const requireTeacher = () => {
+    requireAuth();
+    if (!isTeacher() && !isAdmin()) {
+        window.location.href = '/pages/dashboard.html';
+    }
+};
+
+/**
+ * requireRole(...roles) — flexible role guard used by teacher pages.
+ * e.g. requireRole('teacher', 'admin')
+ * Redirects to dashboard if the current user's role is not in the allowed list.
+ */
+export const requireRole = (...roles) => {
+    requireAuth();
+    const role = getUser()?.role ?? getUser()?._role ?? '';
+    if (!roles.includes(role)) {
+        window.location.href = '/pages/dashboard.html';
+    }
+};
+
+/** Redirect already-logged-in users away from guest-only pages. */
 export const requireGuest = () => {
     if (isLoggedIn()) {
         window.location.href = '/pages/dashboard.html';

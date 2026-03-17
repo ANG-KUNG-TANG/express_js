@@ -1,5 +1,6 @@
 /**
- * tasks/list.js — my tasks list with filters, search, and proper delete modal
+ * tasks/list.js — my tasks list with filters, search, delete modal,
+ * and teacher-assignment accept / decline flow.
  */
 
 import { requireAuth }  from '../../core/router.js';
@@ -17,14 +18,13 @@ const statusEl = document.getElementById('filter-status');
 const typeEl   = document.getElementById('filter-type');
 const examEl   = document.getElementById('filter-exam');
 
-let searchTimer  = null;
-let isLoading    = false;
+let searchTimer = null;
+let isLoading   = false;
 
 // ---------------------------------------------------------------------------
 // Inline confirm modal — no window.confirm()
 // ---------------------------------------------------------------------------
 function showDeleteModal(taskId, onConfirm) {
-    // Remove any existing modal
     document.getElementById('delete-modal')?.remove();
 
     const modal = document.createElement('div');
@@ -45,25 +45,71 @@ function showDeleteModal(taskId, onConfirm) {
                 This action cannot be undone. The task and all its content will be permanently removed.
             </p>
             <div style="display:flex;gap:10px;justify-content:flex-end;">
-                <button id="modal-cancel" class="btn btn--ghost">Cancel</button>
+                <button id="modal-cancel"  class="btn btn--ghost">Cancel</button>
                 <button id="modal-confirm" class="btn btn--danger">Delete</button>
             </div>
         </div>
     `;
 
     document.body.appendChild(modal);
-
     const cleanup = () => modal.remove();
 
     document.getElementById('modal-cancel').addEventListener('click', cleanup);
     modal.addEventListener('click', (e) => { if (e.target === modal) cleanup(); });
     document.getElementById('modal-confirm').addEventListener('click', async () => {
-        document.getElementById('modal-confirm').disabled = true;
+        document.getElementById('modal-confirm').disabled    = true;
         document.getElementById('modal-confirm').textContent = 'Deleting…';
         await onConfirm();
         cleanup();
     });
 }
+
+// ---------------------------------------------------------------------------
+// Accept / Decline assignment  ← NEW
+// Called when a student clicks Accept or Decline on a teacher-assigned task.
+// ---------------------------------------------------------------------------
+const respondAssignment = async (taskId, action) => {
+    // action must be 'accept' or 'decline' (matches respond_assignment.uc.js)
+    listEl.querySelectorAll(`[data-respond="${taskId}"]`).forEach(btn => {
+        btn.disabled = true;
+    });
+
+    if (action === 'decline') {
+        // Ask for a reason before declining
+        const reason = window.prompt('Please give a reason for declining:');
+        if (!reason?.trim()) {
+            // Re-enable buttons if cancelled
+            listEl.querySelectorAll(`[data-respond="${taskId}"]`).forEach(btn => {
+                btn.disabled = false;
+            });
+            return;
+        }
+        try {
+            await apiFetch(`/api/writing-tasks/${taskId}/respond-assignment`, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'decline', declineReason: reason.trim() }),
+            });
+            toast('Assignment declined.', 'info');
+        } catch (err) {
+            toast(err.message, 'error');
+        } finally {
+            loadTasks();
+        }
+        return;
+    }
+
+    try {
+        await apiFetch(`/api/writing-tasks/${taskId}/respond-assignment`, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'accept' }),
+        });
+        toast('✅ Task accepted! You can now start writing.', 'success');
+    } catch (err) {
+        toast(err.message, 'error');
+    } finally {
+        loadTasks();
+    }
+};
 
 // ---------------------------------------------------------------------------
 // Load tasks
@@ -72,7 +118,6 @@ const loadTasks = async () => {
     if (isLoading) return;
     isLoading = true;
 
-    // Disable filters while loading
     [statusEl, typeEl, examEl, searchEl].forEach(el => el.disabled = true);
     listEl.innerHTML = '<p class="loading">Loading tasks…</p>';
 
@@ -93,16 +138,43 @@ const loadTasks = async () => {
         }
 
         const tasks = res?.data || [];
-        listEl.innerHTML = tasks.length
-            ? tasks.map(taskCard).join('')
-            : '<p class="empty-state">No tasks found.</p>';
 
-        // Attach delete listeners — uses API, no confirm()
+        if (!tasks.length) {
+            listEl.innerHTML = '<p class="empty-state">No tasks found.</p>';
+            return;
+        }
+
+        // Sort: pending-response assignments bubble to the top
+        tasks.sort((a, b) => {
+            const aNeeds = (a.status ?? a._status) === 'ASSIGNED'
+                && (a.taskSource ?? a._taskSource)?.startsWith('teacher');
+            const bNeeds = (b.status ?? b._status) === 'ASSIGNED'
+                && (b.taskSource ?? b._taskSource)?.startsWith('teacher');
+            if (aNeeds && !bNeeds) return -1;
+            if (!aNeeds && bNeeds) return  1;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+
+        listEl.innerHTML = tasks.map(taskCard).join('');
+
+        // ── Attach delete listeners (existing behaviour) ──
         listEl.querySelectorAll('[data-delete]').forEach(btn => {
             btn.addEventListener('click', () => {
                 showDeleteModal(btn.dataset.delete, async () => {
                     await deleteTask(btn.dataset.delete);
                 });
+            });
+        });
+
+        // ── Attach accept / decline listeners ──
+        // Normalise action values: 'accepted'→'accept', 'declined'→'decline'
+        listEl.querySelectorAll('[data-respond]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const raw    = btn.dataset.action ?? '';
+                const action = raw === 'accepted' ? 'accept'
+                             : raw === 'declined' ? 'decline'
+                             : raw;   // already 'accept' or 'decline'
+                respondAssignment(btn.dataset.respond, action);
             });
         });
 
@@ -116,7 +188,7 @@ const loadTasks = async () => {
 };
 
 // ---------------------------------------------------------------------------
-// Delete task — calls DELETE API directly
+// Delete task
 // ---------------------------------------------------------------------------
 const deleteTask = async (id) => {
     try {

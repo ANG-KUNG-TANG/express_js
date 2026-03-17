@@ -1,10 +1,15 @@
-import { requireAdmin, getParam } from '../../core/router.js';
-import { apiFetch }               from '../../core/api.js';
-import { initNavbar }             from '../../../components/navbar.js';
-import { statusBadge }            from '../../../components/statusBadge.js';
-import { toast }                  from '../../core/toast.js';
+/**
+ * js/pages/admin/review.js
+ * Admin review + score a single task.
+ */
 
-requireAdmin();
+import { requireRole, getParam } from '../../core/router.js';
+import { apiFetch }              from '../../core/api.js';
+import { initNavbar }            from '../../../components/navbar.js';
+import { statusBadge }           from '../../../components/statusBadge.js';
+import { toast }                 from '../../core/toast.js';
+
+requireRole('admin');
 initNavbar();
 
 const id = getParam('id');
@@ -23,38 +28,43 @@ const scoreBtn      = document.getElementById('score-btn');
 const reviewSection = document.getElementById('review-section');
 const scoreSection  = document.getElementById('score-section');
 
+// ── Load task — single fetch only ─────────────────────────────────────────────
 const loadTask = async () => {
     try {
-        const { data: task } = await apiFetch(`/api/admin/writing-tasks`);
-        // fetch single task via the general task endpoint
         const res  = await apiFetch(`/api/writing-tasks/${id}`);
-        renderTask(res?.data);
-    } catch (err) { toast(err.message, 'error'); }
+        const task = res?.data ?? res;
+        if (!task) throw new Error('Task not found');
+        renderTask(task);
+    } catch (err) {
+        toast(err.message, 'error');
+    }
 };
 
 const renderTask = (task) => {
-    if (!task) { toast('Task not found', 'error'); return; }
-    titleEl.textContent      = task._title    ?? task.title;
-    typeEl.textContent       = `${task._taskType ?? task.taskType} | ${task._examType ?? task.examType}`;
-    statusEl.innerHTML       = statusBadge(task._status ?? task.status);
-    promptEl.textContent     = task._questionPrompt ?? task.questionPrompt ?? '—';
-    submissionEl.textContent = task._submissionText ?? task.submissionText ?? '—';
-    wordCountEl.textContent  = (task._wordCount ?? task.wordCount) ? `${task._wordCount ?? task.wordCount} words` : '—';
+    const status   = task.status   ?? task._status;
+    const feedback = task.feedback ?? task._feedback;
 
-    if (task._feedback ?? task.feedback) feedbackEl.value = task._feedback ?? task.feedback;
+    titleEl.textContent      = task.title          ?? task._title          ?? '—';
+    typeEl.textContent       = `${task.taskType    ?? task._taskType       ?? '—'} | ${task.examType ?? task._examType ?? '—'}`;
+    statusEl.innerHTML       = statusBadge(status);
+    promptEl.textContent     = task.questionPrompt ?? task._questionPrompt ?? '—';
+    submissionEl.textContent = task.submissionText ?? task._submissionText ?? '(No submission yet)';
+    wordCountEl.textContent  = (task.wordCount ?? task._wordCount)
+        ? `${task.wordCount ?? task._wordCount} words` : '—';
 
-    const status   = task._status ?? task.status;
+    if (feedback) feedbackEl.value = feedback;
+
     const canReview = status === 'SUBMITTED';
     const canScore  = status === 'REVIEWED';
     const isScored  = status === 'SCORED';
 
-    reviewSection.style.display = (canReview || (task._feedback ?? task.feedback)) ? 'block' : 'none';
-    scoreSection.style.display  = (canScore || isScored) ? 'block' : 'none';
-    reviewBtn.disabled = !canReview;
-    scoreBtn.disabled  = !canScore;
+    reviewSection.style.display = (canReview || feedback) ? 'block' : 'none';
+    scoreSection.style.display  = (canScore  || isScored) ? 'block' : 'none';
+    reviewBtn.disabled          = !canReview;
+    scoreBtn.disabled           = !canScore;
 
     if (isScored) {
-        const score = task._bandScore ?? task.bandScore;
+        const score         = task.bandScore ?? task._bandScore;
         scoreInput.value    = score;
         scoreInput.disabled = true;
         const finalEl = document.getElementById('final-score');
@@ -62,6 +72,7 @@ const renderTask = (task) => {
     }
 };
 
+// ── Review ────────────────────────────────────────────────────────────────────
 reviewBtn?.addEventListener('click', async () => {
     const feedback = feedbackEl.value.trim();
     if (!feedback) { toast('Please enter feedback before reviewing.', 'error'); return; }
@@ -69,9 +80,10 @@ reviewBtn?.addEventListener('click', async () => {
     reviewBtn.textContent = 'Saving…';
     try {
         await apiFetch(`/api/admin/writing-tasks/${id}/review`, {
-            method: 'PATCH', body: JSON.stringify({ feedback }),
+            method: 'PATCH',
+            body: JSON.stringify({ feedback }),
         });
-        toast('Review saved! An admin can now score this task.');
+        toast('Review saved! You can now score this task.', 'success');
         loadTask();
     } catch (err) {
         toast(err.message, 'error');
@@ -80,6 +92,7 @@ reviewBtn?.addEventListener('click', async () => {
     }
 });
 
+// ── Score ─────────────────────────────────────────────────────────────────────
 scoreBtn?.addEventListener('click', async () => {
     const bandScore = parseFloat(scoreInput.value);
     if (isNaN(bandScore) || bandScore < 0 || bandScore > 9) {
@@ -89,9 +102,10 @@ scoreBtn?.addEventListener('click', async () => {
     scoreBtn.textContent = 'Saving…';
     try {
         await apiFetch(`/api/admin/writing-tasks/${id}/score`, {
-            method: 'PATCH', body: JSON.stringify({ bandScore }),
+            method: 'PATCH',
+            body: JSON.stringify({ bandScore }),
         });
-        toast(`Task scored: Band ${bandScore}`);
+        toast(`Task scored: Band ${bandScore}`, 'success');
         loadTask();
     } catch (err) {
         toast(err.message, 'error');

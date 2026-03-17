@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
+import http from 'http';
+import { startReminderJobs} from './core/job/task_remainder.job.js';
 import { initPassport } from './config/passport.config.js';
 import { connectDB }    from './infrastructure/repositories/db.js';
 import userRouter        from './interfaces/routes/user.router.js';
@@ -21,8 +23,8 @@ import path from 'path';
 import fs from 'fs';
 import { notificationRouter } from './interfaces/routes/notification.router.js';
 import { passwordResetRouter } from './interfaces/routes/password_reset.router.js';
-// FIX: authenticate was used below but never imported
 import { authenticate } from './middleware/auth.middelware.js';
+import { initSocket } from './core/socket.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -90,7 +92,13 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 3000;
 
 connectDB().then(() => {
-    app.listen(PORT, '0.0.0.0', () => {
+    startReminderJobs();
+
+    // Wrap Express in an http.Server so Socket.IO can share the same port
+    const httpServer = http.createServer(app);
+    initSocket(httpServer);
+
+    httpServer.listen(PORT, '0.0.0.0', () => {
         console.log(`✅ Server running at http://localhost:${PORT}/`);
     });
 }).catch(err => {

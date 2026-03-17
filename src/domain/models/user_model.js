@@ -16,37 +16,37 @@ const attachmentSchema = new mongoose.Schema(
 const userSchema = new mongoose.Schema(
     {
         name: {
-            type: String,
-            required: true,
-            trim: true,
+            type:      String,
+            required:  true,
+            trim:      true,
             minlength: 3,
             maxlength: 100
         },
         email: {
-            type: String,
-            required: true,
-            unique: true,
+            type:      String,
+            required:  true,
+            unique:    true,
             lowercase: true,
-            trim: true,
-            match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+            trim:      true,
+            match:     /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         },
         password: {
-            type: String,
-            required: true,
+            type:      String,
+            required:  true,
             minlength: 8
         },
         role: {
-            type: String,
-            enum: Object.values(UserRole),
+            type:    String,
+            enum:    Object.values(UserRole),
             default: UserRole.USER
         },
         interests: {
-            type: [String],
-            enum: Object.values(NewsCategory),
+            type:    [String],
+            enum:    Object.values(NewsCategory),
             default: [],
             validate: {
                 validator: (arr) => arr.length <= 5,
-                message: "you can select up to 5 interest categories",
+                message:   "you can select up to 5 interest categories",
             }
         },
 
@@ -57,12 +57,24 @@ const userSchema = new mongoose.Schema(
         targetBand:  { type: String, default: null },
         examDate:    { type: Date,   default: null },
         attachments: { type: [attachmentSchema], default: [] },
+
+        // ── Teacher assignment (new) ────────────────────────────────────
+        // Populated by admin when linking a student to a teacher.
+        // Used by teacher_assign_task.uc.js to verify ownership.
+        assignedTeacher: {
+            type:    mongoose.Schema.Types.ObjectId,
+            ref:     'User',
+            default: null,
+        },
     },
     {
         timestamps: true,
         versionKey: false
     }
 );
+
+// Index for teacher → students lookup
+userSchema.index({ assignedTeacher: 1, role: 1 });
 
 const UserModel = mongoose.model('User', userSchema);
 

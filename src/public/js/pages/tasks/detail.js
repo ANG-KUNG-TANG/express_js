@@ -86,7 +86,7 @@ function showPromptModal({ title, message, placeholder = '', onConfirm }) {
         ">
             <h3 style="margin:0 0 8px;font-size:1.1rem;">${title}</h3>
             <p style="color:var(--text2);font-size:.85rem;margin:0 0 16px;">${message}</p>
-            <input id="modal-input" type="email" placeholder="${placeholder}"
+            <input id="modal-input" type="text" placeholder="${placeholder}"
                 style="width:100%;padding:9px 12px;border:1px solid var(--border);
                 border-radius:var(--radius-sm);font-size:.9rem;
                 background:var(--surface2);color:var(--text);margin-bottom:20px;" />
@@ -163,6 +163,34 @@ const renderTask = (task) => {
         document.getElementById('task-score').textContent = `Band ${task.bandScore}`;
     }
 
+    // Assignment info — show if this is a teacher-assigned task
+    const assignedBy = task.assignedBy ?? task._assignedBy;
+    const assignmentBanner = document.getElementById('assignment-banner');
+    if (assignedBy && assignmentBanner) {
+        const assignmentStatus = task.assignmentStatus ?? task._assignmentStatus ?? '';
+        const dueDate = task.dueDate ?? task._dueDate;
+        const statusColors = {
+            pending_acceptance: 'var(--amber,#d97706)',
+            accepted:           'var(--green,#059669)',
+            declined:           'var(--red,#dc2626)',
+        };
+        const statusLabels = {
+            pending_acceptance: 'Pending your response',
+            accepted:           'Accepted',
+            declined:           'Declined',
+        };
+        assignmentBanner.style.display = 'flex';
+        assignmentBanner.innerHTML = `
+            <span style="font-size:12px;color:var(--text2)">
+                📋 <strong>Teacher assigned task</strong>
+                ${dueDate ? `· Due: <strong>${new Date(dueDate).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</strong>` : ''}
+                · Status: <strong style="color:${statusColors[assignmentStatus] ?? 'inherit'}">${statusLabels[assignmentStatus] ?? assignmentStatus}</strong>
+                ${task.declineReason ?? task._declineReason ? `· Reason: ${task.declineReason ?? task._declineReason}` : ''}
+            </span>`;
+    } else if (assignmentBanner) {
+        assignmentBanner.style.display = 'none';
+    }
+
     if (task.submittedAt) {
         document.getElementById('task-submitted-at').textContent =
             new Date(task.submittedAt).toLocaleString();
@@ -185,13 +213,60 @@ const renderActions = (task) => {
     const status = task.status;
 
     if (status === 'ASSIGNED') {
-        actionsEl.appendChild(makeButton('Start Writing', 'btn--primary', async () => {
-            try {
-                await apiFetch(`/api/writing-tasks/${id}/start`, { method: 'PATCH' });
-                toast('Task started!');
-                loadTask();
-            } catch (err) { toast(err.message, 'error'); }
-        }));
+        const assignmentStatus = task.assignmentStatus ?? task._assignmentStatus ?? null;
+        const isAssigned = task.assignedBy ?? task._assignedBy;
+
+        // Teacher-assigned task pending response — show Accept / Decline
+        if (isAssigned && assignmentStatus === 'pending_acceptance') {
+            actionsEl.appendChild(makeButton('Accept Task', 'btn--success', async () => {
+                try {
+                    await apiFetch(`/api/writing-tasks/${id}/respond-assignment`, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'accept' }),
+                    });
+                    toast('Task accepted! You can now start writing.', 'success');
+                    loadTask();
+                } catch (err) { toast(err.message, 'error'); }
+            }));
+
+            actionsEl.appendChild(makeButton('Decline Task', 'btn--danger btn--sm', () => {
+                showPromptModal({
+                    title: 'Decline Task',
+                    message: 'Please give a reason for declining this task.',
+                    placeholder: 'e.g. I already covered this topic…',
+                    onConfirm: async (reason) => {
+                        try {
+                            await apiFetch(`/api/writing-tasks/${id}/respond-assignment`, {
+                                method: 'POST',
+                                body: JSON.stringify({ action: 'decline', declineReason: reason }),
+                            });
+                            toast('Task declined.', 'success');
+                            loadTask();
+                        } catch (err) { toast(err.message, 'error'); }
+                    },
+                });
+            }));
+        }
+
+        // Accepted (or self-created) assigned task — can start writing
+        // Never show Start Writing while still pending_acceptance
+        if (!isAssigned || (assignmentStatus === 'accepted')) {
+            const startBtn = makeButton('Start Writing', 'btn--primary', async () => {
+                startBtn.disabled = true;
+                startBtn.textContent = 'Starting…';
+                try {
+                    await apiFetch(`/api/writing-tasks/${id}/start`, { method: 'PATCH' });
+                    toast('Task started! Opening editor…', 'success');
+                    // Go straight to the write page instead of re-rendering
+                    window.location.href = `/pages/tasks/write.html?id=${id}`;
+                } catch (err) {
+                    toast(err.message || 'Failed to start task.', 'error');
+                    startBtn.disabled = false;
+                    startBtn.textContent = 'Start Writing';
+                }
+            });
+            actionsEl.appendChild(startBtn);
+        }
     }
 
     if (status === 'WRITING') {
