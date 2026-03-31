@@ -3,7 +3,7 @@
  * Usage: import { requireAuth, requireTeacher, requireRole } from './router.js';
  */
 
-import { isLoggedIn, isAdmin, getUser } from './auth.js';
+import { isLoggedIn, isAdmin, getUser, getToken } from './auth.js';
 
 export const isTeacher = () => getUser()?.role === 'teacher';
 
@@ -44,11 +44,12 @@ export const requireRole = (...roles) => {
 };
 
 /** Redirect already-logged-in users away from guest-only pages. */
-export const requireGuest = () => {
-    if (isLoggedIn()) {
+export function requireGuest() {
+    const token = getToken();
+    if (token) {
         window.location.href = '/pages/dashboard.html';
     }
-};
+}
 
 /** Pull a query param from the current URL. */
 export const getParam = (key) =>

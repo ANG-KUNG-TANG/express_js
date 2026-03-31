@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audit Logs — WriteSystem Admin</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+    <style>
+        @keyframes rowFlash {
+            0%   { background: var(--green-dim, rgba(29,158,117,.18)); }
+            100% { background: transparent; }
+        }
+        .row--flash { animation: rowFlash 1.5s ease-out forwards; }
+        #live-indicator {
+            font-size: 10px; font-weight: 700; letter-spacing: .06em;
+            font-family: var(--font-mono, monospace);
+            padding: 2px 8px; border-radius: 20px; border: 1px solid currentColor;
+            margin-left: 8px; vertical-align: middle; transition: color .3s;
+        }
+    </style>
+</head>
+<body>
+<!--
+  Sidebar is injected here by initAdminSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
+
+<div class="admin-main">
+
+    <!-- Topbar -->
+    <header class="adm-topbar">
+        <div>
+            <div class="adm-topbar-title">
+                Audit Logs
+                <span id="live-indicator" style="color:var(--text3)" title="Connecting…">○ CONNECTING</span>
+            </div>
+            <div class="adm-topbar-crumb">Admin <span>›</span> <span>Audit</span></div>
+        </div>
+        <!-- fix #6: id added; placeholder and wiring handled in audit_logs.js -->
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input
+                id="topbar-search"
+                type="text"
+                placeholder="Search by email, user ID, or action…"
+                autocomplete="off"
+            />
+        </div>
+        <div class="adm-topbar-actions">
+            <button class="adm-icon-btn" title="Send notification"
+                    onclick="window.location='/pages/admin/notifications.html'">◬</button>
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
+
+    <div class="adm-content">
+
+        <!-- Sub-header context -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <div>
+                <div style="font-size:12px;color:var(--text3);font-family:var(--font-mono,monospace);letter-spacing:.04em">
+                    Every admin action recorded with actor, target, and timestamp
+                </div>
+            </div>
+            <span style="margin-left:auto;border-color:var(--red);color:var(--red);background:var(--red-dim);
+                         font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;
+                         border-radius:20px;border:1px solid var(--red)">ADMIN</span>
+        </div>
+
+        <!-- Filters -->
+        <div class="adm-card" style="margin-bottom:20px">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">Filter logs</span>
+            </div>
+            <div style="padding:16px 20px">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+
+                    <!-- fix #2: options are empty here — audit_logs.js populates them
+                         dynamically from GET /api/admin/audit-logs/actions on load -->
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="filter-action">Action</label>
+                        <select id="filter-action" class="input input--sm" style="width:220px">
+                            <option value="">Loading actions…</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="filter-outcome">Outcome</label>
+                        <select id="filter-outcome" class="input input--sm" style="width:130px">
+                            <option value="">All</option>
+                            <option value="success">Success</option>
+                            <option value="failure">Failure</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="filter-from">From</label>
+                        <input id="filter-from" type="date" class="input input--sm" style="width:150px" />
+                    </div>
+
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="filter-to">To</label>
+                        <input id="filter-to" type="date" class="input input--sm" style="width:150px" />
+                    </div>
+
+                    <button id="apply-filter-btn" class="btn btn--primary btn--sm">Apply</button>
+                    <button id="clear-filter-btn" class="btn btn--ghost btn--sm">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs table -->
+        <div class="adm-card">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">Log entries</span>
+                <span id="log-count" style="font-size:.8rem;color:var(--text3)"></span>
+            </div>
+            <div style="padding:0 0 8px">
+                <div id="logs-list">
+                    <p class="loading" style="text-align:center;padding:32px">Loading…</p>
+                </div>
+                <div id="pagination" style="display:flex;gap:6px;padding:12px 20px;justify-content:flex-end"></div>
+            </div>
+        </div>
+
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast"><span class="t-icon">✓</span><span id="toast-msg">Done</span></div>
+<script type="module" src="/js/pages/admin/audit_logs.js"></script>
+</body>
+</html>

@@ -5,16 +5,15 @@ import { deleteUserUc } from "../../app/user_uc/delete_user.uc.js";
 import { promoteUserToAdminUseCase } from "../../app/user_uc/promote_user.uc.js";
 import { sendSuccess } from '../response_formatter.js';
 import { HTTP_STATUS } from '../http_status.js';
-import { sanitizeCreateInput, sanitizeUpdateInput, sanitizeAuthInput } from "../input_sanitizers/user.input_sanitizer.js";
+import { sanitizeCreateInput, sanitizeUpdateInput } from "../input_sanitizers/user.input_sanitizer.js";
 import { generateTokenPair, verifyRefreshToken } from '../../core/services/jwt.service.js';
 import { saveRefreshToken } from '../../core/services/token_store.service.js';
 import { listAllUsersUseCase } from "../../app/user_uc/list_user.uc.js";
 import logger from '../../core/logger/logger.js';
-import auditLogger from '../../core/logger/audit.logger.js';
-import { id } from "fp-ts/lib/Refinement.js";
+import { recordAudit } from '../../core/services/audit.service.js';
+import { AuditAction } from '../../domain/base/audit_enums.js';
 import { InvalidCredentialsError, UserEmailNotFoundError, UserNotFoundError, UserValidationError } from "../../core/errors/user.errors.js";
 import UserModel from "../../domain/models/user_model.js";
-import { MongooseError } from "mongoose";
 import { sanitizeUser } from "../../infrastructure/repositories/user_repo.js";
 
 const REFRESH_COOKIE_OPTIONS = {
@@ -35,10 +34,9 @@ export const createUser = async (req, res) => {
 
     const user = await createUserUsecase(input);
 
-    auditLogger.log('user.created', {
-        userId: user.id ?? user._id,
+    recordAudit(AuditAction.USER_CREATED, user.id ?? user._id, {
         email: user.email ?? user._email,
-        role: user.role ?? user._role,
+        role:  user.role  ?? user._role,
     }, req);
 
     return sendSuccess(res, user, HTTP_STATUS.CREATED);
@@ -98,10 +96,9 @@ export const updateUser = async (req, res) => {
 
     const user = await updateUserUseCase(id, updates);
 
-    auditLogger.log('user.updated', {
-        targetUserId: id,
+    recordAudit(AuditAction.USER_UPDATED, req.user?.id ?? null, {
+        targetUserId:  id,
         updatedFields: Object.keys(updates),
-        requesterId: req.user?.id ?? null,
     }, req);
 
     return sendSuccess(res, user, HTTP_STATUS.OK);
@@ -171,10 +168,7 @@ export const deleteUser = async (req, res) => {
 
     const result = await deleteUserUc(id);
 
-    auditLogger.log('user.deleted', {
-        targetUserId: id,
-        requesterId: req.user?.id ?? null,
-    }, req);
+    recordAudit(AuditAction.USER_DELETED_GENERAL, req.user?.id ?? null, { targetUserId: id }, req);
 
     return sendSuccess(res, result, HTTP_STATUS.OK);
 };
@@ -190,10 +184,7 @@ export const promoteUser = async (req, res) => {
 
     const user = await promoteUserToAdminUseCase(id);
 
-    auditLogger.log('user.promoted_to_admin', {
-        targetUserId: id,
-        requesterId: req.user?.id ?? null,
-    }, req);
+    recordAudit(AuditAction.USER_PROMOTED_TO_ADMIN, req.user?.id ?? null, { targetUserId: id }, req);
 
     return sendSuccess(res, user, HTTP_STATUS.OK);
 };

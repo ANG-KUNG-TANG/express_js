@@ -18,13 +18,28 @@ const ALLOWED_SORT_DIRS   = new Set([1, -1, 'asc', 'desc']);
 
 const toDomain = (doc) => {
     if (!doc) return null;
+
+    // or a plain ObjectId string (from createLog). Handle both shapes.
+    let actorId    = null;
+    let actorLabel = null;
+
+    if (doc.requesterId && typeof doc.requesterId === 'object' && doc.requesterId._id) {
+        // populated
+        actorId    = doc.requesterId._id.toString();
+        actorLabel = doc.requesterId.email ?? doc.requesterId.name ?? actorId;
+    } else if (doc.requesterId) {
+        actorId    = doc.requesterId.toString();
+        actorLabel = actorId;
+    }
+
     return new AuditLog({
         id:          doc._id.toString(),
         action:      doc.action,
         outcome:     doc.outcome,
-        requesterId: doc.requesterId ? doc.requesterId.toString() : null,
+        requesterId: actorId,
+        actorLabel,          // new field — display-friendly actor string
         details:     doc.details ?? {},
-        request:     doc.request   ?? null,
+        request:     doc.request ?? null,
         createdAt:   doc.createdAt,
     });
 };
@@ -38,9 +53,6 @@ const toDomainList = (docs) => docs.map(toDomain).filter((l) => l !== null);
 /**
  * Validates and sanitizes a sort object so only whitelisted fields/directions
  * reach Mongoose. Falls back to `{ createdAt: -1 }` on any invalid input.
- *
- * @param {object} raw - e.g. { createdAt: -1 } or { action: 'asc' }
- * @returns {object} safe sort object
  */
 const sanitizeSort = (raw) => {
     const DEFAULT_SORT = { createdAt: -1 };
@@ -109,23 +121,14 @@ export const createLog = async ({
 /**
  * Paginated, filterable audit log list for the admin dashboard.
  *
- * @param {object}       options
- * @param {string}       [options.action]       — exact action string e.g. 'admin.user.deleted'
- * @param {string}       [options.requesterId]  — filter by who performed the action
- * @param {string}       [options.outcome]      — 'success' | 'failure'
- * @param {Date|string}  [options.from]         — createdAt >= from
- * @param {Date|string}  [options.to]           — createdAt <= to
- * @param {number}       [options.page]
- * @param {number}       [options.limit]
- * @param {object}       [options.sort]         — e.g. { createdAt: -1 }
- *                                                Only whitelisted fields are accepted;
- *                                                invalid fields are silently dropped and
- *                                                the default { createdAt: -1 } is used.
+ * Changes vs original:
+ *   fix #4 — .populate('requesterId', 'email name') so the UI gets a readable actor
+ *   fix #7 — `to` date is pushed to 23:59:59.999 so the whole day is included
  */
 export const findLogs = async (options = {}) => {
     const {
         action,
-        actionPrefix,   // e.g. 'writingTask.' — set by audit_service category filter
+        actionPrefix,
         requesterId,
         outcome,
         from,
@@ -135,15 +138,13 @@ export const findLogs = async (options = {}) => {
         sort  = { createdAt: -1 },
     } = options;
 
-    // ── #3: Sanitize sort before it reaches Mongoose ─────────────────────────
     const safeSort = sanitizeSort(sort);
+    const skip     = (Math.max(1, Number(page)) - 1) * Number(limit);
+    const query    = {};
 
-    const skip  = (Math.max(1, Number(page)) - 1) * Number(limit);
-    const query = {};
-
-    // Exact action match takes priority; actionPrefix is the category fallback
     if (action)            query.action = action;
     else if (actionPrefix) query.action = { $regex: `^${actionPrefix}`, $options: 'i' };
+
     if (outcome) query.outcome = outcome;
 
     if (requesterId) {
@@ -157,13 +158,24 @@ export const findLogs = async (options = {}) => {
     if (from || to) {
         query.createdAt = {};
         if (from) query.createdAt.$gte = new Date(from);
-        if (to)   query.createdAt.$lte = new Date(to);
+        if (to) {
+            // fix #7: push end of day to 23:59:59.999 so the selected date is fully included
+            const toDate = new Date(to);
+            toDate.setHours(23, 59, 59, 999);
+            query.createdAt.$lte = toDate;
+        }
     }
 
     logger.debug('auditLogRepo.findLogs', { query, page, limit, sort: safeSort });
 
     const [docs, total] = await Promise.all([
-        AuditLogModel.find(query).skip(skip).limit(Number(limit)).sort(safeSort).lean(),
+        AuditLogModel
+            .find(query)
+            .skip(skip)
+            .limit(Number(limit))
+            .sort(safeSort)
+            .populate('requesterId', 'email name')  // fix #4: pull actor display info
+            .lean(),
         AuditLogModel.countDocuments(query),
     ]);
 

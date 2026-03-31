@@ -1,96 +1,664 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/components.css" />
-    <link rel="stylesheet" href="/css/pages/admin.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Dashboard — WriteSystem</title>
+<script src="/js/core/theme.js"></script>
+<link rel="stylesheet" href="/css/base.css" />
+<link rel="stylesheet" href="/css/pages/admin.css" />
 </head>
 <body>
-    <main class="admin-layout">
 
-        <header class="admin-header">
-            <h1 class="admin-header__title">Dashboard</h1>
-            <span class="admin-header__sub">Platform overview</span>
-            <span class="admin-header__badge">ADMIN</span>
-        </header>
+<!--
+  Sidebar is injected here by admin_sidebar.js (initAdminSidebar()).
+  Do NOT add a hardcoded <aside> — the JS component handles it.
+-->
 
-        <section class="stats-bar">
-            <div class="stat-card" id="stat-total-users">
-                <span class="stat-card__value">—</span>
-                <span class="stat-card__label">Total Users</span>
-            </div>
-            <div class="stat-card stat-card--highlight" id="stat-new-users">
-                <span class="stat-card__value">—</span>
-                <span class="stat-card__label">New This Week</span>
-            </div>
-            <div class="stat-card" id="stat-teachers">
-                <span class="stat-card__value">—</span>
-                <span class="stat-card__label">Teachers</span>
-            </div>
-            <div class="stat-card stat-card--warning" id="stat-pending">
-                <span class="stat-card__value">—</span>
-                <span class="stat-card__label">Pending Review</span>
-            </div>
-        </section>
+<div class="admin-main">
 
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <div>
-                    <h2 class="admin-panel__title">Pending Review</h2>
-                    <span class="admin-panel__sub">Oldest first — needs attention</span>
-                </div>
-            </div>
-            <div id="pending-list"><p class="loading">Loading…</p></div>
-        </section>
+  <!-- Topbar -->
+  <header class="adm-topbar">
+    <div>
+      <div class="adm-topbar-title" id="topbar-title">Dashboard</div>
+      <div class="adm-topbar-crumb">Admin <span>›</span> <span id="topbar-bc">Overview</span></div>
+    </div>
 
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <div>
-                    <h2 class="admin-panel__title">Recent Activity</h2>
-                    <span class="admin-panel__sub">Last 10 task updates</span>
-                </div>
-            </div>
-            <div id="activity-list"><p class="loading">Loading…</p></div>
-        </section>
+    <div class="adm-search">
+      <span class="adm-search-icon">⌕</span>
+      <input type="text" placeholder="Search users, tasks…" id="global-search"
+             oninput="handleSearch(this.value)" autocomplete="off" />
+    </div>
 
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <h2 class="admin-panel__title">User Management</h2>
-                <div class="admin-panel__controls">
-                    <input id="search-email" type="text" class="input input--sm"
-                        placeholder="Search by email…" style="width:220px" />
-                    <button id="search-btn"       class="btn btn--secondary btn--sm">Search</button>
-                    <button id="clear-search-btn" class="btn btn--ghost btn--sm">Clear</button>
-                </div>
-            </div>
-            <div id="users-list"><p class="loading">Loading…</p></div>
-        </section>
+    <div class="adm-topbar-actions">
+      <button class="adm-icon-btn"
+              onclick="switchPanel('notifications', document.querySelector('[href*=notifications]'))"
+              title="Send notification">◬</button>
+      <button class="adm-icon-btn" title="Alerts">
+        ◉<span class="dot"></span>
+      </button>
+    </div>
+  </header>
 
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <h2 class="admin-panel__title">Task Management</h2>
-                <div class="admin-panel__controls">
-                    <input id="task-search" type="text" class="input input--sm"
-                        placeholder="Search by title…" style="width:200px" />
-                    <select id="task-status-filter" class="select select--sm" style="width:150px">
-                        <option value="">All Statuses</option>
-                        <option value="ASSIGNED">Assigned</option>
-                        <option value="WRITING">Writing</option>
-                        <option value="SUBMITTED">Submitted</option>
-                        <option value="REVIEWED">Reviewed</option>
-                        <option value="SCORED">Scored</option>
-                    </select>
-                </div>
-            </div>
-            <div id="tasks-list"><p class="loading">Loading…</p></div>
-        </section>
+  <div class="adm-content">
 
-    </main>
-    <div id="toast-container"></div>
-    <!-- FIX: was /pages/admin/dashboard.js — correct path is /js/pages/admin/dashboard.js -->
-    <script type="module" src="/js/pages/admin/dashboard.js"></script>
+    <!-- ══════════ DASHBOARD ══════════════════════════════════════════════ -->
+    <div class="panel active" id="panel-dashboard">
+
+      <div class="adm-stat-grid">
+        <div class="adm-stat adm-stat--blue" id="stat-total-users">
+          <div class="adm-stat__icon">👥</div>
+          <div class="adm-stat__label">Total Users</div>
+          <div class="adm-stat__value stat-card__value">—</div>
+          <div class="adm-stat__delta"><span class="delta-up" id="stat-new-users-delta"></span></div>
+        </div>
+        <div class="adm-stat adm-stat--teal" id="stat-new-users">
+          <div class="adm-stat__icon">✨</div>
+          <div class="adm-stat__label">New This Week</div>
+          <div class="adm-stat__value stat-card__value">—</div>
+          <div class="adm-stat__delta delta-up">↑ Growing</div>
+        </div>
+        <div class="adm-stat adm-stat--amber" id="stat-teachers">
+          <div class="adm-stat__icon">🎓</div>
+          <div class="adm-stat__label">Teachers</div>
+          <div class="adm-stat__value stat-card__value">—</div>
+          <div class="adm-stat__delta">Active educators</div>
+        </div>
+        <div class="adm-stat adm-stat--red" id="stat-pending">
+          <div class="adm-stat__icon">⏳</div>
+          <div class="adm-stat__label">Pending Review</div>
+          <div class="adm-stat__value stat-card__value">—</div>
+          <div class="adm-stat__delta" style="color:var(--amber)">⚑ Needs review</div>
+        </div>
+      </div>
+
+      <div class="adm-row3">
+        <div class="adm-card">
+          <div class="adm-card-hd">
+            <span class="adm-card-title">New signups — last 30 days</span>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="signupChart"></canvas>
+          </div>
+        </div>
+        <div class="adm-card">
+          <div class="adm-card-hd">
+            <span class="adm-card-title">Users by role</span>
+          </div>
+          <div class="donut-wrap" style="margin-top:8px">
+            <canvas id="roleChart" width="110" height="110" style="width:110px;height:110px;flex-shrink:0"></canvas>
+            <div class="donut-legend">
+              <div class="legend-item">
+                <div class="legend-left"><span class="legend-dot" style="background:#5b6ef5"></span>Students</div>
+                <div class="legend-val" id="role-students">—</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-left"><span class="legend-dot" style="background:#38bdf8"></span>Teachers</div>
+                <div class="legend-val" id="role-teachers">—</div>
+              </div>
+              <div class="legend-item">
+                <div class="legend-left"><span class="legend-dot" style="background:#a78bfa"></span>Admins</div>
+                <div class="legend-val" id="role-admins">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="adm-row2">
+        <div class="adm-card">
+          <div class="adm-card-hd">
+            <span class="adm-card-title">Pending review queue</span>
+            <a class="adm-card-action" href="/pages/admin/tasks.html">View all →</a>
+          </div>
+          <div id="pending-list"><p class="loading">Loading…</p></div>
+        </div>
+        <div class="adm-card">
+          <div class="adm-card-hd">
+            <span class="adm-card-title">Recent activity</span>
+          </div>
+          <div id="activity-list"><p class="loading">Loading…</p></div>
+        </div>
+      </div>
+
+      <!-- ── Audit log widget ─────────────────────────────────────────────── -->
+      <div class="adm-card" style="margin-top:24px">
+        <div class="adm-card-hd">
+          <span class="adm-card-title">
+            <span style="margin-right:6px">≡</span> Recent audit events
+          </span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button
+              id="audit-widget-refresh"
+              class="btn btn--ghost btn--sm"
+              title="Refresh"
+              style="padding:3px 10px;font-size:12px"
+            >↻ Refresh</button>
+            <a class="adm-card-action" href="/pages/admin/audit_logs.html">View all →</a>
+          </div>
+        </div>
+        <div id="audit-widget-list"><p class="loading" style="padding:16px;text-align:center">Loading…</p></div>
+      </div>
+
+    </div>
+
+    <!-- ══════════ USERS ══════════════════════════════════════════════════ -->
+    <div class="panel" id="panel-users">
+      <div class="adm-filter-row">
+        <input type="email" id="search-email" placeholder="Search by email…"
+               class="input input--sm" style="width:220px" />
+        <button class="btn btn--ghost btn--sm" id="search-btn">Search</button>
+        <button class="btn btn--ghost btn--sm" id="clear-search-btn">Clear</button>
+        <button class="btn btn--primary btn--sm" style="margin-left:auto"
+                onclick="openModal('modal-create-user')">+ Create user</button>
+      </div>
+      <div class="adm-card">
+        <div id="users-list"><p class="loading">Loading…</p></div>
+      </div>
+    </div>
+
+    <!-- ══════════ ROLES ══════════════════════════════════════════════════ -->
+    <div class="panel" id="panel-roles">
+      <div class="adm-row2">
+        <div class="adm-card">
+          <div class="adm-card-hd"><span class="adm-card-title">Role permissions matrix</span></div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Permission</th><th>Student</th><th>Teacher</th><th>Admin</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>View own tasks</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Create tasks</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Assign tasks to students</td><td style="color:var(--muted)">—</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Review student work</td><td style="color:var(--muted)">—</td><td style="color:var(--green)">✓</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>View all users</td><td style="color:var(--muted)">—</td><td style="color:var(--muted)">—</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Manage roles</td><td style="color:var(--muted)">—</td><td style="color:var(--muted)">—</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Delete content</td><td style="color:var(--muted)">—</td><td style="color:var(--muted)">—</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Broadcast notifications</td><td style="color:var(--muted)">—</td><td style="color:var(--muted)">—</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>View audit logs</td><td style="color:var(--muted)">—</td><td style="color:var(--muted)">—</td><td style="color:var(--green)">✓</td></tr>
+              <tr><td>Edit submissions</td><td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td><td style="color:var(--red)">✗</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="adm-card">
+          <div class="adm-card-hd"><span class="adm-card-title">Promote / demote user</span></div>
+          <div class="form-group">
+            <label class="form-label">User email</label>
+            <input class="input" type="email" id="promote-email" placeholder="user@example.com" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">New role</label>
+            <div class="role-selector">
+              <button class="role-pill" onclick="selectRole('student',this)">Student</button>
+              <button class="role-pill" onclick="selectRole('teacher',this)">Teacher</button>
+              <button class="role-pill" onclick="selectRole('admin',this)">Admin</button>
+            </div>
+          </div>
+          <button id="promote-apply-btn" class="btn btn--primary" style="width:100%;margin-top:8px">Apply role change</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ TASKS ═══════════════════════════════════════════════════ -->
+    <div class="panel" id="panel-tasks">
+      <div class="adm-filter-row">
+        <input type="text" id="task-search" placeholder="Search tasks…"
+               class="input input--sm" style="width:220px" />
+        <select id="task-status-filter" class="input input--sm" style="width:160px">
+          <option value="">All statuses</option>
+          <option value="DRAFT">Draft</option>
+          <option value="SUBMITTED">Submitted</option>
+          <option value="REVIEWED">Reviewed</option>
+          <option value="SCORED">Scored</option>
+        </select>
+      </div>
+      <div class="adm-card">
+        <div id="tasks-list"><p class="loading">Loading…</p></div>
+      </div>
+    </div>
+
+    <!-- ══════════ MODERATION ══════════════════════════════════════════════ -->
+    <div class="panel" id="panel-moderation">
+      <div class="adm-filter-row">
+        <select id="flag-status-filter" class="input input--sm" style="width:160px">
+          <option value="open">Open flags</option>
+          <option value="resolved">Resolved</option>
+          <option value="">All</option>
+        </select>
+        <button class="btn btn--danger btn--sm" style="margin-left:auto"
+                onclick="openModal('modal-flag-content')">⚑ Flag content</button>
+      </div>
+      <div class="adm-card">
+        <table class="data-table">
+          <thead>
+            <tr><th>Task</th><th>Flagged by</th><th>Reason</th><th>Severity</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="flags-table-body"></tbody>
+        </table>
+        <div id="moderation-pagination" style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ AUDIT LOGS ══════════════════════════════════════════════ -->
+    <div class="panel" id="panel-audit">
+      <div class="adm-filter-row">
+        <select id="filter-action" class="input input--sm" style="width:200px">
+          <option value="">All actions</option>
+          <option value="admin.user.promoted">User promoted</option>
+          <option value="admin.user.assigned_teacher">Assigned teacher</option>
+          <option value="admin.user.linked_to_teacher">Linked to teacher</option>
+          <option value="admin.user.unlinked_from_teacher">Unlinked from teacher</option>
+          <option value="admin.user.deleted">User deleted</option>
+          <option value="admin.task.reviewed">Task reviewed</option>
+          <option value="admin.task.scored">Task scored</option>
+          <option value="admin.tasks.transferred">Tasks transferred</option>
+          <option value="admin.content.flagged">Content flagged</option>
+          <option value="admin.content.flag_resolved">Flag resolved</option>
+          <option value="admin.content.deleted">Content deleted</option>
+          <option value="admin.notification.sent">Notification sent</option>
+        </select>
+        <select id="filter-outcome" class="input input--sm" style="width:130px">
+          <option value="">All outcomes</option>
+          <option value="success">Success</option>
+          <option value="failure">Failure</option>
+        </select>
+        <input type="date" id="filter-from" class="input input--sm" style="width:145px" />
+        <input type="date" id="filter-to"   class="input input--sm" style="width:145px" />
+        <button class="btn btn--primary btn--sm" id="apply-filter-btn">Apply</button>
+        <button class="btn btn--ghost   btn--sm" id="clear-filter-btn">Clear</button>
+        <span style="margin-left:auto;font-size:12px;color:var(--text3)" id="log-count"></span>
+      </div>
+      <div class="adm-card">
+        <div id="logs-list"><p class="loading">Loading…</p></div>
+        <div id="pagination" style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
+    <!-- ══════════ NOTIFICATIONS ═══════════════════════════════════════════ -->
+    <div class="panel" id="panel-notifications">
+      <div class="adm-row2">
+        <div class="adm-card">
+          <div class="adm-card-hd"><span class="adm-card-title">Send notification</span></div>
+
+          <div class="form-group">
+            <label class="form-label">Audience</label>
+            <div class="audience-grid">
+              <div class="audience-card selected" onclick="selectAudience('all', this)">
+                <div class="a-title">📢 All users</div>
+                <div class="a-sub">All recipients</div>
+              </div>
+              <div class="audience-card" onclick="selectAudience('teachers', this)">
+                <div class="a-title">📚 Teachers only</div>
+                <div class="a-sub">Teacher role</div>
+              </div>
+              <div class="audience-card" onclick="selectAudience('students', this)">
+                <div class="a-title">🎓 Students only</div>
+                <div class="a-sub">Student role</div>
+              </div>
+              <div class="audience-card" onclick="selectAudience('individual', this)">
+                <div class="a-title">👤 Individual</div>
+                <div class="a-sub">Enter user ID</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden select kept in sync by selectAudience() -->
+          <select id="noti-audience" style="display:none">
+            <option value="all">All users</option>
+            <option value="teachers">Teachers</option>
+            <option value="students">Students</option>
+            <option value="individual">Individual</option>
+          </select>
+
+          <!-- individual-row: shown when audience = individual; matches notifications.js listener -->
+          <div id="individual-row" style="display:none;margin-bottom:14px;flex-direction:column;gap:4px">
+            <label class="form-label">Target User ID</label>
+            <input class="input" type="text" id="noti-target-id" placeholder="User ObjectId…" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select class="input" id="noti-type">
+              <option value="account_alert">Account alert</option>
+              <option value="exam_reminder">Exam reminder</option>
+              <option value="score_available">Score available</option>
+              <option value="practice_ready">Practice ready</option>
+              <option value="role_changed">Role changed</option>
+              <option value="teacher_linked">Teacher linked</option>
+              <option value="task_assigned">Task assigned</option>
+              <option value="task_reviewed">Task reviewed</option>
+              <option value="task_scored">Task scored</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input class="input" type="text" id="noti-title" placeholder="Notification title…" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea class="input" id="noti-message" placeholder="Message body…" rows="3" style="min-height:80px;resize:vertical"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CTA Text <span style="color:var(--text3);text-transform:none;font-weight:400">(optional)</span></label>
+            <input class="input" type="text" id="noti-cta-text" placeholder="e.g. View Task" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">CTA URL <span style="color:var(--text3);text-transform:none;font-weight:400">(optional)</span></label>
+            <input class="input" type="text" id="noti-cta-url" placeholder="https://…" />
+          </div>
+          <p id="send-status" style="font-size:11px;color:var(--text3);margin-bottom:8px;min-height:16px"></p>
+          <button id="send-btn" class="btn btn--primary" style="width:100%">Send notification</button>
+        </div>
+
+        <div class="adm-card">
+          <div class="adm-card-hd"><span class="adm-card-title">Sent history</span></div>
+          <div id="notif-history" class="activity-list">
+            <p class="empty-state" style="font-size:12px">No recent sends.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ MONITORING ══════════════════════════════════════════════ -->
+    <div class="panel" id="panel-monitoring">
+      <div class="adm-stat-grid">
+        <div class="adm-stat adm-stat--blue">
+          <div class="adm-stat__icon">📡</div>
+          <div class="adm-stat__label">API calls today</div>
+          <div class="adm-stat__value">14,302</div>
+          <div class="adm-stat__delta delta-up">↑ 8% vs yesterday</div>
+        </div>
+        <div class="adm-stat adm-stat--teal">
+          <div class="adm-stat__icon">⚡</div>
+          <div class="adm-stat__label">Avg response</div>
+          <div class="adm-stat__value">142ms</div>
+          <div class="adm-stat__delta delta-up">↓ 18ms faster</div>
+        </div>
+        <div class="adm-stat adm-stat--amber">
+          <div class="adm-stat__icon">⚠</div>
+          <div class="adm-stat__label">Error rate</div>
+          <div class="adm-stat__value">0.3%</div>
+          <div class="adm-stat__delta" style="color:var(--green)">Within threshold</div>
+        </div>
+        <div class="adm-stat adm-stat--teal">
+          <div class="adm-stat__icon">🟢</div>
+          <div class="adm-stat__label">Uptime</div>
+          <div class="adm-stat__value">99.9%</div>
+          <div class="adm-stat__delta delta-up">30-day avg</div>
+        </div>
+      </div>
+
+      <div class="adm-card" style="margin-bottom:16px">
+        <div class="adm-card-hd"><span class="adm-card-title">Request volume — last 24 hours</span></div>
+        <div class="chart-wrap"><canvas id="requestChart"></canvas></div>
+      </div>
+
+      <div class="adm-card">
+        <div class="adm-card-hd"><span class="adm-card-title">Live system log</span></div>
+        <div id="system-log"></div>
+      </div>
+    </div>
+
+  </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<!-- ═════════════ MODALS ════════════════════════════════════════════════════ -->
+
+<!-- Create user -->
+<div class="modal-backdrop" id="modal-create-user">
+  <div class="modal">
+    <div class="modal-title">Create new user</div>
+    <div class="modal-sub">User will receive an email with their temporary password.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group">
+        <label class="form-label">First name</label>
+        <input class="input" id="cu-firstname" type="text" placeholder="Jane" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last name</label>
+        <input class="input" id="cu-lastname" type="text" placeholder="Doe" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="input" id="cu-email" type="email" placeholder="jane@school.edu" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="input" id="cu-username" type="text" placeholder="janedoe" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <select class="input" id="cu-role">
+        <option value="student">Student</option>
+        <option value="teacher">Teacher</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Temporary password</label>
+      <input class="input" id="cu-password" type="text" placeholder="Min 8 characters" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn--ghost btn--sm" onclick="closeModal('modal-create-user')">Cancel</button>
+      <button class="btn btn--primary btn--sm" onclick="createUser()">Create user</button>
+    </div>
+  </div>
+</div>
+
+<!-- Flag content -->
+<div class="modal-backdrop" id="modal-flag-content">
+  <div class="modal">
+    <div class="modal-title">Flag content</div>
+    <div class="modal-sub">Admin cannot edit submissions. You may flag or delete.</div>
+    <div class="form-group">
+      <label class="form-label">Task ID</label>
+      <input class="input" id="flag-task-id" placeholder="Task ObjectId" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Severity</label>
+      <select class="input" id="flag-severity">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Reason</label>
+      <textarea class="input" id="flag-reason" placeholder="Describe the issue…" rows="3" style="min-height:80px;resize:vertical"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn--ghost btn--sm" onclick="closeModal('modal-flag-content')">Cancel</button>
+      <button id="submit-flag-btn" class="btn btn--danger btn--sm" onclick="submitFlag()">Flag content</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset password -->
+<div class="modal-backdrop" id="modal-reset-password">
+  <div class="modal">
+    <div class="modal-title">Reset password</div>
+    <div class="modal-sub">Set a new password for this user. They should change it on next login.</div>
+    <div class="form-group" style="margin-top:8px">
+      <label class="form-label">New password</label>
+      <input class="input" id="reset-pw-input" type="text" placeholder="Min 8 characters" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn--ghost btn--sm" onclick="closeModal('modal-reset-password')">Cancel</button>
+      <button class="btn btn--primary btn--sm" onclick="confirmResetPassword()">Reset password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"><span class="t-icon">✓</span><span id="toast-msg">Done</span></div>
+
+<!-- ═════════════ SCRIPTS ════════════════════════════════════════════════════ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+<script type="module" src="/js/pages/admin/dashboard.js"></script>
+<script type="module" src="/js/pages/admin/audit_logs.js"></script>
+<script type="module" src="/js/pages/admin/moderation.js"></script>
+<script type="module" src="/js/pages/admin/notifications.js"></script>
+
+<script>
+'use strict';
+
+let selectedPromoteRole = '';
+let selectedAudience    = 'all';
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type) {
+    const t    = document.getElementById('toast');
+    const icon = document.querySelector('#toast .t-icon');
+    document.getElementById('toast-msg').textContent = msg;
+    if (icon) {
+        icon.textContent = type === 'error' ? '✕' : '✓';
+        icon.style.color = type === 'error' ? 'var(--red)' : 'var(--green)';
+    }
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+// ── Modals ────────────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(b => {
+    b.addEventListener('click', e => { if (e.target === b) b.classList.remove('open'); });
+});
+
+// ── Panel switch ──────────────────────────────────────────────────────────────
+function switchPanel(panelId, el) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('panel-' + panelId);
+    if (target) target.classList.add('active');
+    document.querySelectorAll('.asb-nav-item').forEach(n => n.classList.remove('is-active'));
+    if (el) el.classList.add('is-active');
+    const label = panelId.charAt(0).toUpperCase() + panelId.slice(1).replace(/_/g, ' ');
+    const titleEl = document.getElementById('topbar-title');
+    const bcEl    = document.getElementById('topbar-bc');
+    if (titleEl) titleEl.textContent = label;
+    if (bcEl)    bcEl.textContent    = label;
+}
+
+// ── Global search ─────────────────────────────────────────────────────────────
+function handleSearch(q) {
+    if (!q) return;
+    switchPanel('tasks', null);
+    const si = document.getElementById('task-search');
+    if (si) { si.value = q; si.dispatchEvent(new Event('input', { bubbles: true })); }
+}
+
+// ── Role pill selector ────────────────────────────────────────────────────────
+function selectRole(role, el) {
+    selectedPromoteRole = role;
+    window.__selectedPromoteRole = role;
+    document.querySelectorAll('.role-pill').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+}
+
+// ── Audience card selector ────────────────────────────────────────────────────
+function selectAudience(aud, el) {
+    selectedAudience = aud;
+    document.querySelectorAll('.audience-card').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    // individual-row: matches notifications.js #individual-row listener
+    const row = document.getElementById('individual-row');
+    if (row) row.style.display = aud === 'individual' ? 'flex' : 'none';
+    const sel = document.getElementById('noti-audience');
+    if (sel) sel.value = aud;
+}
+
+// ── Stubs (delegated to ES modules) ──────────────────────────────────────────
+function createUser()           { /* → dashboard.js */ }
+function confirmResetPassword() { /* → dashboard.js */ }
+function submitFlag()           { /* → moderation.js */ }
+
+// ── Charts ────────────────────────────────────────────────────────────────────
+function drawSignupChart() {
+    const ctx = document.getElementById('signupChart')?.getContext('2d');
+    if (!ctx) return;
+    const labels = [], data = [];
+    const now = new Date();
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date(now); d.setDate(d.getDate()-i);
+        labels.push(d.toLocaleDateString('en',{month:'short',day:'numeric'}));
+        data.push(Math.floor(Math.random()*12+1));
+    }
+    new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ data, fill: true,
+            backgroundColor: 'rgba(91,110,245,0.10)',
+            borderColor: '#5b6ef5', borderWidth: 2, pointRadius: 0, tension: 0.4 }] },
+        options: { responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks:{ color:'#7a8099', font:{size:10}, maxTicksLimit:8 }, grid:{ color:'rgba(255,255,255,0.04)' }, border:{display:false} },
+                y: { ticks:{ color:'#7a8099', font:{size:10} }, grid:{ color:'rgba(255,255,255,0.04)' }, border:{display:false} }
+            }
+        }
+    });
+}
+
+function drawRoleChart() {
+    const ctx = document.getElementById('roleChart')?.getContext('2d');
+    if (!ctx) return;
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels: ['Students','Teachers','Admins'],
+            datasets: [{ data:[192,48,8], backgroundColor:['#5b6ef5','#38bdf8','#a78bfa'], borderWidth:0 }] },
+        options: { responsive:false, cutout:'72%',
+            plugins: { legend:{ display:false }, tooltip:{ enabled:true } } }
+    });
+}
+
+function drawRequestChart() {
+    const ctx = document.getElementById('requestChart')?.getContext('2d');
+    if (!ctx) return;
+    const labels = Array.from({length:24},(_,i)=>`${i}:00`);
+    const data   = [120,80,60,45,40,55,200,450,620,700,680,710,650,600,580,610,700,750,680,600,400,300,200,140];
+    new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ data, backgroundColor: data.map(v=>v>600?'#5b6ef5':'rgba(91,110,245,0.3)'), borderRadius:3, borderWidth:0 }] },
+        options: { responsive:true, maintainAspectRatio:false,
+            plugins: { legend:{ display:false } },
+            scales: {
+                x: { ticks:{ color:'#7a8099', font:{size:10}, maxTicksLimit:12 }, grid:{ display:false }, border:{display:false} },
+                y: { ticks:{ color:'#7a8099', font:{size:10} }, grid:{ color:'rgba(255,255,255,0.04)' }, border:{display:false} }
+            }
+        }
+    });
+}
+
+// ── System log ────────────────────────────────────────────────────────────────
+const LOG_TEMPLATES = [
+    () => `<span style="color:#5b6ef5">[INFO]</span>  GET /api/tasks 200 — 45ms`,
+    () => `<span style="color:#2dd4a0">[INFO]</span>  POST /api/auth/login 200 — 88ms`,
+    () => `<span style="color:#f5a623">[WARN]</span>  Slow query detected: 340ms`,
+    () => `<span style="color:#5b6ef5">[INFO]</span>  Socket connected: user-${Math.floor(Math.random()*200+10)}`,
+    () => `<span style="color:#5b6ef5">[INFO]</span>  PATCH /api/users/${Math.floor(Math.random()*10+1)} 200 — 31ms`,
+    () => `<span style="color:#f05b5b">[ERROR]</span> Rate limit hit: 192.168.1.${Math.floor(Math.random()*50)}`,
+];
+function appendSystemLog() {
+    const el = document.getElementById('system-log');
+    if (!el) return;
+    const now  = new Date().toTimeString().slice(0,8);
+    const line = LOG_TEMPLATES[Math.floor(Math.random()*LOG_TEMPLATES.length)]();
+    const div  = document.createElement('div');
+    div.innerHTML = `<span style="color:var(--muted);margin-right:8px">${now}</span>${line}`;
+    el.appendChild(div);
+    if (el.children.length > 40) el.removeChild(el.firstChild);
+    el.scrollTop = el.scrollHeight;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+    drawSignupChart();
+    drawRoleChart();
+    drawRequestChart();
+    setInterval(appendSystemLog, 2200);
+    appendSystemLog();
+});
+</script>
 </body>
 </html>

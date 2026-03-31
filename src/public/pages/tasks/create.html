@@ -1,249 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>New Task — IELTS Platform</title>
-  <link rel="stylesheet" href="/css/base.css" />
-  <style>
-    /* ── Two‑column layout (always side by side) ── */
-    .create-grid {
-      display: grid;
-      grid-template-columns: 260px 1fr; /* left sidebar fixed, right form fluid */
-      gap: 20px;
-      align-items: start;
-    }
-
-    /* ── Left sidebar card (quick guide) ── */
-    .sidebar-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 16px 14px; /* very compact */
-      position: sticky;
-      top: calc(var(--nav-h) + 20px);
-      box-shadow: var(--sh-xs);
-    }
-    .sidebar-card h3 {
-      font-family: var(--font-d);
-      font-size: .9rem;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid var(--border);
-      color: var(--text);
-    }
-    .tip-item {
-      display: flex;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border-light);
-      font-size: .78rem;
-      line-height: 1.4;
-      color: var(--text-secondary);
-    }
-    .tip-item:last-child { border-bottom: none; }
-    .tip-item__icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 5px;
-      background: var(--accent-dim);
-      display: grid;
-      place-items: center;
-      flex-shrink: 0;
-      color: var(--accent);
-      font-size: .75rem;
-      font-weight: 700;
-    }
-    .tip-item strong { color: var(--text); }
-
-    /* ── Main form card (right) ── */
-    .form-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 20px; /* compact */
-    }
-
-    /* ── Step indicator (smaller) ── */
-    .steps {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      margin-bottom: 20px;
-    }
-    .step {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: .75rem;
-      font-weight: 500;
-      color: var(--text-muted);
-    }
-    .step__num {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      border: 1.5px solid var(--border);
-      display: grid;
-      place-items: center;
-      font-size: .65rem;
-      font-weight: 700;
-      flex-shrink: 0;
-      transition: all .2s;
-    }
-    .step--active .step__num {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
-    .step--active { color: var(--text); }
-    .step--done .step__num {
-      background: var(--green);
-      border-color: var(--green);
-      color: #fff;
-    }
-    .step__connector {
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-      margin: 0 6px;
-      min-width: 20px;
-    }
-
-    /* ── Word count hint ── */
-    .wc-hint {
-      display: none;
-      padding: 6px 10px;
-      background: var(--accent-light);
-      border: 1px solid #bfdbfe;
-      border-radius: var(--radius-sm);
-      font-size: .75rem;
-      color: var(--accent);
-      margin-bottom: 12px;
-      gap: 5px;
-      align-items: center;
-    }
-    .wc-hint.show { display: flex; }
-
-    /* ── Form groups (tight) ── */
-    .form-group {
-      margin-bottom: 12px;
-    }
-    .form-group label {
-      font-size: .65rem;
-      margin-bottom: 2px;
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-      padding: 6px 8px;
-      font-size: .8rem;
-      border-radius: var(--radius-sm);
-    }
-    .form-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-    .form-error {
-      font-size: .7rem;
-      min-height: 16px;
-    }
-
-    /* ── Submit row ── */
-    .submit-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding-top: 4px;
-    }
-    .btn--lg {
-      height: 38px;
-      font-size: .85rem;
-    }
-
-    /* ── No stacking media query – columns always stay ── */
-    /* If you want stacking on very small screens, add a media query later */
-  </style>
+  <script src="/js/core/theme.js"></script>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/pages/tasks.css"/>
 </head>
 <body>
 <div class="container page-content">
 
-  <!-- Page header -->
   <div class="page-header">
     <p class="page-header__eyebrow"><a href="/pages/tasks/list.html">← My Tasks</a></p>
     <h1 class="page-header__title">New Writing Task</h1>
     <p class="page-header__sub">Set up your task details, then jump straight into writing.</p>
   </div>
 
-  <!-- Step indicator -->
-  <div class="steps" style="max-width: 360px; margin-bottom: 20px;">
-    <div class="step step--active" id="step-1">
-      <div class="step__num">1</div>
-      <span>Task Setup</span>
-    </div>
+  <div class="steps" style="max-width:360px;margin-bottom:20px;">
+    <div class="step step--active" id="step-1"><div class="step__num">1</div><span>Task Setup</span></div>
     <div class="step__connector"></div>
-    <div class="step step" id="step-2">
-      <div class="step__num">2</div>
-      <span>Write</span>
-    </div>
+    <div class="step" id="step-2"><div class="step__num">2</div><span>Write</span></div>
     <div class="step__connector"></div>
-    <div class="step" id="step-3">
-      <div class="step__num">3</div>
-      <span>Submit</span>
-    </div>
+    <div class="step" id="step-3"><div class="step__num">3</div><span>Submit</span></div>
   </div>
 
   <div class="create-grid">
 
-    <!-- LEFT SIDEBAR (Quick Guide) -->
+    <!-- LEFT SIDEBAR -->
     <aside class="sidebar-card">
       <h3>Quick Guide</h3>
-
       <div class="tip-item">
         <div class="tip-item__icon">T1</div>
-        <div>
-          <strong>Task 1</strong><br>
-          Describe a visual (Academic) or write a letter (General).<br>
-          Minimum <strong>150 words</strong>.
-        </div>
+        <div><strong>Task 1</strong><br>Describe a visual (Academic) or write a letter (General).<br>Minimum <strong>150 words</strong>.</div>
       </div>
-
       <div class="tip-item">
         <div class="tip-item__icon">T2</div>
-        <div>
-          <strong>Task 2</strong><br>
-          Write an essay responding to a question or argument.<br>
-          Minimum <strong>250 words</strong>.
-        </div>
+        <div><strong>Task 2</strong><br>Write an essay responding to a question or argument.<br>Minimum <strong>250 words</strong>.</div>
       </div>
-
       <div class="tip-item">
         <div class="tip-item__icon">
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
           </svg>
         </div>
-        <div>
-          After you click <strong>Create & Start Writing</strong>, you'll go straight to the writing editor.
-        </div>
+        <div>After you click <strong>Create &amp; Start Writing</strong>, you'll go straight to the writing editor.</div>
       </div>
     </aside>
 
-    <!-- RIGHT MAIN FORM -->
+    <!-- RIGHT FORM -->
     <form id="create-task-form" class="form-card" novalidate>
 
       <div class="form-group">
         <label for="title">Task Title *</label>
-        <input
-          type="text"
-          id="title"
-          placeholder="e.g. Climate Change Essay"
-          required
-          minlength="3"
-          maxlength="100"
-          autocomplete="on"
-        />
+        <input type="text" id="title" placeholder="e.g. Climate Change Essay" required minlength="3" maxlength="100" autocomplete="on"/>
         <p class="form-error" id="err-title"></p>
       </div>
 
@@ -268,7 +78,6 @@
         </div>
       </div>
 
-      <!-- Word count hint -->
       <div class="wc-hint" id="wc-hint">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -279,25 +88,17 @@
       <div class="form-group">
         <label for="questionPrompt">
           Question Prompt
-          <span style="font-weight:400; color:var(--text-muted); font-size:.65rem; margin-left:4px;">(optional but recommended)</span>
+          <span style="font-weight:400;color:var(--text3);font-size:.65rem;margin-left:4px;">(optional but recommended)</span>
         </label>
-        <textarea
-          id="questionPrompt"
-          rows="3"
-          placeholder="Paste the full IELTS question here…"
-        ></textarea>
+        <textarea id="questionPrompt" rows="3" placeholder="Paste the full IELTS question here…"></textarea>
       </div>
 
       <div class="form-group">
         <label for="personalNotes">
           Personal Notes
-          <span style="font-weight:400; color:var(--text-muted); font-size:.65rem; margin-left:4px;">(optional)</span>
+          <span style="font-weight:400;color:var(--text3);font-size:.65rem;margin-left:4px;">(optional)</span>
         </label>
-        <textarea
-          id="personalNotes"
-          rows="2"
-          placeholder="Reminders for yourself, e.g. 'Focus on cohesion'"
-        ></textarea>
+        <textarea id="personalNotes" rows="2" placeholder="Reminders for yourself, e.g. 'Focus on cohesion'"></textarea>
       </div>
 
       <div id="form-alert" class="alert alert--error" style="display:none;"></div>
@@ -307,9 +108,9 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
           </svg>
-          Create & Start Writing
+          Create &amp; Start Writing
         </button>
-        <a href="/pages/tasks/write.html" class="btn btn--ghost btn--lg">Cancel</a>
+        <a href="/pages/tasks/list.html" class="btn btn--ghost btn--lg">Cancel</a>
       </div>
 
     </form>

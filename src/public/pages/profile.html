@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profile — IELTS Platform</title>
+  <link rel="stylesheet" href="/css/base.css" />
+  <link rel="stylesheet" href="/css/pages/profile.css" />
+</head>
+<body>
+  <!-- Navbar injected by navbar.js -->
+
+  <div class="profile-page">
+
+    <a href="/pages/dashboard.html" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Dashboard
+    </a>
+
+    <!-- ══ Hero card ══ -->
+    <div class="profile-hero">
+
+      <!-- Cover photo -->
+      <div class="profile-cover" id="cover-area">
+        <canvas id="cover-canvas"></canvas>
+        <div class="profile-cover__hint">
+          <span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            Change cover
+          </span>
+        </div>
+        <input type="file" id="cover-file-input" accept="image/*" style="display:none"/>
+      </div>
+
+      <!-- Avatar + identity -->
+      <div class="profile-identity">
+        <div class="profile-avatar-wrap">
+          <label for="avatar-file-input" style="cursor:pointer">
+            <div class="profile-avatar-large" id="profile-avatar">
+              <span id="profile-initials">—</span>
+            </div>
+            <div class="avatar-edit-badge">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            </div>
+          </label>
+          <input type="file" id="avatar-file-input" accept="image/*" style="display:none"/>
+        </div>
+
+        <div class="profile-identity__info">
+          <h1 class="profile-identity__name" id="profile-display-name">—</h1>
+          <p class="profile-identity__email" id="profile-display-email">—</p>
+          <div class="profile-identity__badges">
+            <span class="badge" id="profile-role-badge">Student</span>
+            <span class="badge badge--active">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Active
+            </span>
+          </div>
+        </div>
+      </div>
+    </div><!-- /hero -->
+
+    <!-- ══ Progress stats ══ -->
+    <div class="stats-strip">
+      <div class="stat-card">
+        <div class="stat-card__number" id="ps-assigned">—</div>
+        <div class="stat-card__label">Assigned</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__number" id="ps-submitted">—</div>
+        <div class="stat-card__label">Submitted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__number" id="ps-scored">—</div>
+        <div class="stat-card__label">Scored</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__number" id="ps-avg">—</div>
+        <div class="stat-card__label">Avg Band</div>
+      </div>
+    </div>
+
+    <!-- ══ Personal information ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <h2 class="profile-section__title">Personal Information</h2>
+      </div>
+      <div class="profile-section__body">
+        <div class="field-grid">
+          <div class="field">
+            <label for="field-first">First Name</label>
+            <input id="field-first" type="text" placeholder="First name" autocomplete="given-name"/>
+          </div>
+          <div class="field">
+            <label for="field-last">Last Name</label>
+            <input id="field-last" type="text" placeholder="Last name" autocomplete="family-name"/>
+          </div>
+          <div class="field field--full">
+            <label for="field-email">Email Address</label>
+            <input id="field-email" type="email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <div class="field">
+            <label for="field-target">Target Band Score</label>
+            <select id="field-target">
+              <option value="">— Select —</option>
+              <option>5.0</option><option>5.5</option><option>6.0</option>
+              <option>6.5</option><option>7.0</option><option>7.5</option>
+              <option>8.0</option><option>8.5</option><option>9.0</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="field-exam-date">Exam Date</label>
+            <input id="field-exam-date" type="date"/>
+          </div>
+          <div class="field field--full">
+            <label for="field-bio">About / Learning Goals</label>
+            <textarea id="field-bio" placeholder="e.g. Preparing for university admission in the UK…"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="section-actions">
+        <span class="save-feedback" id="info-feedback">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Saved!
+        </span>
+        <button class="btn btn--ghost" id="cancel-info-btn">Cancel</button>
+        <button class="btn btn--primary" id="save-info-btn">Save Changes</button>
+      </div>
+    </div>
+
+    <!-- ══ Change password ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <h2 class="profile-section__title">Change Password</h2>
+      </div>
+      <div class="profile-section__body">
+        <div class="field-grid">
+          <div class="field field--full">
+            <label for="field-pw-current">Current Password</label>
+            <input id="field-pw-current" type="password" placeholder="Enter current password" autocomplete="current-password"/>
+          </div>
+          <div class="field">
+            <label for="field-pw-new">New Password</label>
+            <input id="field-pw-new" type="password" placeholder="Min. 8 characters" autocomplete="new-password"/>
+            <div class="pw-bars">
+              <div class="pw-bar" id="pb1"></div><div class="pw-bar" id="pb2"></div>
+              <div class="pw-bar" id="pb3"></div><div class="pw-bar" id="pb4"></div>
+            </div>
+            <span class="pw-hint" id="pw-hint"></span>
+          </div>
+          <div class="field">
+            <label for="field-pw-confirm">Confirm New Password</label>
+            <input id="field-pw-confirm" type="password" placeholder="Repeat new password" autocomplete="new-password"/>
+          </div>
+        </div>
+      </div>
+      <div class="section-actions">
+        <span class="save-feedback" id="pw-feedback">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Password updated!
+        </span>
+        <button class="btn btn--ghost" id="clear-pw-btn">Clear</button>
+        <button class="btn btn--primary" id="save-pw-btn">Update Password</button>
+      </div>
+    </div>
+
+    <!-- ══ Files & attachments ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        <h2 class="profile-section__title">Files &amp; Documents</h2>
+        <span style="font-size:12px;color:var(--text-muted)" id="file-count-label">0 files</span>
+      </div>
+      <div class="profile-section__body">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone__icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+          </div>
+          <div class="dropzone__title">Drop files here</div>
+          <div class="dropzone__sub">PDF, DOC, XLS, PPT, images — max 10 MB each</div>
+          <button class="dropzone__btn" type="button" id="browse-files-btn">Browse files</button>
+        </div>
+        <input type="file" id="file-input" multiple
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.txt"
+          style="display:none"/>
+        <div class="file-list" id="file-list"></div>
+      </div>
+    </div>
+
+    <!-- ══ Account metadata ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <h2 class="profile-section__title">Account Details</h2>
+      </div>
+      <div class="profile-section__body">
+        <div class="field-grid">
+          <div class="field">
+            <label>User ID</label>
+            <input type="text" id="field-uid" readonly/>
+          </div>
+          <div class="field">
+            <label>Role</label>
+            <input type="text" id="field-role-display" readonly/>
+          </div>
+          <div class="field">
+            <label>Member Since</label>
+            <input type="text" id="field-created" readonly/>
+          </div>
+          <div class="field">
+            <label>Last Updated</label>
+            <input type="text" id="field-updated" readonly/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ Account actions ══ -->
+    <div class="profile-section">
+      <div class="profile-section__header">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
+        <h2 class="profile-section__title">Account</h2>
+      </div>
+      <div class="danger-row" style="border-bottom:1px solid var(--border)">
+        <div class="danger-row__info">
+          <p>Sign out</p>
+          <p>Sign out of your account on this device.</p>
+        </div>
+        <button class="btn btn--ghost" id="signout-btn">Sign Out</button>
+      </div>
+      <div class="danger-row">
+        <div class="danger-row__info">
+          <p style="color:#ef4444">Delete Account</p>
+          <p>Permanently delete your account and all data. This cannot be undone.</p>
+        </div>
+        <button class="btn btn--danger-soft" id="delete-account-btn">Delete Account</button>
+      </div>
+    </div>
+
+  </div><!-- /profile-page -->
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="alert" aria-live="polite">
+    <svg class="toast__icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" id="toast-icon">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    <span id="toast-msg"></span>
+  </div>
+
+  <!-- Navbar -->
+  <script type="module">
+    import { initNavbar } from '/components/navbar.js';
+    initNavbar();
+  </script>
+
+  <!-- Profile logic (API calls + UI wiring) -->
+  <script type="module" src="/js/pages/profile.js"></script>
+
+</body>
+</html>

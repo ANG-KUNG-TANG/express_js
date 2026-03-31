@@ -15,7 +15,7 @@ const router = Router();
 
 
 // ── User CRUD ─────────────────────────────────────────────────────────────────
-router.post('/users',               asyncHandler(createUser));
+router.post('/users',               authenticate, asyncHandler(createUser)); 
 router.get('/list_users',           asyncHandler(listUsers));
 router.get('/users/email/:email',   asyncHandler(getUserByEamil));
 router.get('/users/:id',            asyncHandler(getUserById));

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Send Notifications — WriteSystem Admin</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+</head>
+<body>
+<!--
+  Sidebar is injected here by initAdminSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
+
+<div class="admin-main">
+
+    <!-- Topbar -->
+    <header class="adm-topbar">
+        <div>
+            <div class="adm-topbar-title">Notifications</div>
+            <div class="adm-topbar-crumb">Admin <span>›</span> <span>Comms</span></div>
+        </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search users, tasks…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <button class="adm-icon-btn" title="Send notification">◬</button>
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
+
+    <div class="adm-content">
+
+        <!-- Sub-header context -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <div style="font-size:12px;color:var(--text3);font-family:var(--font-mono,monospace);letter-spacing:.04em">
+                Broadcast messages to all users, teachers, students, or individuals
+            </div>
+            <span style="margin-left:auto;border-color:var(--red);color:var(--red);background:var(--red-dim);
+                         font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;
+                         border-radius:20px;border:1px solid var(--red)">ADMIN</span>
+        </div>
+
+        <!-- Compose notification -->
+        <div class="adm-card">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">Compose notification</span>
+            </div>
+            <div style="padding:20px">
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="noti-audience">Audience</label>
+                        <select id="noti-audience" class="input input--sm">
+                            <option value="all">All users</option>
+                            <option value="teachers">Teachers only</option>
+                            <option value="students">Students only (role: user)</option>
+                            <option value="individual">Individual user</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="noti-type">Type</label>
+                        <select id="noti-type" class="input input--sm">
+                            <option value="account_alert">Account alert</option>
+                            <option value="exam_reminder">Exam reminder</option>
+                            <option value="score_available">Score available</option>
+                            <option value="practice_ready">Practice ready</option>
+                            <option value="role_changed">Role changed</option>
+                            <option value="teacher_linked">Teacher linked</option>
+                            <option value="task_assigned">Task assigned</option>
+                            <option value="task_reviewed">Task reviewed</option>
+                            <option value="task_scored">Task scored</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="individual-row" style="display:none;flex-direction:column;gap:4px;margin-bottom:12px">
+                    <label class="input-label" for="noti-target-id">Target user ID</label>
+                    <input id="noti-target-id" type="text" class="input input--sm"
+                        placeholder="MongoDB ObjectId of the user…" style="width:300px" />
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px">
+                    <label class="input-label" for="noti-title">Title</label>
+                    <input id="noti-title" type="text" class="input input--sm"
+                        placeholder="Notification title…" />
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px">
+                    <label class="input-label" for="noti-message">Message</label>
+                    <textarea id="noti-message" class="input input--sm"
+                        placeholder="Full message body…"
+                        style="min-height:90px;resize:vertical"></textarea>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="noti-cta-text">
+                            CTA label
+                            <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:400;font-size:10px">(optional)</span>
+                        </label>
+                        <input id="noti-cta-text" type="text" class="input input--sm"
+                            placeholder="e.g. View task" />
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="noti-cta-url">
+                            CTA URL
+                            <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:400;font-size:10px">(optional)</span>
+                        </label>
+                        <input id="noti-cta-url" type="text" class="input input--sm"
+                            placeholder="/pages/tasks/list.html" />
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:10px">
+                    <button id="send-btn" class="btn btn--primary btn--sm">Send notification</button>
+                    <span id="send-status" style="font-size:.8rem;color:var(--text3)"></span>
+                </div>
+
+            </div>
+        </div>
+
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast"><span class="t-icon">✓</span><span id="toast-msg">Done</span></div>
+<script type="module" src="/js/pages/admin/notifications.js"></script>
+</body>
+</html>

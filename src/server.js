@@ -12,6 +12,7 @@ import authRouter        from './interfaces/routes/auth.router.js';
 import vocabRouter       from './interfaces/routes/vocab.router.js';
 import newsRouter        from './interfaces/routes/news.router.js';
 import adminRouter       from  './interfaces/routes/admin.router.js';
+import auditLogRouter    from  './interfaces/routes/audit_logs.router.js';
 import teacherRouter      from './interfaces/routes/teacher.router.js';
 import { errorHandler }            from './middleware/error.handler.js';
 import { sendFailure }             from './interfaces/response_formatter.js';
@@ -24,7 +25,8 @@ import fs from 'fs';
 import { notificationRouter } from './interfaces/routes/notification.router.js';
 import { passwordResetRouter } from './interfaces/routes/password_reset.router.js';
 import { authenticate } from './middleware/auth.middelware.js';
-import { initSocket } from './core/socket.js';
+import { initSocket }                        from './core/services/socket.service.js';
+import { connectRedis, disconnectRedis }     from './core/services/redis.service.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -63,6 +65,7 @@ app.use('/api/notifications', authenticate, notificationRouter);
 app.use('/api/auth',          authRouter);
 app.use('/api/auth',          passwordResetRouter);
 app.use('/api/admin',         adminRouter);
+app.use('/api/admin/audit-logs', auditLogRouter);
 app.use('/api/teacher',       teacherRouter);
 app.use('/api',               profileRouter);  // /api/users/me — must be before userRouter
 app.use('/api',               userRouter);     // /api/users/:id
@@ -91,7 +94,10 @@ app.use(errorHandler);
 // ── Start server ──────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 
-connectDB().then(() => {
+connectDB().then(async () => {
+    // 1. Connect Redis before jobs or requests can run
+    await connectRedis();
+
     startReminderJobs();
 
     // Wrap Express in an http.Server so Socket.IO can share the same port
@@ -101,6 +107,19 @@ connectDB().then(() => {
     httpServer.listen(PORT, '0.0.0.0', () => {
         console.log(`✅ Server running at http://localhost:${PORT}/`);
     });
+
+    // ── Graceful shutdown ─────────────────────────────────────────────────────
+    const shutdown = async (signal) => {
+        console.log(`\n[server] ${signal} received — shutting down gracefully`);
+        httpServer.close(async () => {
+            await disconnectRedis();
+            process.exit(0);
+        });
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT',  () => shutdown('SIGINT'));
+
 }).catch(err => {
     console.error('❌ Failed to connect to DB:', err);
     process.exit(1);

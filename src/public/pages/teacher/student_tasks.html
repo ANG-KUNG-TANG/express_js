@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Tasks — WriteSystem</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+    <style>
+        /* ── Teacher accent ───────────────────────────────────────────────── */
+        .btn--primary {
+            background: var(--sage, #3a7d5a)   !important;
+            border-color: var(--sage, #3a7d5a) !important;
+        }
+        .btn--primary:hover:not(:disabled) {
+            background: #4a9d6a   !important;
+            border-color: #4a9d6a !important;
+        }
+
+        /* ── Stat pills ──────────────────────────────────────────────────── */
+        .stat-pill {
+            font-size: 11px; padding: 2px 9px; border-radius: 20px;
+            background: rgba(255,255,255,.06); color: var(--text2);
+            border: 1px solid var(--border); font-family: var(--font-mono, monospace);
+        }
+        .stat-pill--warning { background: var(--amber-dim); color: var(--amber); border-color: rgba(212,149,74,.25); }
+        .stat-pill--success { background: var(--green-dim);  color: var(--green); border-color: rgba(93,184,122,.2); }
+
+        /* ── Empty / loading ──────────────────────────────────────────────── */
+        .empty-state { padding: 40px 20px; text-align: center; color: var(--text3); font-size: 14px; }
+        .error-state { padding: 16px 20px; color: var(--red); font-size: 13px; }
+        .loading     { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+    </style>
+</head>
+<body>
+<!--
+  Teacher sidebar injected here by initTeacherSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
+
+<div class="admin-main">
+
+    <header class="adm-topbar">
+        <div style="display:flex;align-items:center;gap:14px">
+            <a href="/pages/teacher/dashboard.html"
+               style="font-size:12px;color:var(--text3);text-decoration:none;transition:color .15s"
+               onmouseover="this.style.color='var(--text)'"
+               onmouseout="this.style.color='var(--text3)'">← Dashboard</a>
+            <span style="color:var(--border-hi);font-size:14px">/</span>
+            <div>
+                <div class="adm-topbar-title" id="page-title">Student Tasks</div>
+                <div class="adm-topbar-crumb">Teacher <span>›</span> <span>Students</span></div>
+            </div>
+        </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search tasks, students…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <button id="assign-btn" class="btn btn--primary btn--sm">+ Assign task</button>
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
+
+    <div class="adm-content">
+
+        <!-- Student info block — rendered by student_tasks.js -->
+        <div id="student-info"></div>
+
+        <!-- Tasks table -->
+        <div class="adm-card">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">Tasks</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <select id="filter-status" class="input input--sm" style="width:160px">
+                        <option value="">All statuses</option>
+                        <option value="ASSIGNED">Assigned</option>
+                        <option value="WRITING">Writing</option>
+                        <option value="SUBMITTED">Submitted</option>
+                        <option value="REVIEWED">Reviewed</option>
+                        <option value="SCORED">Scored</option>
+                    </select>
+                </div>
+            </div>
+            <div id="tasks-list">
+                <p class="loading">Loading…</p>
+            </div>
+        </div>
+
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast-container"></div>
+<script type="module" src="/js/pages/teacher/student_tasks.js"></script>
+</body>
+</html>

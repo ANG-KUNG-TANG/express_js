@@ -1,80 +1,171 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Review Task</title>
+    <title>Review Task — WriteSystem</title>
+    <script src="/js/core/theme.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
     <link rel="stylesheet" href="/css/pages/admin.css" />
+    <style>
+        /* ── Teacher accent ───────────────────────────────────────────────── */
+        .btn--primary {
+            background: var(--sage, #3a7d5a)   !important;
+            border-color: var(--sage, #3a7d5a) !important;
+        }
+        .btn--primary:hover:not(:disabled) {
+            background: #4a9d6a   !important;
+            border-color: #4a9d6a !important;
+        }
+        .input:focus, textarea.input:focus {
+            border-color: var(--sage, #3a7d5a);
+            box-shadow: 0 0 0 3px rgba(58,125,90,.15);
+        }
+        /* Band score display */
+        .band-display {
+            font-size: 22px; font-weight: 800;
+            font-family: var(--font-mono, monospace);
+            color: var(--gold2, #e6c96e);
+        }
+    </style>
 </head>
 <body>
-    <div id="navbar"></div>
-    <main class="review-layout">
+<!--
+  Teacher sidebar injected here by initTeacherSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
 
-        <header class="admin-header">
-            <a href="/pages/teacher/dashboard.html" class="back-link">Dashboard</a>
-            <h1 class="admin-header__title">Review Task</h1>
-            <div id="task-status"></div>
-        </header>
+<div class="admin-main">
 
-        <!-- Task info -->
-        <div class="review-card">
-            <div class="review-card__header">
-                <h2 class="review-card__title" id="task-title">Loading…</h2>
-                <span id="task-type" style="font-family:var(--font-mono);font-size:12px;color:var(--text3)"></span>
+    <header class="adm-topbar">
+        <div style="display:flex;align-items:center;gap:14px">
+            <a href="/pages/teacher/dashboard.html"
+               style="font-size:12px;color:var(--text3);text-decoration:none;transition:color .15s"
+               onmouseover="this.style.color='var(--text)'"
+               onmouseout="this.style.color='var(--text3)'">← Dashboard</a>
+            <span style="color:var(--border-hi);font-size:14px">/</span>
+            <div>
+                <div class="adm-topbar-title">Review Task</div>
+                <div class="adm-topbar-crumb">Teacher <span>›</span>
+                    <span id="page-mode-label">View Mode</span>
+                </div>
             </div>
-            <div class="review-card__body">
-                <div class="review-meta" style="display:flex;flex-wrap:wrap;gap:18px;padding:12px 0 16px;border-bottom:1px solid var(--border);margin-bottom:16px;font-size:13px;color:var(--text2)">
-                    <span><strong>Student:</strong> <span id="task-student">—</span></span>
-                    <span><strong>Word Count:</strong> <span id="task-wordcount">—</span></span>
-                    <span><strong>Due:</strong> <span id="task-duedate">—</span></span>
+        </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search tasks, students…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <span id="task-status"></span>
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
+
+    <div class="adm-content">
+
+        <!-- Task info card -->
+        <div class="adm-card" style="margin-bottom:20px">
+            <div class="adm-card-hd">
+                <div style="flex:1;min-width:0">
+                    <div class="adm-card-title" id="task-title">Loading…</div>
+                    <div style="font-size:11px;color:var(--text3);
+                                font-family:var(--font-mono,monospace);margin-top:2px"
+                         id="task-type"></div>
+                </div>
+            </div>
+            <div style="padding:16px 20px">
+                <!-- Meta row -->
+                <div style="display:flex;flex-wrap:wrap;gap:20px;
+                            padding-bottom:14px;border-bottom:1px solid var(--border);
+                            margin-bottom:16px;font-size:13px;color:var(--text2)">
+                    <span><strong style="color:var(--text3);font-size:11px;
+                                         font-family:var(--font-mono,monospace);
+                                         text-transform:uppercase;letter-spacing:.06em">
+                        Student</strong><br>
+                        <span id="task-student">—</span>
+                    </span>
+                    <span><strong style="color:var(--text3);font-size:11px;
+                                         font-family:var(--font-mono,monospace);
+                                         text-transform:uppercase;letter-spacing:.06em">
+                        Words</strong><br>
+                        <span id="task-wordcount" style="font-family:var(--font-mono,monospace)">—</span>
+                    </span>
+                    <span><strong style="color:var(--text3);font-size:11px;
+                                         font-family:var(--font-mono,monospace);
+                                         text-transform:uppercase;letter-spacing:.06em">
+                        Due</strong><br>
+                        <span id="task-duedate" style="font-family:var(--font-mono,monospace)">—</span>
+                    </span>
                 </div>
 
-                <p class="review-section-title">Question Prompt</p>
-                <div class="review-prose" id="task-prompt" style="margin-bottom:20px;max-height:160px">—</div>
+                <!-- Prompt -->
+                <div style="margin-bottom:16px">
+                    <div class="input-label" style="margin-bottom:6px">Question Prompt</div>
+                    <div id="task-prompt"
+                         style="background:var(--surface2);border:1px solid var(--border-hi);
+                                border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.7;
+                                color:var(--text2);white-space:pre-wrap;
+                                max-height:160px;overflow-y:auto;min-height:40px">—</div>
+                </div>
 
-                <p class="review-section-title">Student Submission</p>
-                <div class="review-prose" id="task-submission">—</div>
+                <!-- Submission -->
+                <div>
+                    <div class="input-label" style="margin-bottom:6px">Student Submission</div>
+                    <div id="task-submission"
+                         style="background:var(--surface2);border:1px solid var(--border-hi);
+                                border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.8;
+                                color:var(--text);white-space:pre-wrap;
+                                max-height:400px;overflow-y:auto;min-height:64px">—</div>
+                </div>
             </div>
         </div>
 
-        <!-- Review section — teacher provides feedback + band score -->
-        <div class="review-card" id="review-section">
-            <div class="review-card__header">
-                <h2 class="review-card__title">Feedback &amp; Score</h2>
-                <span style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">
+        <!-- Editable review section (shown when mode=review AND status=SUBMITTED) -->
+        <div class="adm-card" id="review-section" style="margin-bottom:20px">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">Feedback &amp; Score</span>
+                <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono,monospace)">
                     IELTS band 0–9
                 </span>
             </div>
-            <div class="review-card__body">
-                <div class="form-group" style="margin-bottom:16px">
-                    <label class="form-label">Your Feedback</label>
-                    <textarea id="feedback-input" class="textarea"
-                        placeholder="Write detailed feedback for the student…"></textarea>
+            <div style="padding:20px">
+                <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+                    <label class="input-label" for="feedback-input">Your Feedback</label>
+                    <textarea id="feedback-input" class="input"
+                              style="min-height:140px;resize:vertical"
+                              placeholder="Write detailed feedback for the student…"></textarea>
                 </div>
-                <div class="form-group" style="margin-bottom:20px">
-                    <label class="form-label">Band Score (0–9)</label>
-                    <input id="band-score-input" class="input" type="number"
-                        min="0" max="9" step="0.5"
-                        placeholder="e.g. 6.5"
-                        style="width:140px" />
+                <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:20px">
+                    <label class="input-label" for="band-score-input">Band Score (0–9)</label>
+                    <input id="band-score-input" class="input input--sm" type="number"
+                           min="0" max="9" step="0.5"
+                           placeholder="e.g. 6.5" style="width:140px" />
                 </div>
-                <button id="review-btn" class="btn btn--warning">Save Review &amp; Score</button>
+                <button id="review-btn" class="btn btn--warning btn--sm"
+                        style="height:36px;padding:0 20px;font-size:13.5px">
+                    Save Review &amp; Score
+                </button>
             </div>
         </div>
 
-        <!-- Reviewed notice (shown when already reviewed) -->
-        <div class="review-card" id="reviewed-section" style="display:none">
-            <div class="review-card__body" style="display:flex;align-items:center;gap:12px">
-                <span class="badge badge--info">REVIEWED</span>
-                <span style="font-size:13px;color:var(--text2)">
-                    This task has been reviewed. An admin will assign the band score.
-                </span>
+        <!-- Read-only reviewed section (shown when already reviewed or view mode) -->
+        <div class="adm-card" id="reviewed-section" style="display:none">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">Saved Review</span>
+                <span id="reviewed-score" class="band-display"></span>
+            </div>
+            <div style="padding:20px">
+                <div class="input-label" style="margin-bottom:6px">Feedback</div>
+                <textarea id="feedback-readonly" class="input"
+                          readonly style="min-height:120px;opacity:.75;cursor:default;resize:none"
+                          placeholder="No feedback recorded yet."></textarea>
             </div>
         </div>
 
-    </main>
-    <div id="toast-container"></div>
-    <script type="module" src="/js/pages/teacher/review.js"></script>
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast-container"></div>
+<script type="module" src="/js/pages/teacher/review.js"></script>
 </body>
 </html>

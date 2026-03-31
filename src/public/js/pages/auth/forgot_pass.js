@@ -1,19 +1,21 @@
 // js/pages/auth/forgot_password.js
-// Mirrors login.js / register.js: import apiFetch.js, manipulate DOM, show toast
 
-import { apiFetch }   from '../../core/api.js';
-import { toast } from '../../core/toast.js';
+import { apiFetch } from '../../core/api.js';
+import { toast }    from '../../core/toast.js';
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const forgotForm  = document.getElementById('forgotForm');
 const emailInput  = document.getElementById('email');
 const emailError  = document.getElementById('emailError');
 const submitBtn   = document.getElementById('submitBtn');
-const btnText     = submitBtn.querySelector('.btn-text');
-const btnSpinner  = submitBtn.querySelector('.btn-spinner');
+
+// FIX #1: HTML uses id="btnText" and id="btnRing", not .btn-text / .btn-spinner
+const btnText     = document.getElementById('btnText');
+const btnSpinner  = document.getElementById('btnRing');
 
 const stepRequest = document.getElementById('stepRequest');
-const stepSuccess = document.getElementById('stepSuccess');
+// FIX #2: HTML uses id="stepSent", not id="stepSuccess"
+const stepSuccess = document.getElementById('stepSent');
 const sentEmail   = document.getElementById('sentEmail');
 const resendBtn   = document.getElementById('resendBtn');
 
@@ -28,12 +30,10 @@ const setLoading = (on) => {
 
 const showError = (el, msg) => {
     el.textContent = msg;
-    el.previousElementSibling?.querySelector('input')?.classList.add('is-error');
 };
 
 const clearError = (el) => {
     el.textContent = '';
-    el.previousElementSibling?.querySelector('input')?.classList.remove('is-error');
 };
 
 const showStep = (hideEl, showEl) => {
@@ -41,31 +41,36 @@ const showStep = (hideEl, showEl) => {
     showEl.classList.remove('hidden');
 };
 
-// ── Validation ─────────────────────────────────────────────────────────────────
+// ── Validation ────────────────────────────────────────────────────────────────
 const validateEmail = (value) => {
     if (!value.trim()) return 'Email is required.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email address.';
     return null;
 };
 
-// ── Submit ─────────────────────────────────────────────────────────────────────
+// ── Submit ────────────────────────────────────────────────────────────────────
 const handleSubmit = async (email) => {
     setLoading(true);
     try {
-        await apiFetch.post('/auth/forgot-password', { email });
+        // FIX #3: apiFetch is a plain function, not an object — use apiFetch(url, options)
+        // FIX #4: correct endpoint path with /api prefix to match password_reset.router.js
+        await apiFetch('/api/auth/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email }),
+        });
 
         lastEmail = email;
         sentEmail.textContent = email;
         showStep(stepRequest, stepSuccess);
     } catch (err) {
-        // Even on 404-style backend errors the response message is always generic
-        toast.error(err.message || 'Something went wrong. Please try again.');
+        // FIX #5: toast is a plain function, not toast.error()
+        toast(err.message || 'Something went wrong. Please try again.', 'error');
     } finally {
         setLoading(false);
     }
 };
 
-// ── Form listener ──────────────────────────────────────────────────────────────
+// ── Form listener ─────────────────────────────────────────────────────────────
 forgotForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const email = emailInput.value.trim().toLowerCase();
@@ -84,18 +89,23 @@ forgotForm.addEventListener('submit', (e) => {
 
 emailInput.addEventListener('input', () => clearError(emailError));
 
-// ── Resend ─────────────────────────────────────────────────────────────────────
+// ── Resend ────────────────────────────────────────────────────────────────────
 resendBtn.addEventListener('click', async () => {
     resendBtn.disabled = true;
     resendBtn.textContent = 'Sending…';
     try {
-        await apiFetch.post('/auth/forgot-password', { email: lastEmail });
-        toast.success('Reset link resent!');
+        // FIX #3 + #4: same fix — apiFetch as function with /api prefix
+        await apiFetch('/api/auth/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email: lastEmail }),
+        });
+        // FIX #5: toast is a plain function
+        toast('Reset link resent!', 'success');
     } catch {
-        toast.error('Could not resend. Try again shortly.');
+        toast('Could not resend. Try again shortly.', 'error');
     } finally {
         setTimeout(() => {
-            resendBtn.disabled   = false;
+            resendBtn.disabled    = false;
             resendBtn.textContent = 'Resend email';
         }, 30_000); // 30s cooldown
     }

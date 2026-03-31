@@ -1,63 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Task Management</title>
+    <title>Task Management — WriteSystem Admin</title>
+    <script src="/js/core/theme.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
     <link rel="stylesheet" href="/css/pages/admin.css" />
 </head>
 <body>
-    <div id="navbar"></div>
-    <main class="admin-layout">
+<!--
+  Sidebar is injected here by initAdminSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
 
-        <header class="admin-header">
-            <a href="/pages/admin/dashboard.html" class="back-link">Dashboard</a>
-            <h1 class="admin-header__title">Task Management</h1>
-            <span class="admin-header__badge">ADMIN</span>
-        </header>
+<div class="admin-main">
 
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <h2 class="admin-panel__title">All Tasks</h2>
-                <div class="admin-panel__controls">
+    <!-- Topbar -->
+    <header class="adm-topbar">
+        <div>
+            <div class="adm-topbar-title">Task Management</div>
+            <div class="adm-topbar-crumb">Admin <span>›</span> <span>Content</span></div>
+        </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search users, tasks…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <button class="adm-icon-btn" title="Send notification"
+                    onclick="window.location='/pages/admin/notifications.html'">◬</button>
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
+
+    <div class="adm-content">
+
+        <!-- All Tasks -->
+        <div class="adm-card" style="margin-bottom:20px">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">All Tasks</span>
+                <div style="display:flex;gap:8px;align-items:center">
                     <input id="search-input" type="text" class="input input--sm"
                         placeholder="Search by title…" style="width:200px" />
-                    <select id="filter-status" class="select select--sm" style="width:150px">
+                    <select id="filter-status" class="input input--sm" style="width:160px">
                         <option value="">All Statuses</option>
                         <option value="DRAFT">Draft</option>
                         <option value="SUBMITTED">Submitted</option>
                         <option value="REVIEWED">Reviewed</option>
                         <option value="SCORED">Scored</option>
                     </select>
+                    <span class="admin-header__badge"
+                          style="border-color:var(--red);color:var(--red);background:var(--red-dim);
+                                 font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;
+                                 border-radius:20px;border:1px solid">ADMIN</span>
                 </div>
             </div>
-            <div id="tasks-list"><p class="loading">Loading…</p></div>
-        </section>
-
-        <!-- Transfer panel -->
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <h2 class="admin-panel__title">Transfer Tasks</h2>
-                <span class="admin-panel__sub">Move all tasks from one user to another</span>
+            <div style="padding:0 0 8px">
+                <div id="tasks-list"><p class="loading" style="text-align:center;padding:32px">Loading…</p></div>
             </div>
-            <div class="admin-panel__body">
+        </div>
+
+        <!-- Transfer Tasks -->
+        <div class="adm-card">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">Transfer Tasks</span>
+                <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono,monospace)">Move all tasks from one user to another</span>
+            </div>
+            <div style="padding:16px 20px">
                 <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
-                    <div class="form-group" style="flex:1;min-width:160px">
-                        <label class="form-label">From User ID</label>
+                    <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px">
+                        <label class="input-label">From User ID</label>
                         <input id="transfer-from" type="text" class="input input--sm" placeholder="user ObjectId" />
                     </div>
-                    <div class="form-group" style="flex:1;min-width:160px">
-                        <label class="form-label">To User ID</label>
+                    <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:160px">
+                        <label class="input-label">To User ID</label>
                         <input id="transfer-to" type="text" class="input input--sm" placeholder="user ObjectId" />
                     </div>
                     <button id="transfer-btn" class="btn btn--warning btn--sm">Transfer All</button>
                 </div>
             </div>
-        </section>
+        </div>
 
-    </main>
-    <div id="toast-container"></div>
-    <script type="module" src="/js/pages/admin/tasks.js"></script>
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast"><span class="t-icon">✓</span><span id="toast-msg">Done</span></div>
+<script type="module" src="/js/pages/admin/tasks.js"></script>
 </body>
 </html>

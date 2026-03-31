@@ -1,187 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sign In — IELTS Platform</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  /* ── Academic deep forest palette ── */
-  --bg:        #09110d;
-  --bg2:       #0d1a12;
-  --bg3:       #112018;
-  --bg4:       #1a2e22;
-  --card:      #0f1e16;
-  --forest:    #1e4d35;
-  --sage:      #3a7d5a;
-  --moss:      #2d6147;
-
-  /* Accent: warm parchment gold */
-  --gold:      #c8a84b;
-  --gold2:     #e6c96e;
-  --gold3:     #f2dfa0;
-  --gold-dim:  rgba(200,168,75,.1);
-  --gold-glow: rgba(200,168,75,.25);
-  --gold-b:    rgba(200,168,75,.2);
-
-  /* Text */
-  --ink:       #e8e0cc;
-  --ink2:      #b8ad96;
-  --ink3:      #7a7160;
-
-  /* Status */
-  --green:     #5db87a;
-  --green-dim: rgba(93,184,122,.12);
-  --red:       #e07070;
-  --red-dim:   rgba(224,112,112,.1);
-  --amber:     #d4954a;
-
-  /* Borders */
-  --b1: rgba(255,255,255,.06);
-  --b2: rgba(255,255,255,.1);
-
-  --fd: 'Cormorant Garamond', Georgia, serif;
-  --fu: 'Outfit', system-ui, sans-serif;
-  --fm: 'JetBrains Mono', monospace;
-  --ease: cubic-bezier(0.16,1,0.3,1);
-  --spring: cubic-bezier(0.34,1.56,0.64,1);
-}
-
-*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: var(--fu); background: var(--bg); color: var(--ink); overflow: hidden; }
-::selection { background: var(--gold-dim); color: var(--gold2); }
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
-a { text-decoration: none; }
-button { font-family: var(--fu); cursor: pointer; border: none; background: none; }
-input { font-family: var(--fu); }
-
-/* ── CURSOR ── */
-.cur { position:fixed; width:8px; height:8px; border-radius:50%; background:var(--gold2); pointer-events:none; z-index:9999; transform:translate(-50%,-50%); mix-blend-mode:screen; transition:width .18s var(--spring),height .18s var(--spring); }
-.cur-r { position:fixed; width:32px; height:32px; border-radius:50%; border:1px solid rgba(200,168,75,.4); pointer-events:none; z-index:9998; transform:translate(-50%,-50%); transition:width .3s var(--ease),height .3s var(--ease),border-color .2s; }
-
-/* ── CANVAS ── */
-#bg { position:fixed; inset:0; z-index:0; pointer-events:none; }
-
-/* ── NOISE ── */
-.noise { position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.022; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:200px; }
-
-/* ── LAYOUT ── */
-.wrap { position:relative; z-index:10; display:flex; height:100vh; }
-
-/* ── LEFT ── */
-.left {
-  width: 44%; flex-shrink: 0;
-  background: linear-gradient(160deg, var(--bg3) 0%, var(--bg) 100%);
-  border-right: 1px solid var(--b1);
-  display: flex; flex-direction: column; justify-content: space-between;
-  padding: 36px 44px; position: relative; overflow: hidden;
-}
-/* Orbs */
-.left::before { content:''; position:absolute; top:-100px; right:-80px; width:400px; height:400px; background:radial-gradient(circle,rgba(58,125,90,.12) 0%,transparent 65%); pointer-events:none; animation:orb1 7s ease-in-out infinite; }
-.left::after  { content:''; position:absolute; bottom:-80px; left:-60px;  width:300px; height:300px; background:radial-gradient(circle,rgba(200,168,75,.07) 0%,transparent 65%); pointer-events:none; animation:orb2 9s ease-in-out infinite; }
-@keyframes orb1 { 0%,100%{transform:scale(1) translate(0,0)} 50%{transform:scale(1.1) translate(10px,-10px)} }
-@keyframes orb2 { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
-
-/* Drifting lines */
-.lines { position:absolute; inset:0; overflow:hidden; pointer-events:none; opacity:.035; }
-.lines::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(200,168,75,1) 1px,transparent 1px),linear-gradient(90deg,rgba(200,168,75,1) 1px,transparent 1px); background-size:56px 56px; animation:drift 25s linear infinite; }
-@keyframes drift { from{transform:translateY(0)} to{transform:translateY(56px)} }
-
-/* Brand */
-.brand { display:flex; align-items:center; gap:10px; font-family:var(--fd); font-size:1.2rem; font-weight:700; color:var(--ink); letter-spacing:.01em; animation:up .7s var(--ease) .1s both; }
-.bmark { width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--gold) 0%,#6b4e12 100%); display:grid; place-items:center; font-family:var(--fu); font-size:.7rem; font-weight:700; color:var(--bg); box-shadow:0 0 14px var(--gold-glow); animation:glow 3s ease-in-out infinite; }
-@keyframes glow { 0%,100%{box-shadow:0 0 14px var(--gold-glow)} 50%{box-shadow:0 0 26px rgba(200,168,75,.45)} }
-
-/* Copy */
-.lbody { animation:up .7s var(--ease) .22s both; }
-.eyebrow { font-size:.66rem; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--sage); margin-bottom:13px; }
-.lh1 { font-family:var(--fd); font-size:clamp(1.9rem,3vw,2.7rem); font-weight:300; line-height:1.18; color:var(--ink); margin-bottom:13px; }
-.lh1 em { font-style:italic; color:var(--gold2); }
-.ldesc { font-size:.84rem; color:var(--ink2); line-height:1.8; margin-bottom:32px; max-width:300px; }
-
-/* Features */
-.feats { display:flex; flex-direction:column; gap:10px; animation:up .7s var(--ease) .35s both; }
-.feat { display:flex; align-items:center; gap:12px; font-size:.82rem; color:var(--ink2); padding:10px 13px; background:rgba(255,255,255,.025); border:1px solid var(--b1); border-radius:10px; transition:border-color .2s,background .2s,transform .2s var(--ease); }
-.feat:hover { border-color:rgba(58,125,90,.4); background:rgba(58,125,90,.06); transform:translateX(4px); }
-.fic { width:28px; height:28px; border-radius:7px; background:rgba(200,168,75,.1); border:1px solid var(--gold-b); display:grid; place-items:center; font-size:.85rem; flex-shrink:0; }
-
-/* Quote */
-.quote { background:rgba(255,255,255,.025); border:1px solid var(--b1); border-left:2px solid var(--gold); border-radius:11px; padding:15px 16px; font-size:.8rem; color:var(--ink2); line-height:1.7; font-style:italic; position:relative; animation:up .7s var(--ease) .5s both; }
-.quote::before { content:'"'; font-family:var(--fd); font-size:2.4rem; color:var(--gold); opacity:.3; position:absolute; top:-5px; left:11px; line-height:1; }
-.qrow { display:flex; align-items:center; gap:8px; margin-top:10px; }
-.qav { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--sage) 0%,var(--gold) 100%); display:grid; place-items:center; font-size:.58rem; font-weight:700; color:white; flex-shrink:0; }
-.qname { font-size:.7rem; font-style:normal; color:var(--ink3); font-weight:500; }
-.qscore { margin-left:auto; font-family:var(--fm); font-size:.68rem; color:var(--gold2); font-style:normal; }
-
-/* ── RIGHT ── */
-.right { flex:1; display:flex; align-items:center; justify-content:center; padding:40px 32px; background:var(--bg); overflow-y:auto; }
-.fbox { width:100%; max-width:400px; animation:slide .7s var(--ease) .15s both; }
-@keyframes slide { from{opacity:0;transform:translateX(22px)} to{opacity:1;transform:translateX(0)} }
-
-/* Head */
-.fhead { margin-bottom:26px; }
-.fhead h2 { font-family:var(--fd); font-size:2rem; font-weight:300; line-height:1.1; color:var(--ink); margin-bottom:5px; }
-.fhead h2 em { font-style:italic; color:var(--gold2); }
-.fhead p { font-size:.84rem; color:var(--ink2); }
-
-/* Alert */
-.alert { display:flex; align-items:center; gap:8px; padding:10px 13px; border-radius:9px; font-size:.8rem; margin-bottom:16px; animation:up .3s var(--ease) both; }
-.alert--error   { background:var(--red-dim);   border:1px solid rgba(224,112,112,.22); color:var(--red); }
-.alert--success { background:var(--green-dim); border:1px solid rgba(93,184,122,.22);  color:var(--green); }
-
-/* OAuth */
-.ostack { display:flex; flex-direction:column; gap:8px; margin-bottom:18px; }
-.obtn { display:flex; align-items:center; justify-content:center; gap:10px; padding:10px 14px; background:var(--card); border:1px solid var(--b2); border-radius:10px; font-size:.84rem; font-weight:500; color:var(--ink2); transition:border-color .18s,background .18s,color .18s,transform .18s var(--ease); }
-.obtn:hover { border-color:rgba(58,125,90,.5); background:rgba(58,125,90,.07); color:var(--ink); transform:translateY(-1px); }
-
-/* Divider */
-.div { display:flex; align-items:center; gap:11px; font-size:.67rem; color:var(--ink3); letter-spacing:.08em; text-transform:uppercase; margin:18px 0; }
-.div::before,.div::after { content:''; flex:1; height:1px; background:var(--b1); }
-
-/* Form group */
-.fg { margin-bottom:14px; }
-.fg label { display:block; font-size:.74rem; font-weight:600; color:var(--ink2); margin-bottom:6px; letter-spacing:.02em; }
-.fg input { width:100%; padding:10px 13px; background:var(--card); border:1px solid var(--b2); border-radius:9px; color:var(--ink); font-size:.87rem; outline:none; transition:border-color .18s,box-shadow .18s,background .18s; }
-.fg input::placeholder { color:var(--ink3); }
-.fg input:focus { border-color:var(--sage); box-shadow:0 0 0 3px rgba(58,125,90,.12); background:rgba(58,125,90,.03); }
-.fg input.err { border-color:var(--red); box-shadow:0 0 0 3px var(--red-dim); }
-.ferr { font-size:.7rem; color:var(--red); margin-top:4px; display:none; }
-.fg.has-err .ferr { display:block; }
-
-/* Password wrapper */
-.pww { position:relative; }
-.pwtog { position:absolute; right:11px; top:50%; transform:translateY(-50%); color:var(--ink3); display:grid; place-items:center; transition:color .15s; padding:2px; }
-.pwtog:hover { color:var(--gold2); }
-
-/* Forgot */
-.forgot { text-align:right; margin:-6px 0 14px; }
-.forgot a { font-size:.74rem; color:var(--sage); font-weight:500; transition:color .15s; }
-.forgot a:hover { color:var(--gold2); }
-
-/* Submit */
-.bsub { width:100%; padding:12px; background:linear-gradient(135deg,var(--sage) 0%,var(--moss) 100%); color:#e8f4ee; font-size:.9rem; font-weight:700; border-radius:10px; box-shadow:0 3px 14px rgba(58,125,90,.3); transition:transform .18s var(--spring),box-shadow .18s,opacity .18s; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; gap:8px; letter-spacing:.01em; }
-.bsub::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,.15) 50%,transparent 70%); transform:translateX(-100%); transition:transform .5s; }
-.bsub:hover::before { transform:translateX(100%); }
-.bsub:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(58,125,90,.4); }
-.bsub:disabled { opacity:.4; cursor:not-allowed; transform:none; }
-.spin { width:15px; height:15px; border-radius:50%; border:2px solid rgba(232,244,238,.3); border-top-color:#e8f4ee; animation:spin .7s linear infinite; display:none; }
-@keyframes spin { to{transform:rotate(360deg)} }
-.bsub.loading .spin { display:block; }
-.bsub.loading .blbl { opacity:0; }
-
-/* Bottom link */
-.blink { text-align:center; margin-top:18px; font-size:.8rem; color:var(--ink2); }
-.blink a { color:var(--gold2); font-weight:600; transition:opacity .15s; }
-.blink a:hover { opacity:.8; text-decoration:underline; }
-
-@keyframes up { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-@media(max-width:768px){ .left{display:none;} .right{padding:28px 18px;} html,body{overflow:auto;} }
-</style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign In — IELTS Platform</title>
+  <script src="/js/core/theme.js"></script>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/pages/auth.css"/>
 </head>
-<body>
+<body class="auth-page">
+
 <div class="cur" id="cur"></div>
 <div class="cur-r" id="curR"></div>
 <canvas id="bg"></canvas>
@@ -266,74 +94,20 @@ input { font-family: var(--fu); }
   </div>
 </div>
 
+<script src="/js/pages/auth/auth.canvas.js"></script>
 <script>
-/* CURSOR */
-const cur=document.getElementById('cur'),curR=document.getElementById('curR');
-let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
-(function t(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;cur.style.cssText=`left:${mx}px;top:${my}px`;curR.style.cssText=`left:${rx}px;top:${ry}px`;requestAnimationFrame(t);})();
-document.querySelectorAll('a,button,input').forEach(el=>{
-  el.addEventListener('mouseenter',()=>{cur.style.width='14px';cur.style.height='14px';curR.style.width='48px';curR.style.height='48px';curR.style.borderColor='var(--gold)';});
-  el.addEventListener('mouseleave',()=>{cur.style.width='8px';cur.style.height='8px';curR.style.width='32px';curR.style.height='32px';curR.style.borderColor='rgba(200,168,75,.4)';});
-});
-
-/* CANVAS — forest green + gold particles */
-const cv=document.getElementById('bg'),ctx=cv.getContext('2d');
-let W,H,pts=[];
-function rsz(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
-rsz();addEventListener('resize',rsz);
-const N=Math.min(55,Math.floor(innerWidth/20));
-const COLORS=['rgba(58,125,90,','rgba(200,168,75,','rgba(45,97,71,'];
-for(let i=0;i<N;i++) pts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,r:Math.random()*1.3+.3,o:Math.random()*.4+.1,c:COLORS[Math.floor(Math.random()*COLORS.length)]});
-let mX=W/2,mY=H/2;
-document.addEventListener('mousemove',e=>{mX=e.clientX;mY=e.clientY;});
-function draw(){
-  ctx.clearRect(0,0,W,H);
-  const g=ctx.createRadialGradient(mX,mY,0,mX,mY,260);
-  g.addColorStop(0,'rgba(58,125,90,.04)');g.addColorStop(1,'transparent');
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  pts.forEach((p,i)=>{
-    p.x+=p.vx;p.y+=p.vy;
-    if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
-    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c+p.o+')';ctx.fill();
-    for(let j=i+1;j<pts.length;j++){
-      const q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);
-      if(d<110){ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle=`rgba(58,125,90,${.06*(1-d/110)})`;ctx.lineWidth=.5;ctx.stroke();}
-    }
+  /* Password toggle — tiny, stays inline since it's pure DOM wiring */
+  const pwI = document.getElementById('password');
+  const pwtog = document.getElementById('pwtog');
+  const eyeico = document.getElementById('eyeico');
+  let vis = false;
+  pwtog.addEventListener('click', () => {
+    vis = !vis;
+    pwI.type = vis ? 'text' : 'password';
+    eyeico.innerHTML = vis
+      ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+      : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
   });
-  requestAnimationFrame(draw);
-}
-draw();
-
-/* PASSWORD TOGGLE */
-const pwI=document.getElementById('password'),pwtog=document.getElementById('pwtog'),eyeico=document.getElementById('eyeico');
-let vis=false;
-pwtog.addEventListener('click',()=>{
-  vis=!vis; pwI.type=vis?'text':'password';
-  eyeico.innerHTML=vis?`<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`:`<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
-});
-
-/* FORM */
-const form=document.getElementById('login-form'),subBtn=document.getElementById('subbtn'),alertEl=document.getElementById('login-alert');
-function setErr(fg,err,msg){document.getElementById(fg).classList.add('has-err');document.getElementById(err).textContent=msg;document.querySelector(`#${fg} input`).classList.add('err');}
-function clearAll(){document.querySelectorAll('.fg').forEach(f=>f.classList.remove('has-err'));document.querySelectorAll('.fg input').forEach(i=>i.classList.remove('err'));alertEl.style.display='none';}
-document.getElementById('email').addEventListener('input',function(){if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value)){document.getElementById('fg-email').classList.remove('has-err');this.classList.remove('err');}});
-document.getElementById('password').addEventListener('input',function(){if(this.value){document.getElementById('fg-password').classList.remove('has-err');this.classList.remove('err');}});
-form.addEventListener('submit',async e=>{
-  e.preventDefault();clearAll();
-  const email=document.getElementById('email').value.trim(),pass=document.getElementById('password').value;
-  let ok=true;
-  if(!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setErr('fg-email','err-email','Please enter a valid email address.');ok=false;}
-  if(!pass){setErr('fg-password','err-password','Password is required.');ok=false;}
-  if(!ok)return;
-  subBtn.classList.add('loading');subBtn.disabled=true;
-  try{
-    const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
-    const data=await res.json().catch(()=>({}));
-    if(res.ok){subBtn.querySelector('.blbl').textContent='✓ Signed in!';setTimeout(()=>location.href=data.redirect||'/pages/tasks/list.html',600);}
-    else{alertEl.textContent=data.message||'Invalid email or password.';alertEl.style.display='flex';subBtn.classList.remove('loading');subBtn.disabled=false;}
-  }catch(_){alertEl.textContent='Network error — please try again.';alertEl.style.display='flex';subBtn.classList.remove('loading');subBtn.disabled=false;}
-});
 </script>
 <script type="module" src="/js/pages/auth/login.js"></script>
 </body>

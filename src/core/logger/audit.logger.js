@@ -1,86 +1,122 @@
-import winston from 'winston';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from "fs";
+// src/core/logger/audit.logger.js
 
-const __dirname= path.dirname(fileURLToPath(import.meta.url));
-const LOG_DIR = path.resolve(__dirname, '../../../logs');  // fixed: '.../.../../' → '../../../'
+import winston               from 'winston';
+import path                  from 'path';
+import { fileURLToPath }     from 'url';
+import fs                    from 'fs';
+import { createLog }         from '../../infrastructure/repositories/audit_log_repo.js';
+import { isKnownAction }     from '../../domain/base/audit_enums.js';
+import { emitToAdmins }      from '../services/socket.service.js';
+import logger                from './logger.js';
 
-if (!fs.existsSync(LOG_DIR)){                             // fixed: 'fsexistsSync' → 'fs.existsSync'
-    fs.mkdirSync(LOG_DIR, {recursive: true});             // fixed: 'ture' → 'true'
-};
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const LOG_DIR   = path.resolve(__dirname, '../../../logs');
 
-const auditFormat = winston.format.combine(               // fixed: 'autditFormat' → 'auditFormat'
-    winston.format.timestamp({
-        format: "YYYY-MM-DD HH:mm:ss"                    // fixed: 'YYY-MM-DD' → 'YYYY-MM-DD'
-    }),
+if (!fs.existsSync(LOG_DIR)) {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+}
+
+const auditFormat = winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     winston.format.json()
 );
 
 const auditWinston = winston.createLogger({
-    level: "info",
-    transports: [                                         // fixed: 'transprots' → 'transports'
+    level: 'info',
+    transports: [
         new winston.transports.File({
-            filename: path.join(LOG_DIR, 'audit.log'),    // fixed: 'audit.lgo' → 'audit.log'
-            format: auditFormat,                          // fixed: 'autditFormat' → 'auditFormat'
-            maxsize : 10 * 1024 * 1024,                  // fixed: '1034' → '1024'
+            filename: path.join(LOG_DIR, 'audit.log'),
+            format:   auditFormat,
+            maxsize:  10 * 1024 * 1024,
             maxFiles: 20,
             tailable: true,
         }),
-
         ...(process.env.NODE_ENV !== 'production'
             ? [
                 new winston.transports.Console({
                     format: winston.format.combine(
-                        winston.format.timestamp({ format: "HH:mm:ss" }), // ✅ FIX 1: timestamp must be added before printf can destructure it
+                        winston.format.timestamp({ format: 'HH:mm:ss' }),
                         winston.format.colorize(),
                         winston.format.printf(
-                            ({timestamp, message}) => `[AUDIT ${timestamp}] ${message}`
+                            ({ timestamp, message }) => `[AUDIT ${timestamp}] ${message}`
                         )
-                    )
-                })
+                    ),
+                }),
             ]
-        : []),
+            : []),
     ],
-    exitOnError: false
+    exitOnError: false,
 });
 
-// ── Public audit logger interface ─────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Public interface
+// ---------------------------------------------------------------------------
 
 /**
- * Record an audit event.
+ * Record an audit event — writes to file (Winston), persists to MongoDB,
+ * and pushes the entry in real time to all connected admin dashboards.
  *
- * @param {string}  action   - Dot-namespaced action label  e.g. "vocab.created"
- * @param {Object}  details  - Any extra context  e.g. { word, topic, savedCount }
- * @param {Request} req      - Express request object — REQUIRED for requestId, IP, method, path.
- *                             Pass `null` only for system-level (non-HTTP) events.
- * @param {'success'|'failure'} [outcome] - Defaults to 'success'
+ * requesterId resolution priority:
+ *   1. req.user._id  (set by auth middleware)
+ *   2. details.requesterId  (explicit override for background jobs)
+ *   3. null
  */
-const log = (action, details = {}, req = null, outcome = "success") => {
-  const entry = {
-    action,
-    outcome,
-    details,
-    ...(req && {
-      request: {
-        method: req.method,
-        path: req.originalUrl || req.path,
-        ip: req.ip || req.headers?.["x-forwarded-for"] || "unknown",
-        userAgent: req.headers?.["user-agent"] || "unknown",
-        requestId: req.id || null,
-      },
-    }),
-  };
+const log = (action, details = {}, req = null, outcome = 'success') => {
+    if (!isKnownAction(action)) {
+        logger.warn('auditLogger: unknown action string — check AuditAction enum', { action });
+    }
 
-  auditWinston.info(action, entry);
+    const requesterId =
+        req?.user?._id?.toString()
+        ?? req?.user?.id?.toString()
+        ?? details.requesterId
+        ?? null;
+
+    const requestMeta = req
+        ? {
+            method:    req.method,
+            path:      req.originalUrl || req.path,
+            ip:        req.ip || req.headers?.['x-forwarded-for'] || 'unknown',
+            userAgent: req.headers?.['user-agent'] || 'unknown',
+            requestId: req.id || null,
+          }
+        : null;
+
+    const entry = {
+        action,
+        outcome,
+        requesterId,
+        details,
+        ...(requestMeta && { request: requestMeta }),
+    };
+
+    // 1. Write to file
+    auditWinston.info(action, entry);
+
+    // 2. Persist to MongoDB — then emit to admin dashboards with the saved doc
+    //    so the frontend gets the real _id and createdAt the DB assigned.
+    createLog({
+        action,
+        outcome,
+        requesterId,
+        details,
+        request: requestMeta,
+    }).then((saved) => {
+        if (!saved) return;
+
+        // Push the full serialized log entry to every connected admin.
+        // toJSON() on the AuditLog entity ensures public field names are used.
+        emitToAdmins('audit:new', saved);
+    }).catch((err) => {
+        logger.error('auditLogger: failed to emit audit:new', { error: err.message });
+    });
 };
 
 /**
  * Shorthand for a failed audit event.
  */
 const failure = (action, details = {}, req = null) =>
-  log(action, details, req, "failure");
+    log(action, details, req, 'failure');
 
 const auditLogger = { log, failure };
-
 export default auditLogger;

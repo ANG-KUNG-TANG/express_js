@@ -1,86 +1,86 @@
-/**
- * teacher_review_task.uc.js
- *
- * Teacher reviews and scores a submitted assigned task.
- *
- * Your WritingTask state machine requires TWO steps after SUBMITTED:
- *   SUBMITTED → review(feedback) → REVIEWED → score(bandScore) → SCORED
- *
- * This UC does both in one call for simplicity (teacher submits feedback + score together).
- *
- * Guards:
- *   - task.source must not be 'self'
- *   - task._assignedBy must equal teacher.id
- *   - task._status must be SUBMITTED
- *
- * After scoring:
- *   - status → SCORED
- *   - Fires TASK_SCORED notification to student
- */
+// src/app/teacher_uc/teacher_review_task.uc.js
 
 import {
     findTaskByID,
     reviewTask,
     scoreTask,
 } from '../../infrastructure/repositories/task_repo.js';
-import { sendNotificationUseCase } from '../notification/send_noti.uc.js';
-import { NotificationType } from '../../domain/entities/notificaiton_entity.js';
-import { WritingStatus } from '../../domain/base/task_enums.js';
-import { TaskSource } from '../../domain/base/task_enums.js';
+import { NotificationService }          from '../../core/services/notification.service.js';
+import { WritingStatus, TaskSource }    from '../../domain/base/task_enums.js';
 import {
     NotFoundError,
     ForbiddenError,
     ConflictError,
     ValidationError,
 } from '../../core/errors/base.errors.js';
+import { recordAudit, recordFailure }   from '../../core/services/audit.service.js';
+import { AuditAction }                  from '../../domain/base/audit_enums.js';
 
-export async function teacherReviewTaskUC(teacher, { taskId, bandScore, feedback }) {
-    // 1. Fetch
+export async function teacherReviewTaskUC(teacher, { taskId, bandScore, feedback }, req = null) {
+    const teacherId = String(teacher._id ?? teacher.id);
+
+    // ── 1. Fetch ──────────────────────────────────────────────────────────────
     const task = await findTaskByID(taskId);
     if (!task) throw new NotFoundError('Task not found');
 
-    // 2. Must be an assigned task (not self-created → admin queue)
+    // ── 2. Must be an assigned task ───────────────────────────────────────────
     if (task._source === TaskSource.SELF || !task._assignedBy) {
+        recordFailure(AuditAction.TEACHER_TASK_REVIEWED, teacherId, {
+            taskId,
+            reason: 'self-created task — not reviewable by teacher',
+        }, req);
         throw new ForbiddenError('Self-created tasks are reviewed by admins, not teachers');
     }
 
-    // 3. Only the assigning teacher may review
-    if (task._assignedBy.toString() !== teacher.id.toString()) {
+    // ── 3. Only the assigning teacher may review ──────────────────────────────
+    if (task._assignedBy.toString() !== teacherId) {
+        recordFailure(AuditAction.TEACHER_TASK_REVIEWED, teacherId, {
+            taskId,
+            reason: 'teacher did not assign this task',
+        }, req);
         throw new ForbiddenError('You can only review tasks that you assigned');
     }
 
-    // 4. Must be SUBMITTED
+    // ── 4. Must be SUBMITTED ──────────────────────────────────────────────────
     if (task._status !== WritingStatus.SUBMITTED) {
+        recordFailure(AuditAction.TEACHER_TASK_REVIEWED, teacherId, {
+            taskId,
+            reason:        'task not in SUBMITTED state',
+            currentStatus: task._status,
+        }, req);
         throw new ConflictError(
             `Task status is "${task._status}". Only SUBMITTED tasks can be reviewed.`
         );
     }
 
-    // 5. Validate inputs
+    // ── 5. Validate inputs ────────────────────────────────────────────────────
     if (!feedback?.trim()) throw new ValidationError('feedback is required');
     const score = Number(bandScore);
     if (isNaN(score) || score < 0 || score > 9) {
         throw new ValidationError('bandScore must be a number between 0 and 9');
     }
 
-    // 6. Two-step state transition: SUBMITTED → REVIEWED → SCORED
-    //    reviewTask() calls task.review(feedback) on the entity
+    // ── 6. Two-step state transition: SUBMITTED → REVIEWED → SCORED ──────────
     await reviewTask(taskId, feedback.trim());
-    //    scoreTask() calls task.score(bandScore) on the entity
     const scored = await scoreTask(taskId, score);
 
-    // 7. Notify student
-    await sendNotificationUseCase({
-        userId:  task._assignedTo,
-        type:    NotificationType.TASK_SCORED,
-        title:   'Your task has been scored',
-        message: `Your task "${task._title}" has been scored: ${score}/9`,
-        metadata: {
-            taskId:   task._id,
-            score,
-            feedback: feedback.trim(),
-            teacherId: teacher.id,
-        },
+    // ── 7. Audit ──────────────────────────────────────────────────────────────
+    recordAudit(AuditAction.TEACHER_TASK_REVIEWED, teacherId, {
+        taskId,
+        studentId:  String(task._assignedTo),
+        taskTitle:  task._title,
+        bandScore:  score,
+    }, req);
+
+    // ── 8. Notify student ─────────────────────────────────────────────────────
+    NotificationService.send({
+        recipientId: String(task._assignedTo),
+        actorId:     teacherId,
+        type:        NotificationService.TYPES.TASK_SCORED,
+        title:       'Your task has been scored',
+        message:     `Your task "${task._title}" received a score of ${score}/9`,
+        refId:       String(task._id),
+        refModel:    'Task',
     });
 
     return scored;

@@ -7,11 +7,14 @@ import {
   revokeAllForUser,
 } from '../../core/services/token_store.service.js';
 import { authenticateUserUseCase } from '../../app/user_uc/auth_user.uc.js';
-import { sanitizeAuthInput } from '../input_sanitizers/user.input_sanitizer.js';
+import { createUserUsecase } from '../../app/user_uc/create_user.uc.js';
+import { sanitizeAuthInput, sanitizeCreateInput } from '../input_sanitizers/user.input_sanitizer.js';
 import { sendSuccess } from '../response_formatter.js';
 import { HTTP_STATUS } from '../http_status.js';
 import logger from '../../core/logger/logger.js';
-import auditLogger from '../../core/logger/audit.logger.js';
+// ── CHANGED: replaced direct auditLogger import with service + enum ──────────
+import { recordAudit, recordFailure } from '../../core/services/audit.service.js';
+import { AuditAction } from '../../domain/base/audit_enums.js';
 
 // ---------------------------------------------------------------------------
 // Cookie config
@@ -20,7 +23,7 @@ import auditLogger from '../../core/logger/audit.logger.js';
 const REFRESH_COOKIE_OPTIONS = {
   httpOnly: true,
   secure:   process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  sameSite: 'lax',
   maxAge:   7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
@@ -48,13 +51,24 @@ export const loginUser = async (req, res) => {
 
   logger.debug('auth.loginUser called', { requestId: req.id, email: input.email });
 
-  const user = await authenticateUserUseCase(input);
+  // ── CHANGED: wrap UC call to catch and audit login failures ─────────────
+  let user;
+  try {
+    user = await authenticateUserUseCase(input);
+  } catch (err) {
+    recordFailure(AuditAction.AUTH_LOGIN, null, {
+      email:  input.email,
+      reason: err.message,
+    }, req);
+    throw err; // re-throw so error handler sends the response
+  }
+
   const { accessToken } = issueTokens(res, user);
 
-  auditLogger.log('auth.login', {
-    userId: user.id ?? user._id,
-    email:  user.email ?? user._email,
-    role:   user.role  ?? user._role,
+  // ── CHANGED: recordAudit via service, using AuditAction enum ────────────
+  recordAudit(AuditAction.AUTH_LOGIN, user.id ?? user._id, {
+    email: user.email ?? user._email,
+    role:  user.role  ?? user._role,
   }, req);
 
   return sendSuccess(res, {
@@ -66,6 +80,35 @@ export const loginUser = async (req, res) => {
       name:  user.name  ?? user._name,
     },
   }, HTTP_STATUS.OK);
+};
+
+// ---------------------------------------------------------------------------
+// Register  (POST /auth/register)
+// ---------------------------------------------------------------------------
+
+export const registerUser = async (req, res) => {
+  const input = sanitizeCreateInput(req.body);
+
+  logger.debug('auth.registerUser called', { requestId: req.id, email: input.email });
+
+  const user = await createUserUsecase(input);
+  const { accessToken } = issueTokens(res, user);
+
+  // ── CHANGED: 'auth.register' was an unregistered string; now USER_CREATED ──
+  recordAudit(AuditAction.USER_CREATED, user.id ?? user._id, {
+    email: user.email ?? user._email,
+    role:  user.role  ?? user._role,
+  }, req);
+
+  return sendSuccess(res, {
+    token: accessToken,
+    user: {
+      id:    user.id    ?? user._id,
+      email: user.email ?? user._email,
+      role:  user.role  ?? user._role,
+      name:  user.name  ?? user._name,
+    },
+  }, HTTP_STATUS.CREATED);
 };
 
 // ---------------------------------------------------------------------------
@@ -86,7 +129,6 @@ const oauthCallback = (provider) => [
   (req, res, next) =>
     passport.authenticate(provider, {
       session: false,
-      // --- CHANGE: redirect to frontend failure page ---
       failureRedirect: '/pages/auth/auth_fail.html?message=Authentication+failed'
     })(req, res, next),
   (req, res) => {
@@ -98,14 +140,16 @@ const oauthCallback = (provider) => [
       provider,
     });
 
-    auditLogger.log(`auth.oauth.login.${provider}`, {
-      userId: req.user?.id,
-      email: req.user?._email ?? req.user?.email,
+    // ── CHANGED: derive correct enum per provider instead of raw template string ──
+    const oauthAction =
+      provider === 'google' ? AuditAction.AUTH_OAUTH_LOGIN_GOOGLE
+                            : AuditAction.AUTH_OAUTH_LOGIN_GITHUB;
+
+    recordAudit(oauthAction, req.user?.id, {
+      email:    req.user?._email ?? req.user?.email,
       provider,
     }, req);
 
-    // --- CHANGE: redirect to frontend success page with token and user ---
-    // Encode user object as base64 to safely pass in URL
     const userBase64 = Buffer.from(JSON.stringify(req.user)).toString('base64');
     const successUrl = `/pages/auth/auth_success.html?token=${tokens.accessToken}&user=${userBase64}`;
     return res.redirect(successUrl);
@@ -124,7 +168,8 @@ export const refreshTokens = (req, res) => {
 
   if (!token) {
     logger.warn('auth.refreshTokens: no refresh token in cookie', { requestId: req.id });
-    auditLogger.failure('auth.token.refresh', { reason: 'no_token' }, req);
+    // ── CHANGED: AUTH_TOKEN_REFRESH_FAILED replaces raw 'auth.token.refresh' ──
+    recordFailure(AuditAction.AUTH_TOKEN_REFRESH_FAILED, null, { reason: 'no_token' }, req);
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'No refresh token provided' });
   }
 
@@ -136,19 +181,18 @@ export const refreshTokens = (req, res) => {
       requestId: req.id,
       error: err.message,
     });
-    auditLogger.failure('auth.token.refresh', { reason: 'invalid_or_expired' }, req);
+    recordFailure(AuditAction.AUTH_TOKEN_REFRESH_FAILED, null, { reason: 'invalid_or_expired' }, req);
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'Invalid or expired refresh token' });
   }
 
   if (!isRefreshTokenValid(decoded.jti)) {
-    // Token reuse detected — security event, kill all sessions for this user
     revokeAllForUser(decoded.id);
     logger.warn('auth.refreshTokens: refresh token reuse detected — all sessions revoked', {
       requestId: req.id,
       userId: decoded.id,
     });
-    auditLogger.failure('auth.token.reuse_detected', {
-      userId: decoded.id,
+    // ── CHANGED: AUTH_TOKEN_REUSE_DETECTED replaces raw 'auth.token.reuse_detected' ──
+    recordFailure(AuditAction.AUTH_TOKEN_REUSE_DETECTED, decoded.id, {
       action: 'all_sessions_revoked',
     }, req);
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'Refresh token reuse detected' });
@@ -165,7 +209,8 @@ export const refreshTokens = (req, res) => {
   res.cookie('refreshToken', newRefresh, REFRESH_COOKIE_OPTIONS);
 
   logger.debug('auth.refreshTokens: token pair rotated', { requestId: req.id, userId: decoded.id });
-  auditLogger.log('auth.token.refreshed', { userId: decoded.id }, req);
+  // ── CHANGED: AUTH_TOKEN_REFRESHED replaces raw 'auth.token.refreshed' ───
+  recordAudit(AuditAction.AUTH_TOKEN_REFRESHED, decoded.id, {}, req);
 
   return sendSuccess(res, { accessToken }, HTTP_STATUS.OK);
 };
@@ -184,7 +229,6 @@ export const logout = (req, res) => {
       userId = decoded.id;
       revokeRefreshToken(decoded.jti);
     } catch {
-      // Token already expired or invalid — still clear the cookie
       logger.warn('auth.logout: could not verify refresh token on logout', { requestId: req.id });
     }
   }
@@ -192,7 +236,8 @@ export const logout = (req, res) => {
   res.clearCookie('refreshToken');
 
   logger.debug('auth.logout: user logged out', { requestId: req.id, userId });
-  auditLogger.log('auth.logout', { userId }, req);
+  // ── CHANGED: AUTH_LOGOUT replaces raw 'auth.logout' ─────────────────────
+  recordAudit(AuditAction.AUTH_LOGOUT, userId, {}, req);
 
   return sendSuccess(res, { message: 'Logged out successfully' }, HTTP_STATUS.OK);
 };
@@ -203,7 +248,7 @@ export const logout = (req, res) => {
 
 export const authFailure = (req, res) => {
   logger.warn('auth.authFailure: OAuth authentication failed', { requestId: req.id });
-  auditLogger.failure('auth.oauth.failure', { reason: 'oauth_provider_rejected' }, req);
-  // --- CHANGE: redirect to frontend failure page ---
+  // ── CHANGED: AUTH_OAUTH_FAILURE replaces raw 'auth.oauth.failure' ────────
+  recordFailure(AuditAction.AUTH_OAUTH_FAILURE, null, { reason: 'oauth_provider_rejected' }, req);
   return res.redirect('/pages/auth/auth_fail.html?message=OAuth+authentication+failed');
 };

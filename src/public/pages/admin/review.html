@@ -1,110 +1,132 @@
-import { requireAdmin, getParam } from '../../core/router.js';
-import { apiFetch }               from '../../core/api.js';
-import { initNavbar }             from '../../../components/navbar.js';
-import { statusBadge }            from '../../../components/statusBadge.js';
-import { toast }                  from '../../core/toast.js';
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Review Task — WriteSystem Admin</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+</head>
+<body>
+<!--
+  Sidebar is injected here by initAdminSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
 
-requireAdmin();
-initNavbar();
+<div class="admin-main">
 
-const id = getParam('id');
-if (!id) window.location.href = '/pages/admin/tasks.html';
+    <!-- Topbar -->
+    <header class="adm-topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+            <a href="/pages/admin/tasks.html"
+               style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3);
+                      text-decoration:none;transition:color .15s"
+               onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text3)'">
+                ← Tasks
+            </a>
+            <span style="color:var(--border-hi)">/</span>
+            <div>
+                <div class="adm-topbar-title">Review Task</div>
+                <div class="adm-topbar-crumb">Admin <span>›</span> <span>Content</span></div>
+            </div>
+        </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search users, tasks…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <button class="adm-icon-btn" title="Send notification"
+                    onclick="window.location='/pages/admin/notifications.html'">◬</button>
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
 
-const statusEl      = document.getElementById('task-status');
-const titleEl       = document.getElementById('task-title');
-const typeEl        = document.getElementById('task-type');
-const promptEl      = document.getElementById('task-prompt');
-const submissionEl  = document.getElementById('task-submission');
-const wordCountEl   = document.getElementById('task-wordcount');
-const feedbackEl    = document.getElementById('feedback-input');
-const reviewBtn     = document.getElementById('review-btn');
-const scoreInput    = document.getElementById('score-input');
-const scoreBtn      = document.getElementById('score-btn');
-const reviewSection = document.getElementById('review-section');
-const scoreSection  = document.getElementById('score-section');
+    <div class="adm-content">
 
-// FIX: was double-fetching — now just fetches the single task directly
-const loadTask = async () => {
-    try {
-        const res = await apiFetch(`/api/writing-tasks/${id}`);
-        renderTask(res?.data ?? res);
-    } catch (err) {
-        toast(err.message, 'error');
-    }
-};
+        <!-- Sub-header context -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <div style="font-size:12px;color:var(--text3);font-family:var(--font-mono,monospace);letter-spacing:.04em">
+                Submit feedback, then assign a band score
+            </div>
+            <span style="margin-left:auto;border-color:var(--red);color:var(--red);background:var(--red-dim);
+                         font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;
+                         border-radius:20px;border:1px solid var(--red)">ADMIN</span>
+        </div>
 
-const renderTask = (task) => {
-    if (!task) { toast('Task not found', 'error'); return; }
+        <!-- Task details card -->
+        <div class="adm-card">
+            <div class="adm-card-hd">
+                <div style="flex:1;min-width:0">
+                    <div class="adm-card-title" id="task-title">Loading…</div>
+                    <div style="font-size:11px;color:var(--text3);font-family:var(--font-mono,monospace);margin-top:2px" id="task-type"></div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center">
+                    <span id="task-status"></span>
+                    <span id="task-wordcount" style="font-size:12px;color:var(--text3);font-family:var(--font-mono,monospace)"></span>
+                </div>
+            </div>
 
-    titleEl.textContent      = task._title          ?? task.title          ?? '—';
-    typeEl.textContent       = `${task._taskType    ?? task.taskType       ?? '—'} | ${task._examType ?? task.examType ?? '—'}`;
-    statusEl.innerHTML       = statusBadge(task._status ?? task.status);
-    promptEl.textContent     = task._questionPrompt ?? task.questionPrompt ?? '—';
-    submissionEl.textContent = task._submissionText ?? task.submissionText ?? '(No submission yet)';
-    wordCountEl.textContent  = (task._wordCount ?? task.wordCount)
-        ? `${task._wordCount ?? task.wordCount} words` : '—';
+            <div style="padding:20px">
+                <!-- Prompt -->
+                <div style="margin-bottom:16px">
+                    <div class="input-label" style="margin-bottom:6px">Prompt</div>
+                    <div id="task-prompt"
+                         style="background:var(--surface2);border:1px solid var(--border-hi);
+                                border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.7;
+                                color:var(--text2);white-space:pre-wrap;min-height:48px"></div>
+                </div>
 
-    const feedback = task._feedback ?? task.feedback;
-    if (feedback) feedbackEl.value = feedback;
+                <!-- Submission -->
+                <div style="margin-bottom:24px">
+                    <div class="input-label" style="margin-bottom:6px">Submission</div>
+                    <div id="task-submission"
+                         style="background:var(--surface2);border:1px solid var(--border-hi);
+                                border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.8;
+                                color:var(--text);max-height:400px;overflow-y:auto;
+                                white-space:pre-wrap;min-height:64px"></div>
+                </div>
 
-    const status    = task._status ?? task.status;
-    const canReview = status === 'SUBMITTED';
-    const canScore  = status === 'REVIEWED';
-    const isScored  = status === 'SCORED';
+                <!-- Review + Score columns -->
+                <div class="adm-row2">
 
-    reviewSection.style.display = (canReview || feedback) ? 'block' : 'none';
-    scoreSection.style.display  = (canScore || isScored)  ? 'block' : 'none';
-    reviewBtn.disabled          = !canReview;
-    scoreBtn.disabled           = !canScore;
+                    <!-- Review section -->
+                    <div id="review-section" style="display:none">
+                        <div class="form-group">
+                            <label class="form-label">Feedback <span style="color:var(--red)">*</span></label>
+                            <textarea id="feedback-input" class="input"
+                                style="min-height:140px"
+                                placeholder="Write detailed feedback for the student…"></textarea>
+                        </div>
+                        <button id="review-btn" class="btn btn--primary btn--sm">Save Review</button>
+                    </div>
 
-    if (isScored) {
-        const score = task._bandScore ?? task.bandScore;
-        scoreInput.value    = score;
-        scoreInput.disabled = true;
-        const finalEl = document.getElementById('final-score');
-        if (finalEl) { finalEl.textContent = `Band ${score}`; finalEl.style.display = 'flex'; }
-    }
-};
+                    <!-- Score section -->
+                    <div id="score-section" style="display:none">
+                        <div class="form-group">
+                            <label class="form-label">Band score (0–9)</label>
+                            <input id="score-input" type="number" min="0" max="9" step="0.5"
+                                   class="input" placeholder="e.g. 6.5" style="width:140px" />
+                        </div>
+                        <p style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5">
+                            Save your review first, then assign a band score. Scores are final once submitted.
+                        </p>
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <button id="score-btn" class="btn btn--ghost btn--sm">Save Score</button>
+                            <span id="final-score"
+                                  style="display:none;font-size:20px;font-weight:700;
+                                         color:var(--green);font-family:var(--font-mono,monospace)"></span>
+                        </div>
+                    </div>
 
-reviewBtn?.addEventListener('click', async () => {
-    const feedback = feedbackEl.value.trim();
-    if (!feedback) { toast('Please enter feedback before reviewing.', 'error'); return; }
-    reviewBtn.disabled    = true;
-    reviewBtn.textContent = 'Saving…';
-    try {
-        await apiFetch(`/api/admin/writing-tasks/${id}/review`, {
-            method: 'PATCH',
-            body: JSON.stringify({ feedback }),
-        });
-        toast('Review saved! You can now score this task.');
-        loadTask();
-    } catch (err) {
-        toast(err.message, 'error');
-        reviewBtn.disabled    = false;
-        reviewBtn.textContent = 'Save Review';
-    }
-});
+                </div>
+            </div>
+        </div>
 
-scoreBtn?.addEventListener('click', async () => {
-    const bandScore = parseFloat(scoreInput.value);
-    if (isNaN(bandScore) || bandScore < 0 || bandScore > 9) {
-        toast('Band score must be between 0 and 9.', 'error'); return;
-    }
-    scoreBtn.disabled    = true;
-    scoreBtn.textContent = 'Saving…';
-    try {
-        await apiFetch(`/api/admin/writing-tasks/${id}/score`, {
-            method: 'PATCH',
-            body: JSON.stringify({ bandScore }),
-        });
-        toast(`Task scored: Band ${bandScore}`);
-        loadTask();
-    } catch (err) {
-        toast(err.message, 'error');
-        scoreBtn.disabled    = false;
-        scoreBtn.textContent = 'Save Score';
-    }
-});
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
 
-// FIX: dashboard.js also had wrong navbar import path — add to dashboard.js fix list
-loadTask();
+<div id="toast"><span class="t-icon">✓</span><span id="toast-msg">Done</span></div>
+<script type="module" src="/js/pages/admin/review.js"></script>
+</body>
+</html>

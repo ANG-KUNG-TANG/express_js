@@ -1,24 +1,20 @@
+<!-- auth_fail.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sign In Failed — IELTS Platform</title>
-  <link rel="stylesheet" href="/css/base.css" />
-  <style>
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .fail-box { text-align: center; padding: 48px 32px; max-width: 400px; }
-    .fail-icon { font-size: 3rem; margin-bottom: 20px; }
-    h2 { font-family: var(--font-display); margin-bottom: 8px; }
-    p  { color: var(--text-muted); margin-bottom: 28px; }
-  </style>
+  <script src="/js/core/theme.js"></script>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/pages/auth.css"/>
 </head>
-<body>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;">
   <div class="fail-box">
     <div class="fail-icon">✕</div>
     <h2>Sign in failed</h2>
     <p id="error-msg">Authentication was unsuccessful. This can happen if you denied access or your account couldn't be verified.</p>
-    <a href="/pages/auth/login.html" class="btn btn--primary">Try again</a>
+    <a href="/pages/auth/login.html" class="btn btn--primary" style="margin-top:16px;">Try again</a>
   </div>
   <script>
     const params = new URLSearchParams(window.location.search);

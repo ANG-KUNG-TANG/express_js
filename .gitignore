@@ -1,7 +1,10 @@
-node_modules/
+logs/
+uploads/
 .env
+node_modules/
 dist
 coverage
 .pnpm-store
 .pnpm-lock.yaml
-.uploads
+
+

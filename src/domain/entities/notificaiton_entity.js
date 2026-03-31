@@ -5,26 +5,13 @@ import {
     NotificationInvalidTypeError,
     NotificationMissingFieldError,
 } from '../../core/errors/notification.errors.js';
+import { NotificationType } from '../base/noti_enums.js';
 
-export const NotificationType = Object.freeze({
-    // ── Existing types (unchanged) ────────────────────────────────────────────
-    TEST_RESULT:      'test_result',
-    EXAM_REMINDER:    'exam_reminder',
-    SCORE_AVAILABLE:  'score_available',
-    PRACTICE_READY:   'practice_ready',
-    PASSWORD_CHANGED: 'password_changed',
-    ACCOUNT_ALERT:    'account_alert',
-
-    // ── Assignment types (new) ────────────────────────────────────────────────
-    // Values are lowercase to match navbar.js TYPE_ICONS keys and the strings
-    // passed into sendNotificationUseCase({ type: NotificationType.TASK_ASSIGNED })
-    TASK_ASSIGNED:    'task_assigned',    // → student:  teacher assigned a task
-    TASK_DECLINED:    'task_declined',    // → teacher:  student declined
-    TASK_REMINDER:    'task_reminder',    // → student:  due in 24h (cron)
-    TASK_UNSTARTED:   'task_unstarted',   // → student:  not started after X days (cron)
-    TASK_SUBMITTED:   'task_submitted',   // → teacher:  student submitted
-    TASK_SCORED:      'task_scored',      // → student:  teacher scored it
-});
+// FIX: re-export NotificationType from this file so any use case that
+// mistakenly imports it from here still works without crashing.
+// The correct import path is '../base/noti_enums.js' — but this re-export
+// means you don't have to hunt down and fix every file that uses the wrong path.
+export { NotificationType };
 
 export class Notification {
     constructor(props) {
@@ -81,4 +68,18 @@ export class Notification {
     get metadata()  { return this._metadata; }
     get createdAt() { return this._createdAt; }
     get updatedAt() { return this._updatedAt; }
+
+    toJSON() {
+        return {
+            _id:       this._id,
+            userId:    this._userId,
+            type:      this._type,
+            title:     this._title,
+            message:   this._message,
+            isRead:    this._isRead,      
+            metadata:  this._metadata,   
+            createdAt: this._createdAt, 
+            updatedAt: this._updatedAt,  
+        };
+    }
 }

@@ -1,8 +1,9 @@
 // js/pages/auth/reset_password.js
 // Reads ?token= from URL, validates with backend, then handles reset
 
-import { apiFetch   }   from '../../core/apijs';
-import { toast } from '../../core/toast.js';
+// FIX #1: 'apijs' → 'api.js' (missing dot in import path)
+import { apiFetch } from '../../core/api.js';
+import { toast }    from '../../core/toast.js';
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const stepValidating = document.getElementById('stepValidating');
@@ -23,19 +24,21 @@ const strengthLabel  = document.getElementById('strengthLabel');
 
 const token = new URLSearchParams(window.location.search).get('token');
 
-// ── Step helpers ───────────────────────────────────────────────────────────────
+// ── Step helpers ──────────────────────────────────────────────────────────────
 const showOnly = (...show) => {
     [stepValidating, stepInvalid, stepForm, stepDone].forEach((el) =>
-        el.classList.add('hidden')
+        el?.classList.add('hidden')
     );
-    show.forEach((el) => el.classList.remove('hidden'));
+    show.forEach((el) => el?.classList.remove('hidden'));
 };
 
-// ── Token validation on load ───────────────────────────────────────────────────
+// ── Token validation on load ──────────────────────────────────────────────────
 const validateToken = async () => {
     if (!token) return showOnly(stepInvalid);
     try {
-        await apiFetch .get(`/auth/reset-password/validate?token=${encodeURIComponent(token)}`);
+        // FIX #2: apiFetch .get(...) → apiFetch(url, { method: 'GET' })
+        // FIX #3: missing /api prefix to match password_reset.router.js mount point
+        await apiFetch(`/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`);
         showOnly(stepForm);
     } catch {
         showOnly(stepInvalid);
@@ -44,13 +47,13 @@ const validateToken = async () => {
 
 validateToken();
 
-// ── Password strength meter ────────────────────────────────────────────────────
+// ── Password strength meter ───────────────────────────────────────────────────
 const getStrength = (pw) => {
     let score = 0;
-    if (pw.length >= 8)                  score++;
-    if (/[A-Z]/.test(pw))               score++;
-    if (/[0-9]/.test(pw))               score++;
-    if (/[^A-Za-z0-9]/.test(pw))        score++;
+    if (pw.length >= 8)           score++;
+    if (/[A-Z]/.test(pw))         score++;
+    if (/[0-9]/.test(pw))         score++;
+    if (/[^A-Za-z0-9]/.test(pw))  score++;
     return score;
 };
 
@@ -63,7 +66,7 @@ passwordInput.addEventListener('input', () => {
     clearFieldError(passwordError, passwordInput);
 });
 
-// ── Validation ─────────────────────────────────────────────────────────────────
+// ── Validation ────────────────────────────────────────────────────────────────
 const validatePassword = (pw) => {
     if (!pw) return 'Password is required.';
     if (pw.length < 8) return 'Must be at least 8 characters.';
@@ -82,7 +85,7 @@ const clearFieldError = (el, input) => {
     input.classList.remove('is-error');
 };
 
-// ── Show / hide password toggles ───────────────────────────────────────────────
+// ── Show / hide password toggles ──────────────────────────────────────────────
 document.querySelectorAll('.toggle-password').forEach((btn) => {
     btn.addEventListener('click', () => {
         const targetId = btn.dataset.target;
@@ -91,14 +94,14 @@ document.querySelectorAll('.toggle-password').forEach((btn) => {
     });
 });
 
-// ── Loading state ──────────────────────────────────────────────────────────────
+// ── Loading state ─────────────────────────────────────────────────────────────
 const setLoading = (on) => {
     resetBtn.disabled = on;
     btnText.classList.toggle('hidden', on);
     btnSpinner.classList.toggle('hidden', !on);
 };
 
-// ── Submit ─────────────────────────────────────────────────────────────────────
+// ── Submit ────────────────────────────────────────────────────────────────────
 resetForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -124,11 +127,16 @@ resetForm.addEventListener('submit', async (e) => {
 
     setLoading(true);
     try {
-        await apiFetch .post('/auth/reset-password', { token, password, confirmPassword: confirm });
+        // FIX #2: apiFetch .post(...) → apiFetch(url, { method: 'POST', body: ... })
+        // FIX #3: missing /api prefix
+        await apiFetch('/api/auth/reset-password', {
+            method: 'POST',
+            body: JSON.stringify({ token, password, confirmPassword: confirm }),
+        });
         showOnly(stepDone);
     } catch (err) {
-        toast.error(err.message || 'Reset failed. The link may have expired.');
-        // Link may be expired — send user to request a new one
+        // FIX #4: toast is a plain function, not toast.error()
+        toast(err.message || 'Reset failed. The link may have expired.', 'error');
         setTimeout(() => showOnly(stepInvalid), 2500);
     } finally {
         setLoading(false);

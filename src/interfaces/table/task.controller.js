@@ -10,23 +10,23 @@ import { submitTask }           from '../../app/task_uc/complete_task.uc.js';
 import { reviewTask }           from '../../app/task_uc/review_task.uc.js';
 import { scoreTask }            from '../../app/task_uc/score_task.uc.js';
 import { lookupVocabUseCase }   from '../../app/task_uc/lookup_vocab.uc.js';
-import { respondAssignmentUC }  from '../../app/task_uc/respond_assignment.uc.js';  // ← new
+import { respondAssignmentUC }  from '../../app/task_uc/respond_assignment.uc.js';
 import { sendSuccess }          from '../response_formatter.js';
 import { HTTP_STATUS }          from '../http_status.js';
 import { sanitizeCreateInput, sanitizeUpdateInput } from '../input_sanitizers/task.input_sanitizer.js';
-import logger      from '../../core/logger/logger.js';
-import auditLogger from '../../core/logger/audit.logger.js';
-// NOTE: removed bad import → '../../public/js/core/auth.js' (frontend file, not for backend)
+import { recordAudit }          from '../../core/services/audit.service.js';
+import { AuditAction }          from '../../domain/base/audit_enums.js';
+import logger                   from '../../core/logger/logger.js';
 
 const getUserId = (req) => req.user?.id ?? req.user?._id;
 
 // POST /writing-tasks
 export const createWritingTaskController = async (req, res) => {
     const userId = getUserId(req);
-    const data = sanitizeCreateInput(req.body);
-    logger.debug('WritingTask.create called', { requestId: req.id, userId });
+    const data   = sanitizeCreateInput(req.body);
+    logger.debug('writingTask.create called', { requestId: req.id, userId });
     const task = await createWritingTask(userId, data);
-    auditLogger.log('WritingTask.created', { taskId: task.id, userId }, req);
+    recordAudit(AuditAction.TASK_CREATED, userId, { taskId: task.id }, req);
     return sendSuccess(res, task, HTTP_STATUS.CREATED);
 };
 
@@ -71,17 +71,17 @@ export const updateWritingTaskController = async (req, res) => {
     const updates = sanitizeUpdateInput(req.body);
     logger.debug('writingTask.update called', { requestId: req.id, taskId: id, userId });
     const task = await updateWritingTask(id, updates, userId);
-    auditLogger.log('writingTask.updated', { taskId: id, userId, updatedFields: Object.keys(updates) }, req);
+    recordAudit(AuditAction.TASK_UPDATED, userId, { taskId: id, updatedFields: Object.keys(updates) }, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
 // DELETE /writing-tasks/:id
+// audit is handled inside deleteWritingTask UC — do NOT call recordAudit here too
 export const deleteWritingTaskController = async (req, res) => {
     const { id } = req.params;
     const userId  = getUserId(req);
     logger.debug('writingTask.delete called', { requestId: req.id, taskId: id, userId });
-    const result = await deleteWritingTask(id, userId);
-    auditLogger.log('writingTask.deleted', { taskId: id, userId }, req);
+    const result = await deleteWritingTask(id, userId, req);  // pass req → UC logs it
     return sendSuccess(res, result, HTTP_STATUS.OK);
 };
 
@@ -89,31 +89,31 @@ export const deleteWritingTaskController = async (req, res) => {
 export const startWritingTaskController = async (req, res) => {
     const { id } = req.params;
     const userId  = getUserId(req);
-    logger.debug('WritingTask.start called', { requestId: req.id, taskId: id, userId });
+    logger.debug('writingTask.start called', { requestId: req.id, taskId: id, userId });
     const task = await startWritingTask(id, userId);
-    auditLogger.log('writingTask.started', { taskId: id, userId }, req);
+    recordAudit(AuditAction.TASK_STARTED, userId, { taskId: id }, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
 // PATCH /writing-tasks/:id/submit
+// audit is handled inside submitTask UC — do NOT call recordAudit here too
 export const submitTaskController = async (req, res) => {
     const { id }             = req.params;
     const userId             = getUserId(req);
     const { submissionText } = req.body;
     logger.debug('writingTask.submit called', { requestId: req.id, taskId: id, userId });
-    const task = await submitTask(id, userId, submissionText);
-    auditLogger.log('writingTask.submitted', { taskId: id, userId, wordCount: task._wordCount }, req);
+    const task = await submitTask(id, userId, submissionText, req);  // pass req → UC logs it
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
 // PATCH /writing-tasks/:id/review
+// audit is handled inside reviewTask UC — do NOT call recordAudit here too
 export const reviewTaskController = async (req, res) => {
     const { id }       = req.params;
     const reviewerId   = getUserId(req);
     const { feedback } = req.body;
     logger.debug('writingTask.review called', { requestId: req.id, taskId: id, reviewerId });
-    const task = await reviewTask(id, reviewerId, feedback);
-    auditLogger.log('writingTask.reviewed', { taskId: id, reviewerId }, req);
+    const task = await reviewTask(id, reviewerId, feedback, req);  // pass req → UC logs it
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
@@ -124,7 +124,7 @@ export const scoreTaskController = async (req, res) => {
     const { bandScore } = req.body;
     logger.debug('writingTask.score called', { requestId: req.id, taskId: id, scorerId });
     const task = await scoreTask(id, scorerId, bandScore);
-    auditLogger.log('writingTask.scored', { taskId: id, scorerId, bandScore: task._bandScore }, req);
+    recordAudit(AuditAction.TASK_SCORED_USER, scorerId, { taskId: id, bandScore: task._bandScore }, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
@@ -142,11 +142,10 @@ export const transferWritingTaskController = async (req, res, next) => {
         const { fromUserId, toUserId } = req.body;
         logger.debug('writingTask.transfer called', { requestId: req.id, fromUserId, toUserId });
         const result = await transferWritingTasks(fromUserId, toUserId);
-        auditLogger.log('writingTask.transferred', {
+        recordAudit(AuditAction.TASK_TRANSFERRED, req.user?.id ?? null, {
             fromUserId,
             toUserId,
             transferredCount: result.transferred,
-            requesterId: req.user?.id ?? null,
         }, req);
         return sendSuccess(res, result, HTTP_STATUS.OK);
     } catch (err) {
@@ -154,13 +153,13 @@ export const transferWritingTaskController = async (req, res, next) => {
     }
 };
 
-// POST /writing-tasks/:taskId/respond-assignment  ← new
+// POST /writing-tasks/:taskId/respond-assignment
+// audit is handled inside respondAssignmentUC — do NOT call recordAudit here too
 export const respondAssignmentController = async (req, res) => {
-    const student             = req.user;
-    const { taskId }          = req.params;
+    const student                   = req.user;
+    const { taskId }                = req.params;
     const { action, declineReason } = req.body;
     logger.debug('writingTask.respondAssignment called', { requestId: req.id, taskId, action, userId: student.id });
-    const task = await respondAssignmentUC(student, { taskId, action, declineReason });
-    auditLogger.log('writingTask.assignmentResponded', { taskId, action, userId: student.id }, req);
+    const task = await respondAssignmentUC(student, { taskId, action, declineReason }, req);  // pass req → UC logs it
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };

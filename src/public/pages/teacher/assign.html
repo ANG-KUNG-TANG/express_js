@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assign Task — WriteSystem</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+    <style>
+        /* ── Teacher accent ───────────────────────────────────────────────── */
+        .btn--primary {
+            background: var(--sage, #3a7d5a)   !important;
+            border-color: var(--sage, #3a7d5a) !important;
+        }
+        .btn--primary:hover:not(:disabled) {
+            background: #4a9d6a   !important;
+            border-color: #4a9d6a !important;
+        }
+        .input:focus, .select:focus, select.input:focus, textarea.input:focus {
+            border-color: var(--sage, #3a7d5a);
+            box-shadow: 0 0 0 3px rgba(58,125,90,.15);
+        }
+
+        /* ── Spinner ──────────────────────────────────────────────────────── */
+        .spinner {
+            display: inline-block; width: 12px; height: 12px;
+            border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+            border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Mode section dividers ───────────────────────────────────────── */
+        #section-new, #section-existing, #section-topic {
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<!--
+  Teacher sidebar injected here by initTeacherSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
+
+<div class="admin-main">
+
+    <header class="adm-topbar">
+        <div style="display:flex;align-items:center;gap:14px">
+            <a href="/pages/teacher/dashboard.html"
+               style="font-size:12px;color:var(--text3);text-decoration:none;transition:color .15s"
+               onmouseover="this.style.color='var(--text)'"
+               onmouseout="this.style.color='var(--text3)'">← Dashboard</a>
+            <span style="color:var(--border-hi);font-size:14px">/</span>
+            <div>
+                <div class="adm-topbar-title">Assign Task</div>
+                <div class="adm-topbar-crumb">Teacher <span>›</span> <span>Students</span></div>
+            </div>
+        </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search tasks, students…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
+
+    <div class="adm-content">
+
+        <!-- Page intro -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+            <span style="font-size:12px;color:var(--text3);font-family:var(--font-mono,monospace)">
+                Create a new task, assign an existing one, or assign by topic keyword
+            </span>
+            <span style="margin-left:auto;font-size:10px;font-weight:700;letter-spacing:1px;
+                         padding:2px 9px;border-radius:20px;
+                         border:1px solid var(--sage,#3a7d5a);
+                         color:var(--sage,#3a7d5a);background:rgba(58,125,90,.1)">TEACHER</span>
+        </div>
+
+        <form id="assign-form" novalidate>
+
+            <!-- Student selection -->
+            <div class="adm-card" style="margin-bottom:20px">
+                <div class="adm-card-hd">
+                    <span class="adm-card-title">👩‍🎓 Select student</span>
+                </div>
+                <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="student-select">Student</label>
+                        <select id="student-select" class="input input--sm" style="width:300px">
+                            <option value="">Loading students…</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <input type="checkbox" id="assign-all"
+                               style="width:15px;height:15px;accent-color:var(--sage,#3a7d5a);cursor:pointer" />
+                        <label for="assign-all" id="assign-all-label"
+                               style="font-size:.82rem;color:var(--text2);cursor:pointer">
+                            Assign to all my students
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task mode -->
+            <div class="adm-card" style="margin-bottom:20px">
+                <div class="adm-card-hd">
+                    <span class="adm-card-title">✎ Task mode</span>
+                </div>
+                <div style="padding:16px 20px">
+                    <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:20px">
+                        <label class="input-label" for="assign-mode">Mode</label>
+                        <select id="assign-mode" class="input input--sm" style="width:260px">
+                            <option value="teacher_new">Create a new task</option>
+                            <option value="teacher_existing">Use an existing task</option>
+                            <option value="teacher_topic">Assign by topic</option>
+                        </select>
+                    </div>
+
+                    <!-- New task fields -->
+                    <div id="section-new">
+                        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px">
+                            <label class="input-label" for="new-title">
+                                Task title <span style="color:var(--red)">*</span>
+                            </label>
+                            <input id="new-title" type="text" class="input input--sm"
+                                   placeholder="e.g. IELTS Task 2 — Environment" />
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px">
+                            <label class="input-label" for="new-prompt">Question prompt</label>
+                            <textarea id="new-prompt" class="input input--sm"
+                                      style="min-height:90px;resize:vertical"
+                                      placeholder="Paste the full question text here…"></textarea>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                            <div style="display:flex;flex-direction:column;gap:4px">
+                                <label class="input-label" for="new-task-type">
+                                    Task type <span style="color:var(--red)">*</span>
+                                </label>
+                                <select id="new-task-type" class="input input--sm">
+                                    <option value="">Select type…</option>
+                                    <option value="TASK_1">Task 1</option>
+                                    <option value="TASK_2">Task 2</option>
+                                </select>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px">
+                                <label class="input-label" for="new-exam-type">Exam type</label>
+                                <select id="new-exam-type" class="input input--sm">
+                                    <option value="">Select exam…</option>
+                                    <option value="ACADEMIC">Academic</option>
+                                    <option value="GENERAL">General Training</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Existing task fields -->
+                    <div id="section-existing" style="display:none">
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label class="input-label" for="existing-task-id">Task ID</label>
+                            <input id="existing-task-id" type="text" class="input input--sm"
+                                   placeholder="Paste the task ObjectId…" style="width:300px" />
+                        </div>
+                        <div id="existing-preview"></div>
+                    </div>
+
+                    <!-- Topic fields -->
+                    <div id="section-topic" style="display:none">
+                        <div style="display:flex;flex-direction:column;gap:4px">
+                            <label class="input-label" for="topic-keyword">Topic keyword</label>
+                            <input id="topic-keyword" type="text" class="input input--sm"
+                                   placeholder="e.g. environment, technology, health…" style="width:300px" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deadline + reminder -->
+            <div class="adm-card" style="margin-bottom:20px">
+                <div class="adm-card-hd">
+                    <span class="adm-card-title">⏰ Schedule</span>
+                    <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono,monospace)">
+                        Optional deadline and reminder
+                    </span>
+                </div>
+                <div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="due-date">Due date</label>
+                        <input id="due-date" type="datetime-local" class="input input--sm" />
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="reminder-hours">Reminder before deadline</label>
+                        <select id="reminder-hours" class="input input--sm">
+                            <option value="">No reminder</option>
+                            <option value="24">24 hours before</option>
+                            <option value="48">48 hours before</option>
+                            <option value="72">72 hours before</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div style="display:flex;gap:12px">
+                <button id="submit-btn" type="submit" class="btn btn--primary btn--sm"
+                        style="flex:1;height:40px;font-size:14px">
+                    <span id="submit-label">Create &amp; assign task</span>
+                </button>
+                <a href="/pages/teacher/dashboard.html"
+                   class="btn btn--ghost btn--sm" style="height:40px;font-size:14px">Cancel</a>
+            </div>
+
+        </form>
+
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast-container"></div>
+<script type="module" src="/js/pages/teacher/assign.js"></script>
+</body>
+</html>

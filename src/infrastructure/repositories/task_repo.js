@@ -1,6 +1,6 @@
 import WritingTaskModel from "../../domain/models/task_model.js";
 import { WritingTask } from "../../domain/entities/task_entity.js";
-import { WritingStatus } from "../../domain/base/task_enums.js";
+import { WritingStatus, AssignmentStatus } from "../../domain/base/task_enums.js";
 import mongoose from 'mongoose';
 import {
     TaskInvalidIdError,
@@ -11,7 +11,7 @@ import {
     TaskOwnershipError,
 } from '../../core/errors/task.errors.js';
 import logger from '../../core/logger/logger.js';
-import { option, task } from "fp-ts";
+
 
 // ---------------------------------------------------------------------------
 // Mappers
@@ -153,6 +153,26 @@ export const createTask = async (taskData) => {
     }
 };
 
+export const createManyTasks = async (payloads) => {
+    if (!payloads?.length) return [];
+ 
+    logger.debug('taskRepo.createManyTasks', { count: payloads.length });
+ 
+    // Map each payload through the entity constructor so domain validation
+    // (required fields, enum checks) runs on every item before hitting the DB.
+    const docs = payloads.map((p) => {
+        const entity = new WritingTask(p);   // same entity class used in createTask
+        return toPersistence(entity);        // same mapper used in createTask
+    });
+ 
+    // ordered: false  → if one insert fails, the rest still go through.
+    // Remove it if you prefer all-or-nothing (ordered: true is Mongoose default).
+    const inserted = await WritingTaskModel.insertMany(docs, { ordered: false });
+ 
+    logger.debug('taskRepo.createManyTasks: inserted', { count: inserted.length });
+    return inserted.map(toDomain);
+};
+
 export const updateTask = async (id, updates) => {
     // FIX #3: Pass the actual `id` value to TaskInvalidIdError, not the string literal 'TaskNotFoundError'
     if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError(id);
@@ -198,6 +218,12 @@ export const updateTask = async (id, updates) => {
             submittedAt:    task._submittedAt,
             reviewedAt:     task._reviewedAt,
             updatedAt:      task._updatedAt,
+            // FIX: these fields were missing — assignment updates were silently dropped
+            assignmentStatus:  task._assignmentStatus,
+            declineReason:     task._declineReason,
+            dueDate:           task._dueDate,
+            assignedBy:        task._assignedBy,
+            assignedTo:        task._assignedTo,
         }},
         { returnDocument: 'after', runValidators: true }
     ).lean();
@@ -274,33 +300,34 @@ export const acceptAssignment = async (taskId) => {
     });
 };
 
-export const declineAssignment = async (taskid, reason) =>{
-    logger.debug('writingTaskRepo.declineAssigment', { taskId});
+export const declineAssignment = async (taskId, reason) => {
+    logger.debug('writingTaskRepo.declineAssignment', { taskId });
     const task = await findTaskByID(taskId);
     task.declineAssignment(reason);
     return await updateTask(taskId, {
         assignmentStatus: task._assignmentStatus,
-        declineReason: task._declineReason,
-        status: WritingStatus.ASSIGNED,
+        declineReason:    task._declineReason,
+        status:           WritingStatus.ASSIGNED,
     });
 };
 
 export const findDueSoon = async (withinHours = 24) => {
-    const now = new Date();
-    const cutoff = new Date(now.getTime() + withinHours *60*60*1000);
-    const dedupe = new Date(now.getTime() - 20*60*60*1000);
+    const now    = new Date();
+    const cutoff = new Date(now.getTime() + withinHours * 60 * 60 * 1000);
+    const dedupe = new Date(now.getTime() - 20 * 60 * 60 * 1000);
 
-    logger.debug('WritingTAskRepo.findDueSoon', { withinHours, cutoff});
+    logger.debug('writingTaskRepo.findDueSoon', { withinHours, cutoff });
     const docs = await WritingTaskModel.find({
-        dueDate: { $gt: now, $lte: cutoff},
-        status: { $nin: [WritingStatus.SUBMITTED, WritingStatus.REVIEWED, WritingStatus.SCORED]}, 
+        dueDate:          { $gt: now, $lte: cutoff },
+        status:           { $nin: [WritingStatus.SUBMITTED, WritingStatus.REVIEWED, WritingStatus.SCORED] },
         assignmentStatus: AssignmentStatus.ACCEPTED,
         $or: [
-            {reminderSentAt: null},
-            {reminderSentAt: { $lte: dedupe}},
-        ]
+            { reminderSentAt: null },
+            { reminderSentAt: { $lte: dedupe } },
+        ],
     }).lean();
-    logger.debug('writingTaskRepo.findDueSoon : result', { count: doc.length});
+    // FIX: was doc.length (undefined) — should be docs.length
+    logger.debug('writingTaskRepo.findDueSoon: result', { count: docs.length });
     return toDomainList(docs);
 };
 

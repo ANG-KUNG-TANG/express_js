@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Content Moderation — WriteSystem Admin</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+</head>
+<body>
+<!--
+  Sidebar is injected here by initAdminSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
+
+<div class="admin-main">
+
+    <!-- Topbar -->
+    <header class="adm-topbar">
+        <div>
+            <div class="adm-topbar-title">Content Moderation</div>
+            <div class="adm-topbar-crumb">Admin <span>›</span> <span>Content</span></div>
+        </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search users, tasks…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <button class="adm-icon-btn" title="Send notification"
+                    onclick="window.location='/pages/admin/notifications.html'">◬</button>
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
+
+    <div class="adm-content">
+
+        <!-- Sub-header context -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+            <div style="font-size:12px;color:var(--text3);font-family:var(--font-mono,monospace);letter-spacing:.04em">
+                Flag, review, and remove inappropriate submissions
+            </div>
+            <span style="margin-left:auto;border-color:var(--red);color:var(--red);background:var(--red-dim);
+                         font-size:10px;font-weight:700;letter-spacing:1px;padding:2px 8px;
+                         border-radius:20px;border:1px solid var(--red)">ADMIN</span>
+        </div>
+
+        <!-- Flag a submission -->
+        <div class="adm-card" style="margin-bottom:20px">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">Flag a submission</span>
+            </div>
+            <div style="padding:16px 20px">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="flag-task-id">Task ID</label>
+                        <input id="flag-task-id" type="text" class="input input--sm"
+                            placeholder="MongoDB ObjectId…" style="width:240px" />
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:4px">
+                        <label class="input-label" for="flag-severity">Severity</label>
+                        <select id="flag-severity" class="input input--sm" style="width:120px">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:200px">
+                        <label class="input-label" for="flag-reason">Reason</label>
+                        <input id="flag-reason" type="text" class="input input--sm"
+                            placeholder="Describe the issue…" />
+                    </div>
+                    <button id="flag-btn" class="btn btn--danger btn--sm">Flag content</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flags table -->
+        <div class="adm-card">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">Flagged content</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <select id="flag-status-filter" class="input input--sm" style="width:150px">
+                        <option value="open">Open flags</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="">All</option>
+                    </select>
+                    <button id="refresh-btn" class="btn btn--ghost btn--sm">Refresh</button>
+                </div>
+            </div>
+            <div style="overflow-x:auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Flagged by</th>
+                            <th>Reason</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="flags-table-body">
+                        <tr><td colspan="6" class="loading" style="text-align:center;padding:32px">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div style="padding:12px 20px">
+                <div id="moderation-pagination" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"></div>
+            </div>
+        </div>
+
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast"><span class="t-icon">✓</span><span id="toast-msg">Done</span></div>
+<script type="module" src="/js/pages/admin/moderation.js"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@
  */
 
 import { apiFetch } from './api.js';
+import { disconnectSocket } from './socket.js';
 
 // ── Session helpers ───────────────────────────────────────────────────────────
 export const getUser    = () => JSON.parse(localStorage.getItem('user') || 'null');
@@ -14,6 +15,8 @@ export const isLoggedIn = () => !!getToken();
 export const saveSession = (token, user) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
+    // Socket is initialised by the page (dashboard.js calls initSocket directly)
+    // — do NOT call initSocket() here to avoid double-connecting.
 };
 
 export const logOut = async () => {
@@ -22,6 +25,7 @@ export const logOut = async () => {
     } catch (_) {
         // ignore — clear session regardless
     } finally {
+        disconnectSocket();
         localStorage.clear();
         window.location.href = '/pages/auth/login.html';
     }
@@ -58,7 +62,7 @@ export const initLoginPage = () => {
                 body: JSON.stringify({ email, password }),
             });
             saveSession(data.token ?? data.data?.token, data.user ?? data.data?.user);
-            redirectAfterLogin(data.user ?? data.data?.user);
+            redirectAfterLogin();
         } catch (err) {
             showAlert(alertEl, err.message || 'Invalid email or password.');
             setLoading(btn, false, 'Sign In');
@@ -105,7 +109,7 @@ export const initRegisterPage = () => {
                 body: JSON.stringify({ name, email, password }),
             });
             saveSession(data.token ?? data.data?.token, data.user ?? data.data?.user);
-            redirectAfterLogin(data.user ?? data.data?.user);
+            redirectAfterLogin();
         } catch (err) {
             showAlert(alertEl, err.message || 'Registration failed. Please try again.');
             setLoading(btn, false, 'Create Account');
@@ -113,11 +117,9 @@ export const initRegisterPage = () => {
     });
 };
 
-// ── Role-based redirect after login ──────────────────────────────────────────
-function redirectAfterLogin(user) {
-    if (!user) { window.location.href = '/pages/dashboard.html'; return; }
-    if (user.role === 'admin')   { window.location.href = '/pages/admin/dashboard.html'; return; }
-    if (user.role === 'teacher') { window.location.href = '/pages/teacher/dashboard.html'; return; }
+// ── Redirect after login/register ────────────────────────────────────────────
+// All roles go to the single dashboard — dashboard.js handles role switching.
+function redirectAfterLogin() {
     window.location.href = '/pages/dashboard.html';
 }
 

@@ -4,434 +4,21 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>My Tasks — IELTS Platform</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+  <script src="/js/core/theme.js"></script>
   <link rel="stylesheet" href="/css/base.css"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-
-    :root {
-      --ink:      #0b1120;
-      --ink-2:    #1a2640;
-      --frost:    #f5f3ef;
-      --gold:     #c9a84c;
-      --gold-lt:  #e8d49a;
-      --blue:     #4d7cfe;
-      --blue-bg:  #eef2ff;
-      --green:    #16a34a;
-      --green-bg: #f0fdf4;
-      --amber:    #d97706;
-      --amber-bg: #fffbeb;
-      --rose:     #e11d48;
-      --rose-bg:  #fff1f2;
-      --slate:    #64748b;
-    }
-
-    body { font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
-
-    /* ── PAGE WRAP ──────────────────────────────────────────────────────── */
-    .page-wrap {
-      max-width: 1160px;
-      margin: 0 auto;
-      padding: 0 28px 72px;
-    }
-
-    /* ── HERO BAND ──────────────────────────────────────────────────────── */
-    .tasks-hero {
-      background: var(--ink);
-      border-radius: 20px;
-      margin: 28px 0 0;
-      padding: 40px 52px 40px;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 24px;
-    }
-
-    /* Dot-grid texture */
-    .tasks-hero::before {
-      content: '';
-      position: absolute; inset: 0;
-      background-image: radial-gradient(circle, rgba(255,255,255,.06) 1px, transparent 1px);
-      background-size: 28px 28px;
-      pointer-events: none;
-    }
-
-    /* Top-right glow */
-    .tasks-hero::after {
-      content: '';
-      position: absolute;
-      top: -60px; right: -80px;
-      width: 340px; height: 340px;
-      background: radial-gradient(circle, rgba(77,124,254,.2) 0%, transparent 65%);
-      pointer-events: none;
-    }
-
-    /* Big decorative word */
-    .hero-deco-text {
-      position: absolute;
-      bottom: -20px; right: 48px;
-      font-family: 'Playfair Display', serif;
-      font-weight: 700;
-      font-size: 130px;
-      color: rgba(255,255,255,.03);
-      line-height: 1; letter-spacing: -.04em;
-      user-select: none; pointer-events: none;
-    }
-
-    .hero-content { position: relative; z-index: 2; }
-
-    .hero-eyebrow {
-      font-size: .68rem; font-weight: 600;
-      letter-spacing: .15em; text-transform: uppercase;
-      color: var(--gold);
-      margin-bottom: 10px;
-      display: flex; align-items: center; gap: 9px;
-    }
-    .hero-eyebrow::before {
-      content: ''; display: block;
-      width: 20px; height: 1px;
-      background: var(--gold); opacity: .55;
-    }
-
-    .hero-title {
-      font-family: 'Playfair Display', serif;
-      font-size: 2.3rem; font-weight: 700;
-      line-height: 1.15; color: #f0ece3;
-      letter-spacing: -.025em;
-      margin-bottom: 8px;
-    }
-    .hero-title em { font-style: italic; color: var(--gold-lt); }
-
-    .hero-sub {
-      font-size: .875rem; color: #8a9ab8;
-      line-height: 1.65; max-width: 380px;
-    }
-
-    /* Hero CTA */
-    .hero-cta { position: relative; z-index: 2; flex-shrink: 0; }
-    .btn-new {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 13px 26px;
-      background: var(--gold); color: var(--ink);
-      border: none; border-radius: 10px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: .88rem; font-weight: 700;
-      text-decoration: none; cursor: pointer;
-      letter-spacing: .01em;
-      box-shadow: 0 0 0 1px rgba(201,168,76,.4);
-      transition: background .15s, box-shadow .15s, transform .1s;
-      white-space: nowrap;
-    }
-    .btn-new:hover { background: var(--gold-lt); box-shadow: 0 6px 20px rgba(201,168,76,.35); }
-    .btn-new:active { transform: scale(.97); }
-    .btn-new svg { width: 13px; height: 13px; flex-shrink: 0; }
-
-    /* ── TOOLBAR ──────────────────────────────────────────────────────────── */
-    .toolbar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 22px 0 26px;
-      flex-wrap: wrap;
-    }
-
-    /* Search */
-    .search-wrap {
-      position: relative;
-      flex: 1; min-width: 200px; max-width: 320px;
-    }
-    .search-icon {
-      position: absolute; left: 12px; top: 50%;
-      transform: translateY(-50%);
-      width: 15px; height: 15px;
-      color: #a0adc0; pointer-events: none;
-    }
-    #search-input {
-      width: 100%;
-      padding: 9px 14px 9px 36px;
-      border: 1.5px solid #e0e5f0;
-      border-radius: 9px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: .875rem; color: var(--ink);
-      background: #fff; outline: none;
-      transition: border-color .14s, box-shadow .14s;
-    }
-    #search-input::placeholder { color: #b6bfcc; }
-    #search-input:focus {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px rgba(77,124,254,.1);
-    }
-
-    /* Filter pills group */
-    .filter-pills {
-      display: flex; gap: 8px; flex-wrap: wrap;
-    }
-
-    .filter-pill-wrap { position: relative; }
-    .filter-pill-wrap::after {
-      content: '';
-      position: absolute; right: 11px; top: 50%;
-      transform: translateY(-50%);
-      border: 4px solid transparent;
-      border-top: 5px solid #9aacc8;
-      pointer-events: none;
-      margin-top: 2px;
-    }
-
-    /* These IDs must stay exactly as list.js expects */
-    #filter-status,
-    #filter-type,
-    #filter-exam {
-      appearance: none;
-      padding: 9px 30px 9px 13px;
-      border: 1.5px solid #e0e5f0;
-      border-radius: 9px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: .82rem; font-weight: 500;
-      color: var(--slate); background: #fff;
-      cursor: pointer; outline: none;
-      transition: border-color .14s, background .14s, color .14s, box-shadow .14s;
-      white-space: nowrap;
-    }
-    #filter-status:focus,
-    #filter-type:focus,
-    #filter-exam:focus {
-      border-color: var(--blue);
-      box-shadow: 0 0 0 3px rgba(77,124,254,.1);
-    }
-
-    /* Active state when a value is selected (set via JS) */
-    .filter-pill-wrap.is-active::after { border-top-color: var(--blue); }
-    .filter-pill-wrap.is-active select {
-      border-color: #c5d3fd;
-      background: var(--blue-bg);
-      color: var(--blue); font-weight: 600;
-    }
-
-    /* Divider */
-    .toolbar-divider {
-      width: 1px; height: 24px;
-      background: #e0e5f0; flex-shrink: 0;
-    }
-
-    /* Count label */
-    .tasks-count {
-      font-size: .8rem; color: #8a9ab8;
-      white-space: nowrap; margin-left: auto;
-    }
-    .tasks-count strong { color: var(--ink); font-weight: 700; }
-
-    /* ── TASK CARDS — styled here, rendered by list.js ────────────────────── */
-    /*
-      list.js renders into #tasks-list.tasks-grid
-      We style .task-card and its children here so list.js output looks great.
-      list.js uses: .task-card, .task-card__header, .task-card__title,
-                    .task-card__meta, .task-card__status, .task-card__band,
-                    .task-card__footer, .task-card__date, .task-card__action
-      statusBadge.js renders: .status-badge.status--ASSIGNED etc.
-    */
-
-    /* Main grid — ID must stay "tasks-list", class "tasks-grid" */
-    .tasks-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-      gap: 16px;
-      animation: gridFade .4s cubic-bezier(.16,1,.3,1) both;
-    }
-    @keyframes gridFade {
-      from { opacity: 0; transform: translateY(10px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Loading / empty state */
-    .tasks-grid .loading,
-    .tasks-grid .empty-state {
-      grid-column: 1 / -1;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 12px;
-      padding: 72px 20px;
-      color: #a0adc0; font-size: .9rem; text-align: center;
-    }
-
-    /* ─── Task card ──────────────────────────────────────────── */
-    .task-card {
-      background: #fff;
-      border: 1.5px solid #e8edf5;
-      border-radius: 14px;
-      padding: 0;
-      overflow: hidden;
-      display: flex; flex-direction: column;
-      transition: border-color .16s, box-shadow .16s, transform .16s;
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-      animation: cardPop .35s cubic-bezier(.16,1,.3,1) both;
-    }
-    .task-card:hover {
-      border-color: #cbd5fd;
-      box-shadow: 0 4px 20px rgba(77,124,254,.1), 0 1px 4px rgba(0,0,0,.05);
-      transform: translateY(-2px);
-    }
-    @keyframes cardPop {
-      from { opacity: 0; transform: scale(.97) translateY(8px); }
-      to   { opacity: 1; transform: scale(1)   translateY(0);   }
-    }
-
-    /* Card accent bar — color by status */
-    .task-card::before {
-      content: '';
-      display: block;
-      height: 3px;
-      background: #e8edf5;
-      transition: background .2s;
-    }
-    .task-card.status-ASSIGNED::before  { background: #94a3b8; }
-    .task-card.status-WRITING::before   { background: var(--blue); }
-    .task-card.status-SUBMITTED::before { background: var(--amber); }
-    .task-card.status-REVIEWED::before  { background: #8b5cf6; }
-    .task-card.status-SCORED::before    { background: var(--green); }
-
-    /* Card body */
-    .task-card__body {
-      padding: 18px 20px 16px;
-      flex: 1;
-      display: flex; flex-direction: column; gap: 12px;
-    }
-
-    /* Top row: status badge + band score */
-    .task-card__header {
-      display: flex; align-items: center;
-      justify-content: space-between; gap: 10px;
-    }
-
-    /* Status badge (rendered by statusBadge.js) */
-    .status-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 9px;
-      border-radius: 99px;
-      font-size: .7rem; font-weight: 700;
-      letter-spacing: .04em; text-transform: uppercase;
-    }
-    .status-badge::before {
-      content: ''; width: 5px; height: 5px;
-      border-radius: 50%; background: currentColor; opacity: .7;
-      flex-shrink: 0;
-    }
-    .status--ASSIGNED  { background: #f1f5f9; color: #475569; }
-    .status--WRITING   { background: var(--blue-bg); color: var(--blue); }
-    .status--SUBMITTED { background: var(--amber-bg); color: var(--amber); }
-    .status--REVIEWED  { background: #f5f3ff; color: #7c3aed; }
-    .status--SCORED    { background: var(--green-bg); color: var(--green); }
-
-    /* Band score pill */
-    .task-card__band {
-      display: inline-flex; align-items: baseline; gap: 2px;
-      padding: 3px 10px;
-      background: var(--ink); color: #f0ece3;
-      border-radius: 99px;
-      font-family: 'Playfair Display', serif;
-      font-size: .9rem; font-weight: 700;
-      line-height: 1;
-    }
-    .task-card__band .band-label {
-      font-family: 'DM Sans', sans-serif;
-      font-size: .62rem; font-weight: 500;
-      color: #8a9ab8; text-transform: uppercase;
-      letter-spacing: .05em;
-    }
-    .task-card__band.no-band {
-      background: #f1f5f9; color: #94a3b8;
-      font-family: 'DM Sans', sans-serif;
-      font-size: .72rem; font-weight: 500;
-    }
-
-    /* Title */
-    .task-card__title {
-      font-size: .93rem; font-weight: 600;
-      color: var(--ink); line-height: 1.45;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      margin: 0;
-    }
-
-    /* Meta row: type + exam chips */
-    .task-card__meta {
-      display: flex; align-items: center; gap: 6px;
-      flex-wrap: wrap;
-    }
-    .meta-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 8px;
-      background: #f4f6fb; color: #64748b;
-      border-radius: 6px;
-      font-size: .7rem; font-weight: 600;
-      letter-spacing: .03em; text-transform: uppercase;
-    }
-    .meta-chip.chip-academic { background: #eff6ff; color: #1d4ed8; }
-    .meta-chip.chip-general  { background: #fdf4ff; color: #7e22ce; }
-    .meta-chip.chip-task1    { background: #fff7ed; color: #c2410c; }
-    .meta-chip.chip-task2    { background: #f0fdf4; color: #15803d; }
-
-    /* Card footer */
-    .task-card__footer {
-      padding: 12px 20px;
-      border-top: 1px solid #f1f5f9;
-      display: flex; align-items: center;
-      justify-content: space-between; gap: 10px;
-    }
-    .task-card__date {
-      font-size: .75rem; color: #94a3b8;
-      display: flex; align-items: center; gap: 5px;
-    }
-    .task-card__date svg { width: 12px; height: 12px; flex-shrink: 0; }
-
-    .task-card__action {
-      font-size: .75rem; font-weight: 600;
-      color: var(--blue); text-decoration: none;
-      display: flex; align-items: center; gap: 4px;
-      transition: gap .15s;
-    }
-    .task-card__action:hover { gap: 7px; }
-    .task-card__action svg { width: 11px; height: 11px; }
-
-    /* ── RESPONSIVE ─────────────────────────────────────────────────────── */
-    @media (max-width: 860px) {
-      .tasks-hero { padding: 32px 28px; flex-direction: column; align-items: flex-start; }
-      .hero-deco-text { display: none; }
-      .hero-cta { width: 100%; }
-      .btn-new { width: 100%; justify-content: center; }
-    }
-    @media (max-width: 600px) {
-      .page-wrap { padding: 0 16px 56px; }
-      .tasks-hero { margin: 16px 0 0; border-radius: 14px; }
-      .hero-title { font-size: 1.75rem; }
-      .search-wrap { max-width: 100%; }
-      .toolbar { gap: 8px; }
-      .toolbar-divider { display: none; }
-      .tasks-count { width: 100%; margin-left: 0; }
-    }
-  </style>
+  <link rel="stylesheet" href="/css/pages/tasks.css"/>
 </head>
 <body>
 <div class="page-wrap">
 
-  <!-- ── HERO ──────────────────────────────────────────────────────────── -->
+  <!-- HERO -->
   <div class="tasks-hero">
     <span class="hero-deco-text" aria-hidden="true">Tasks</span>
-
     <div class="hero-content">
       <p class="hero-eyebrow">Writing Practice</p>
       <h1 class="hero-title">My <em>Tasks</em></h1>
       <p class="hero-sub">All your IELTS writing tasks in one place — track progress, review feedback, and keep improving.</p>
     </div>
-
     <div class="hero-cta">
       <a href="/pages/tasks/create.html" class="btn-new">
         <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
@@ -442,10 +29,8 @@
     </div>
   </div>
 
-  <!-- ── TOOLBAR ───────────────────────────────────────────────────────── -->
+  <!-- TOOLBAR -->
   <div class="toolbar">
-
-    <!-- Search — ID kept exactly as list.js expects -->
     <div class="search-wrap">
       <svg class="search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
         <circle cx="9" cy="9" r="6"/>
@@ -456,7 +41,6 @@
 
     <div class="toolbar-divider"></div>
 
-    <!-- Filter selects — IDs kept exactly as list.js expects -->
     <div class="filter-pills">
       <div class="filter-pill-wrap">
         <select id="filter-status">
@@ -468,7 +52,6 @@
           <option value="SCORED">Scored</option>
         </select>
       </div>
-
       <div class="filter-pill-wrap">
         <select id="filter-type">
           <option value="">All Types</option>
@@ -476,7 +59,6 @@
           <option value="TASK_2">Task 2</option>
         </select>
       </div>
-
       <div class="filter-pill-wrap">
         <select id="filter-exam">
           <option value="">All Exams</option>
@@ -486,46 +68,17 @@
       </div>
     </div>
 
-    <!-- Live count -->
     <span class="tasks-count" id="tasks-count"></span>
   </div>
 
-  <!-- ── TASKS GRID — populated by list.js ─────────────────────────────── -->
+  <!-- TASKS GRID — populated by list.js -->
   <div id="tasks-list" class="tasks-grid">
     <p class="loading">Loading tasks…</p>
   </div>
 
 </div>
 
+<script src="/js/pages/tasks/task.filtercount.js"></script>
 <script type="module" src="/js/pages/tasks/list.js"></script>
-
-<script>
-  // ── Visual enhancements: active filter highlight + live count ──────────
-  (function () {
-    const wraps = document.querySelectorAll('.filter-pill-wrap');
-    wraps.forEach(wrap => {
-      const sel = wrap.querySelector('select');
-      if (!sel) return;
-      const update = () => wrap.classList.toggle('is-active', !!sel.value);
-      sel.addEventListener('change', update);
-      update();
-    });
-
-    // Watch #tasks-list for card changes and update count
-    const countEl = document.getElementById('tasks-count');
-    const gridEl  = document.getElementById('tasks-list');
-    if (countEl && gridEl) {
-      const refresh = () => {
-        const cards = gridEl.querySelectorAll('.task-card');
-        if (cards.length) {
-          countEl.innerHTML = `<strong>${cards.length}</strong> task${cards.length !== 1 ? 's' : ''}`;
-        } else {
-          countEl.textContent = '';
-        }
-      };
-      new MutationObserver(refresh).observe(gridEl, { childList: true, subtree: false });
-    }
-  })();
-</script>
 </body>
 </html>

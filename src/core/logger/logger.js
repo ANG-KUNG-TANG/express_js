@@ -38,7 +38,7 @@ const transports = [
         level: "error",
         format: baseFormat,
         maxsize: 5 * 1024 * 1024,
-        maxFile: 5,
+        maxFiles: 5,
         tailable: true
     }),
     new winston.transports.File({

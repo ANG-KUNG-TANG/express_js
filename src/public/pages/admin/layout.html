@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin • WriteSystem</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+</head>
+<body>
+    <!--
+      Sidebar is injected as first child of <body> by initAdminSidebar().
+      Do NOT hardcode an <aside> here.
+    -->
+
+    <div class="admin-main">
+        <div class="adm-content" id="page-content">
+            <!-- Individual page content will be placed here -->
+        </div>
+    </div>
+
+    <div id="toast"><span class="t-icon">✓</span><span id="toast-msg">Done</span></div>
+
+    <script type="module">
+        import { initAdminSidebar } from '/js/components/admin_sidebar.js';
+        initAdminSidebar();
+    </script>
+</body>
+</html>

@@ -1,193 +1,164 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Teacher Dashboard</title>
+    <title>Teacher Dashboard — WriteSystem</title>
+    <script src="/js/core/theme.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
     <link rel="stylesheet" href="/css/pages/admin.css" />
     <style>
-        /* ── Queue rows ── */
+        /* ── Teacher accent overrides ──────────────────────────────────────── */
+        .btn--primary {
+            background: var(--sage, #3a7d5a)      !important;
+            border-color: var(--sage, #3a7d5a)    !important;
+        }
+        .btn--primary:hover:not(:disabled) {
+            background: #4a9d6a                   !important;
+            border-color: #4a9d6a                 !important;
+        }
+        .input:focus, .select:focus {
+            border-color: var(--sage, #3a7d5a);
+            box-shadow: 0 0 0 3px rgba(58,125,90,.15);
+        }
+
+        /* ── Queue rows ──────────────────────────────────────────────────── */
         .queue-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 0;
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 20px;
             border-bottom: 1px solid var(--border);
         }
         .queue-row:last-child { border-bottom: none; }
-        .queue-row__info { flex: 1; min-width: 0; }
+        .queue-row__info      { flex: 1; min-width: 0; }
         .queue-row__title {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text1);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: block; font-size: 14px; font-weight: 600;
+            color: var(--text1); white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
         }
         .queue-row__meta {
-            display: block;
-            font-size: 12px;
-            color: var(--text3);
-            margin-top: 3px;
+            display: block; font-size: 12px; color: var(--text3); margin-top: 3px;
         }
 
-        /* ── Data table ── */
-        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .data-table th {
-            text-align: left;
-            padding: 8px 12px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: .05em;
-            text-transform: uppercase;
-            color: var(--text3);
-            border-bottom: 1px solid var(--border);
-        }
-        .data-table td {
-            padding: 11px 12px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text2);
-            vertical-align: middle;
-        }
-        .data-table tr:last-child td { border-bottom: none; }
-        .data-table .col-title {
-            color: var(--text1);
-            font-weight: 500;
-            max-width: 200px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .data-table .col-mono { font-family: var(--font-mono); font-size: 12px; }
-        .data-table .actions-cell { white-space: nowrap; }
-
-        /* ── Student cards ── */
+        /* ── Student cards ───────────────────────────────────────────────── */
         .student-card {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 16px 0;
+            display: flex; align-items: center; gap: 14px;
+            padding: 16px 20px;
             border-bottom: 1px solid var(--border);
         }
         .student-card:last-child { border-bottom: none; }
         .student-card__avatar {
-            width: 40px; height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--teal, #2dd4bf), #06b6d4);
-            color: #fff;
-            font-weight: 700; font-size: 16px;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, #3a7d5a, #c8a84b);
+            color: #fff; font-weight: 700; font-size: 16px;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
         }
-        .student-card__info { flex: 1; min-width: 0; }
-        .student-card__name {
-            display: block;
-            font-size: 14px; font-weight: 600;
-            color: var(--text1);
-        }
-        .student-card__email {
-            display: block;
-            font-size: 12px; color: var(--text3);
-        }
-        .student-card__stats { display: flex; gap: 6px; flex-wrap: wrap; }
+        .student-card__info  { flex: 1; min-width: 0; }
+        .student-card__name  { display: block; font-size: 14px; font-weight: 600; color: var(--text1); }
+        .student-card__email { display: block; font-size: 12px; color: var(--text3); }
+        .student-card__stats { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
 
+        /* ── Stat pills ──────────────────────────────────────────────────── */
         .stat-pill {
-            font-size: 11px;
-            padding: 2px 9px;
-            border-radius: 20px;
-            background: var(--surface2, #f3f4f6);
-            color: var(--text2);
-            border: 1px solid var(--border);
+            font-size: 11px; padding: 2px 9px; border-radius: 20px;
+            background: rgba(255,255,255,.06); color: var(--text2);
+            border: 1px solid var(--border); font-family: var(--font-mono, monospace);
         }
-        .stat-pill--warning {
-            background: rgba(245,158,11,.1);
-            color: var(--amber, #d97706);
-            border-color: rgba(245,158,11,.25);
-        }
-        .stat-pill--success {
-            background: rgba(16,185,129,.1);
-            color: var(--green, #059669);
-            border-color: rgba(16,185,129,.25);
-        }
+        .stat-pill--warning { background: var(--amber-dim); color: var(--amber); border-color: rgba(212,149,74,.25); }
+        .stat-pill--info    { background: rgba(56,189,248,.08); color: #38bdf8; border-color: rgba(56,189,248,.2); }
+        .stat-pill--success { background: var(--green-dim);  color: var(--green); border-color: rgba(93,184,122,.2); }
 
-        /* ── Empty / error ── */
-        .empty-state  { padding: 32px 0; text-align: center; color: var(--text3); font-size: 14px; }
-        .error-state  { padding: 16px; color: var(--red, #dc2626); font-size: 13px; }
+        /* ── Empty / error ───────────────────────────────────────────────── */
+        .empty-state { padding: 40px 20px; text-align: center; color: var(--text3); font-size: 14px; }
+        .error-state { padding: 16px 20px; color: var(--red); font-size: 13px; }
+        .loading     { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
 
-        /* ── Spinner (used in submit button) ── */
+        /* ── Spinner ─────────────────────────────────────────────────────── */
         .spinner {
-            display: inline-block;
-            width: 12px; height: 12px;
-            border: 2px solid rgba(255,255,255,.4);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin .6s linear infinite;
-            vertical-align: middle;
+            display: inline-block; width: 12px; height: 12px;
+            border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+            border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-    <div id="navbar"></div>
-    <main class="admin-layout">
+<!--
+  Teacher sidebar injected here by initTeacherSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
 
-        <header class="admin-header">
-            <h1 class="admin-header__title">Teacher Dashboard</h1>
-            <span class="admin-header__sub">Manage your students and review queue</span>
-            <span class="admin-header__badge"
-                  style="border-color:var(--teal);color:var(--teal);background:rgba(45,212,191,.1)">
-                TEACHER
-            </span>
-        </header>
+<div class="admin-main">
 
-        <!-- ── Stats ── -->
-        <section class="stats-bar" style="grid-template-columns:repeat(3,1fr)">
-            <div class="stat-card stat-card--warning" id="stat-submitted">
-                <span class="stat-card__value">—</span>
-                <span class="stat-card__label">Awaiting Review</span>
-            </div>
-            <div class="stat-card stat-card--info" id="stat-reviewed">
-                <span class="stat-card__value">—</span>
-                <span class="stat-card__label">Reviewed</span>
-            </div>
-            <div class="stat-card stat-card--success" id="stat-scored">
-                <span class="stat-card__value">—</span>
-                <span class="stat-card__label">Scored</span>
-            </div>
-        </section>
+    <header class="adm-topbar">
+        <div>
+            <div class="adm-topbar-title">Teacher Dashboard</div>
+            <div class="adm-topbar-crumb">Teacher <span>›</span> <span>Overview</span></div>
+        </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search tasks, students…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <button class="adm-icon-btn" title="Assign task"
+                    onclick="window.location='/pages/teacher/assign.html'">✎</button>
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
 
-        <!-- ── Students — assign tasks here ── -->
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <div>
-                    <h2 class="admin-panel__title">👩‍🎓 Your Students</h2>
-                    <span class="admin-panel__sub">Click "+ Assign Task" to send a task and notify the student</span>
-                </div>
-            </div>
-            <div id="students-list"><p class="loading">Loading…</p></div>
-        </section>
+    <div class="adm-content">
 
-        <!-- ── Pending review queue ── -->
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <div>
-                    <h2 class="admin-panel__title">⚠ Review Queue</h2>
-                    <span class="admin-panel__sub">Submitted tasks waiting for your feedback</span>
-                </div>
+        <!-- Stats -->
+        <div class="adm-stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+            <div class="adm-stat adm-stat--amber" id="stat-submitted">
+                <div class="adm-stat__icon">⏳</div>
+                <div class="adm-stat__label">Awaiting Review</div>
+                <div class="adm-stat__value stat-card__value">—</div>
             </div>
-            <div id="pending-list"><p class="loading">Loading…</p></div>
-        </section>
+            <div class="adm-stat adm-stat--blue" id="stat-reviewed">
+                <div class="adm-stat__icon">◈</div>
+                <div class="adm-stat__label">Reviewed</div>
+                <div class="adm-stat__value stat-card__value">—</div>
+            </div>
+            <div class="adm-stat adm-stat--teal" id="stat-scored">
+                <div class="adm-stat__icon">✦</div>
+                <div class="adm-stat__label">Scored</div>
+                <div class="adm-stat__value stat-card__value">—</div>
+            </div>
+        </div>
 
-        <!-- ── All tasks ── -->
-        <section class="admin-panel">
-            <div class="admin-panel__header">
-                <h2 class="admin-panel__title">All Tasks</h2>
-                <div class="admin-panel__controls">
+        <!-- Students -->
+        <div class="adm-card" style="margin-bottom:20px">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">👩‍🎓 Your Students</span>
+                <a class="adm-card-action" href="/pages/teacher/assign.html">+ Assign task →</a>
+            </div>
+            <div id="students-list">
+                <p class="loading">Loading students…</p>
+            </div>
+        </div>
+
+        <!-- Review queue -->
+        <div class="adm-card" style="margin-bottom:20px">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">⚠ Review Queue</span>
+                <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono,monospace)">
+                    Submitted tasks waiting for your feedback
+                </span>
+            </div>
+            <div id="pending-list">
+                <p class="loading">Loading…</p>
+            </div>
+        </div>
+
+        <!-- All tasks -->
+        <div class="adm-card">
+            <div class="adm-card-hd">
+                <span class="adm-card-title">All Tasks</span>
+                <div style="display:flex;gap:8px;align-items:center">
                     <input id="task-search" type="text" class="input input--sm"
-                        placeholder="Search by title…" style="width:200px" />
-                    <select id="task-status-filter" class="select select--sm" style="width:160px">
+                           placeholder="Search by title…" style="width:200px" />
+                    <select id="task-status-filter" class="input input--sm" style="width:160px">
                         <option value="">All statuses</option>
                         <option value="SUBMITTED">Submitted</option>
                         <option value="REVIEWED">Reviewed</option>
@@ -195,11 +166,15 @@
                     </select>
                 </div>
             </div>
-            <div id="tasks-list"><p class="loading">Loading…</p></div>
-        </section>
+            <div id="tasks-list">
+                <p class="loading">Loading tasks…</p>
+            </div>
+        </div>
 
-    </main>
-    <div id="toast-container"></div>
-    <script type="module" src="/js/pages/teacher/dashboard.js"></script>
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast-container"></div>
+<script type="module" src="/js/pages/teacher/dashboard.js"></script>
 </body>
 </html>

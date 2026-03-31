@@ -58,7 +58,7 @@ const toPersistence = (user) => {
     return persistence;
 };
 
-export const sanitizeUser = (user) => {
+export const   sanitizeUser = (user) => {
     if (!user) return null;
     return {
         id:          user.id,
@@ -103,7 +103,8 @@ export const findUserByEmailWithPassword = async (email) => {
     const doc = await UserModel.findOne({ email: email.toLowerCase() }).lean();
     if (!doc) {
         logger.warn("userRepo.findUserByEmailWithPassword: email not found", { email });
-        throw new UserEmailNotFoundError(email);}
+        throw new UserEmailNotFoundError(email);
+    }
     return toDomain(doc);
 };
 
@@ -116,7 +117,7 @@ export const lisAllUsers = async () => {
 
 /**
  * findAll({ assignedTeacher?, role? })
- * Used by teacher_list_students.uc.js to get all students linked to a teacher.
+ * Used by teacher_list_students.uc.js to get all users linked to a teacher.
  */
 export const findAll = async (filter = {}) => {
     const query = {};
@@ -132,6 +133,41 @@ export const findAll = async (filter = {}) => {
     const docs = await UserModel.find(query).select('-password').lean();
     logger.debug('userRepo.findAll: result', { count: docs.length });
     return docs.map(toDomain);
+};
+
+/**
+ * findStudentsByTeacher(teacherId)
+ *
+ * Returns all users whose assignedTeacher matches this teacher.
+ * Used by teacher_assign_task.uc.js for bulk assignment.
+ *
+ * FIX: removed `role: UserRole.STUDENT` filter — linked users commonly have
+ * role 'user' (the default), not 'student'. Filtering by role caused bulk
+ * assign to find zero students and silently skip all notifications.
+ * teacher_list_students.uc.js already excludes teachers/admins client-side.
+ */
+export const findStudentsByTeacher = async (teacherId) => {
+    if (!mongoose.Types.ObjectId.isValid(teacherId)) {
+        throw new UserValidationError('invalid teacherId format');
+    }
+    logger.debug('userRepo.findStudentsByTeacher', { teacherId });
+
+    const docs = await UserModel.find({
+        assignedTeacher: new mongoose.Types.ObjectId(teacherId),
+        // Do NOT filter by role here — users may have role 'user' not 'student'.
+        // Exclude staff roles instead so all linked non-staff users are included.
+        role: { $nin: ['teacher', 'admin'] },
+    })
+        .select('_id name email')
+        .lean();
+
+    logger.debug('userRepo.findStudentsByTeacher: result', { count: docs.length });
+
+    return docs.map((d) => ({
+        id:    d._id.toString(),
+        name:  d.name  ?? '',
+        email: d.email ?? '',
+    }));
 };
 
 // Alias used by send_noti_uc.js (imported as * as userRepo → userRepo.findById)
