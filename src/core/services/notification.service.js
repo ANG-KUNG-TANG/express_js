@@ -21,23 +21,7 @@
 
 import { redisDel, CacheKeys }      from './redis.service.js';
 import { sendNotificationUseCase }  from '../../app/notification/send_noti.uc.js';
-
-// ── Notification type registry ────────────────────────────────────────────────
-// Values are lowercase strings — must match NotificationType in notificaiton_entity.js
-// exactly, because send_noti.uc.js → notification_repo → Notification entity validates them.
-
-const TYPES = Object.freeze({
-    TASK_ASSIGNED:   'task_assigned',
-    TASK_ACCEPTED:   'task_accepted',
-    TASK_DECLINED:   'task_declined',
-    TASK_SUBMITTED:  'task_submitted',
-    TASK_REVIEWED:   'task_reviewed',
-    TASK_SCORED:     'task_scored',
-    TASK_REMINDER:   'task_reminder',
-    TASK_UNSTARTED:  'task_unstarted',
-    ROLE_CHANGED:    'role_changed',
-    TEACHER_LINKED:  'teacher_linked',
-});
+import { NotificationType } from '../../domain/base/noti_enums.js';
 
 // ── Core send function ────────────────────────────────────────────────────────
 
@@ -51,7 +35,7 @@ const TYPES = Object.freeze({
  * @param {{
  *   recipientId : string,
  *   actorId?    : string,
- *   type        : string,   // use TYPES constants above
+ *   type        : string,   // use NotificationType constants above
  *   title       : string,
  *   message     : string,
  *   refId?      : string,
@@ -107,4 +91,4 @@ const sendToMany = async (recipientIds, options) => {
 
 // ── Export ────────────────────────────────────────────────────────────────────
 
-export const NotificationService = { send, sendToMany, TYPES };
+export const NotificationService = { send, sendToMany, TYPES: NotificationType };

@@ -1,19 +1,4 @@
-// core/socket.js
-//
-// ── Wire up in server.js ──────────────────────────────────────────────────────
-//
-//   import http                from 'http';
-//   import app                 from './app.js';
-//   import { initSocket }      from './core/socket.js';
-//
-//   const httpServer = http.createServer(app);
-//   initSocket(httpServer);
-//   httpServer.listen(process.env.PORT || 3000);
-//
-// ── Emit from notification.service.js (preferred — never call this directly from UCs) ──
-//
-//   import { emitToUser } from '../../core/socket.js';
-//   emitToUser(userId, 'notification:new', payload);
+// core/services/socket.service.js
 
 import { Server }             from 'socket.io';
 import { verifyAccessToken }  from './jwt.service.js';
@@ -21,15 +6,14 @@ import { verifyAccessToken }  from './jwt.service.js';
 let _io = null;
 
 // Track online users:  Map<userId, Set<socketId>>
-// Lets you check if a user is online before deciding to send a push later (Phase 2).
 const _onlineUsers = new Map();
+
+// Track admin sockets in a dedicated room so we can broadcast audit events
+// without iterating all users.  Admins join 'room:admins' on connect.
+const ADMIN_ROOM = 'room:admins';
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
-/**
- * Call once in server.js after http.createServer(app).
- * Safe to call multiple times — only initialises once.
- */
 export const initSocket = (httpServer) => {
     if (_io) return _io;
 
@@ -51,7 +35,8 @@ export const initSocket = (httpServer) => {
             const token   = raw.startsWith('Bearer ') ? raw.slice(7) : raw;
             const payload = verifyAccessToken(token);
 
-            socket.userId = String(payload._id ?? payload.id ?? payload.sub ?? '');
+            socket.userId   = String(payload._id ?? payload.id ?? payload.sub ?? '');
+            socket.userRole = String(payload.role ?? '');
             if (!socket.userId) return next(new Error('Invalid token payload'));
             next();
         } catch {
@@ -61,25 +46,26 @@ export const initSocket = (httpServer) => {
 
     // ── Connection ────────────────────────────────────────────────────────────
     _io.on('connection', (socket) => {
-        const { userId } = socket;
+        const { userId, userRole } = socket;
 
-        // Join private room (all tabs share the same room)
+        // Join private user room
         socket.join(userId);
+
+        // Admins also join the shared admin room — audit events broadcast here
+        if (userRole === 'admin') {
+            socket.join(ADMIN_ROOM);
+        }
 
         // Track online presence
         if (!_onlineUsers.has(userId)) _onlineUsers.set(userId, new Set());
         _onlineUsers.get(userId).add(socket.id);
 
-        console.log(`[socket] User ${userId} connected  (socketId: ${socket.id}, tabs: ${_onlineUsers.get(userId).size})`);
+        console.log(`[socket] User ${userId} (${userRole}) connected (socketId: ${socket.id}, tabs: ${_onlineUsers.get(userId).size})`);
 
-        // ── Client can mark notifications as read via socket (optional) ───────
         socket.on('notification:markRead', (notificationId) => {
-            // Just an event hook — the UC handles DB update via REST.
-            // Broadcast to all tabs of the same user so the badge updates everywhere.
-            socket.to(userId).emit('notification:markedRead', notificationId);
+            socket.to(userId).emit('noti:markedRead', notificationId);
         });
 
-        // ── Disconnect ────────────────────────────────────────────────────────
         socket.on('disconnect', () => {
             const sockets = _onlineUsers.get(userId);
             if (sockets) {
@@ -96,19 +82,10 @@ export const initSocket = (httpServer) => {
 
 // ── Public helpers ────────────────────────────────────────────────────────────
 
-/**
- * Returns the raw Socket.IO Server instance.
- * Prefer emitToUser() for notifications.
- */
 export const getIO = () => _io;
 
 /**
  * Emit an event to ALL active sockets (tabs) of a given user.
- * Safe to call when the user is offline — nothing happens.
- *
- * @param {string} userId
- * @param {string} event   e.g. 'notification:new'
- * @param {*}      payload
  */
 export const emitToUser = (userId, event, payload) => {
     if (!_io || !userId) return;
@@ -117,11 +94,6 @@ export const emitToUser = (userId, event, payload) => {
 
 /**
  * Emit the same event to multiple users at once.
- * Useful for "assign task to all students" operations.
- *
- * @param {string[]} userIds
- * @param {string}   event
- * @param {*}        payload
  */
 export const emitToUsers = (userIds, event, payload) => {
     if (!_io || !userIds?.length) return;
@@ -129,10 +101,18 @@ export const emitToUsers = (userIds, event, payload) => {
 };
 
 /**
- * Check whether a user currently has at least one open socket connection.
- * Useful in Phase 2 for deciding whether to send a push notification instead.
+ * Broadcast an event to every connected admin.
+ * Used by audit_logger to push new audit entries in real time.
  *
- * @param  {string}  userId
- * @returns {boolean}
+ * @param {string} event   e.g. 'audit:new'
+ * @param {*}      payload
+ */
+export const emitToAdmins = (event, payload) => {
+    if (!_io) return;
+    _io.to(ADMIN_ROOM).emit(event, payload);
+};
+
+/**
+ * Check whether a user currently has at least one open socket connection.
  */
 export const isUserOnline = (userId) => (_onlineUsers.get(userId)?.size ?? 0) > 0;
