@@ -1,0 +1,28 @@
+services:
+  app:
+    image: baw1463i/ielts-js:latest   # <-- change this
+    container_name: ielts_js_prod
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env                    # friend fills this from .env.example
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # NO volume mount — code is baked into the image
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: ielts_js_redis_prod
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis_data:

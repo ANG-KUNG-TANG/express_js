@@ -1,4 +1,5 @@
 logs/
+*.log
 uploads/
 .env
 node_modules/
@@ -6,5 +7,5 @@ dist
 coverage
 .pnpm-store
 .pnpm-lock.yaml
-
-
+.DS_Store
+Thumbs.db

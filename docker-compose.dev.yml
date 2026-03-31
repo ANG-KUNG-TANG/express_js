@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ielts_js_dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app                  # live source mount — changes reflect instantly
+      - /app/node_modules       # keep container node_modules separate
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: ielts_js_redis_dev
+    volumes:
+      - redis_dev_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis_dev_data:

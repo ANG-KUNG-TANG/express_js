@@ -1,0 +1,17 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache git
+
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml* ./
+
+# Install ALL deps including devDependencies
+RUN pnpm install --no-frozen-lockfile
+
+# Source is mounted via volume — no COPY needed
+EXPOSE 3000
+
+CMD ["pnpm", "run", "dev"]
