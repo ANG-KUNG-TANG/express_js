@@ -1,19 +1,17 @@
 // core/services/redis.service.js
 //
-// ── Setup ─────────────────────────────────────────────────────────────────────
+// ── .env / Railway Variables ──────────────────────────────────────────────────
 //
-//   npm install ioredis
+//   REDIS_URL=redis://localhost:6379          ← local dev
+//   REDIS_URL=${{Redis.REDIS_URL}}            ← Railway (set in Variables tab)
+//   USE_REDIS=true                            ← set to false to disable entirely
 //
-// ── .env ─────────────────────────────────────────────────────────────────────
+// ── Wire up in server.js ──────────────────────────────────────────────────────
 //
-//   REDIS_URL=redis://localhost:6379
-//   # or for Redis Cloud / Upstash:
-//   # REDIS_URL=redis://:password@host:port
-//
-// ── Wire up in server.js (call before routes) ─────────────────────────────────
-//
-//   import { connectRedis } from './core/services/redis.service.js';
+//   import { connectRedis, disconnectRedis } from './core/services/redis.service.js';
 //   await connectRedis();
+//   // ... on shutdown:
+//   await disconnectRedis();
 //
 // ── Usage anywhere ────────────────────────────────────────────────────────────
 //
@@ -26,29 +24,52 @@ import Redis from 'ioredis';
 
 let _client = null;
 
+// ── Feature flag ──────────────────────────────────────────────────────────────
+// Set USE_REDIS=false to run without Redis (all cache ops become no-ops)
+
+const isRedisEnabled = () => process.env.USE_REDIS !== 'false';
+
 // ── Connection ────────────────────────────────────────────────────────────────
 
 export const connectRedis = async () => {
+    if (!isRedisEnabled()) {
+        console.warn('[redis] Disabled via USE_REDIS=false — skipping connection');
+        return null;
+    }
+
     if (_client) return _client;
 
     const url = process.env.REDIS_URL ?? 'redis://localhost:6379';
 
     _client = new Redis(url, {
-        maxRetriesPerRequest: 3,
-        enableReadyCheck:     true,
-        lazyConnect:          false,
+        maxRetriesPerRequest:    3,
+        enableReadyCheck:        true,
+        lazyConnect:             false,
+        connectTimeout:          10_000,   // 10s — Railway cold-start can be slow
+        retryStrategy: (times) => {
+            if (times > 5) {
+                console.error('[redis] Too many retries — giving up');
+                return null; // stop retrying
+            }
+            const delay = Math.min(times * 300, 3000);
+            console.warn(`[redis] Retry #${times} in ${delay}ms…`);
+            return delay;
+        },
     });
 
-    _client.on('connect',   () => console.log('[redis] Connected'));
-    _client.on('ready',     () => console.log('[redis] Ready'));
-    _client.on('error',     (err) => console.error('[redis] Error:', err.message));
-    _client.on('close',     () => console.warn('[redis] Connection closed'));
+    _client.on('connect',      () => console.log('[redis] Connected'));
+    _client.on('ready',        () => console.log('[redis] Ready'));
+    _client.on('error',        (err) => console.error('[redis] Error:', err.message));
+    _client.on('close',        () => console.warn('[redis] Connection closed'));
     _client.on('reconnecting', () => console.log('[redis] Reconnecting…'));
 
-    // Await the ready event so the app won't start with a broken cache
+    // Wait for ready before the app starts accepting requests
     await new Promise((resolve, reject) => {
         _client.once('ready', resolve);
-        _client.once('error', reject);
+        _client.once('error', (err) => {
+            console.error('[redis] Failed to connect on startup:', err.message);
+            reject(err);
+        });
     });
 
     return _client;
@@ -69,7 +90,7 @@ export const disconnectRedis = async () => {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
- * Get a value. Returns parsed object/array/primitive, or null on miss.
+ * Get a value. Returns parsed object/array/primitive, or null on miss/error.
  */
 export const redisGet = async (key) => {
     if (!_client) return null;
@@ -131,23 +152,22 @@ export const redisDelPattern = async (pattern) => {
 };
 
 // ── Cache key factory ─────────────────────────────────────────────────────────
-// Centralise key names so nothing is typed as a raw string in multiple files.
 
 export const CacheKeys = {
-    // Phase 1 — notifications
-    userNotifications: (userId)      => `notifications:${userId}`,
-    unreadCount:       (userId)      => `notifications:${userId}:unread`,
+    // Notifications
+    userNotifications: (userId)    => `notifications:${userId}`,
+    unreadCount:       (userId)    => `notifications:${userId}:unread`,
 
-    // Phase 2 — tasks (add more as needed)
-    userTaskList:      (userId)      => `tasks:${userId}:list`,
-    taskDetail:        (taskId)      => `tasks:${taskId}`,
-    teacherTaskList:   (teacherId)   => `tasks:teacher:${teacherId}:list`,
+    // Tasks
+    userTaskList:      (userId)    => `tasks:${userId}:list`,
+    taskDetail:        (taskId)    => `tasks:${taskId}`,
+    teacherTaskList:   (teacherId) => `tasks:teacher:${teacherId}:list`,
 };
 
 // ── TTL constants (seconds) ───────────────────────────────────────────────────
 
 export const TTL = {
-    NOTIFICATIONS:  60,        // 1 minute  — invalidated on new noti
-    TASK_LIST:      120,       // 2 minutes — invalidated on create/update/delete
-    TASK_DETAIL:    300,       // 5 minutes — invalidated on update
+    NOTIFICATIONS: 60,    // 1 minute  — invalidated on new notification
+    TASK_LIST:     120,   // 2 minutes — invalidated on create/update/delete
+    TASK_DETAIL:   300,   // 5 minutes — invalidated on update
 };

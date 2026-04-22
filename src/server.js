@@ -4,7 +4,7 @@ import express from 'express';
 import http from 'http';
 import { startReminderJobs} from './core/job/task_remainder.job.js';
 import { initPassport } from './config/passport.config.js';
-import { connectDB }    from './infrastructure/repositories/db.js';
+import { connectDB, disconnectDB }    from './infrastructure/repositories/db.js';
 import userRouter        from './interfaces/routes/user.router.js';
 import profileRouter     from './interfaces/routes/profile.router.js';
 import writingTaskRouter from './interfaces/routes/task.router.js';
@@ -113,6 +113,7 @@ connectDB().then(async () => {
         console.log(`\n[server] ${signal} received — shutting down gracefully`);
         httpServer.close(async () => {
             await disconnectRedis();
+            await disconnectDB();
             process.exit(0);
         });
     };
