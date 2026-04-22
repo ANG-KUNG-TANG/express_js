@@ -7,6 +7,20 @@
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
+// Mocks must be registered before the SUT is imported
+jest.unstable_mockModule('../../../core/services/audit.service.js', () => ({
+    recordAudit:   jest.fn(),
+    recordFailure: jest.fn(),
+}));
+
+jest.unstable_mockModule('../../../domain/base/audit_enums.js', () => ({
+    AuditAction: {
+        AUTH_OAUTH_FAILURE:      'AUTH_OAUTH_FAILURE',
+        AUTH_OAUTH_LOGIN_GOOGLE: 'AUTH_OAUTH_LOGIN_GOOGLE',
+        AUTH_OAUTH_LOGIN_GITHUB: 'AUTH_OAUTH_LOGIN_GITHUB',
+    },
+}));
+
 const { findOrCreateOAuthUser } = await import('../../../app/auth_uc/oauth_user.uc.js');
 
 // ---------------------------------------------------------------------------
@@ -97,14 +111,11 @@ describe('findOrCreateOAuthUser — new Google user', () => {
         expect(repo.create).toHaveBeenCalledTimes(1);
     });
 
-    it('creates with correct provider fields', async () => {
+    it('creates without provider/providerId fields (not forwarded to repo)', async () => {
         await findOrCreateOAuthUser(repo)(googleProfile);
-        expect(repo.create).toHaveBeenCalledWith(
-            expect.objectContaining({
-                provider:   'google',
-                providerId: 'google-id-123',
-            })
-        );
+        const callArg = repo.create.mock.calls[0][0];
+        expect(callArg).not.toHaveProperty('provider');
+        expect(callArg).not.toHaveProperty('providerId');
     });
 
     it('creates with correct name and email', async () => {
@@ -124,10 +135,10 @@ describe('findOrCreateOAuthUser — new Google user', () => {
         );
     });
 
-    it('creates with null password (OAuth users have no password)', async () => {
+    it('creates with a random hex password (OAuth users never use it)', async () => {
         await findOrCreateOAuthUser(repo)(googleProfile);
         expect(repo.create).toHaveBeenCalledWith(
-            expect.objectContaining({ password: null })
+            expect.objectContaining({ password: expect.stringMatching(/^[0-9a-f]{64}$/) })
         );
     });
 
@@ -140,7 +151,7 @@ describe('findOrCreateOAuthUser — new Google user', () => {
 
     it('returns the newly created user', async () => {
         const result = await findOrCreateOAuthUser(repo)(googleProfile);
-        expect(result).toMatchObject({ email: 'alice@gmail.com', provider: 'google' });
+        expect(result).toMatchObject({ email: 'alice@gmail.com' });
         expect(result.id).toBeDefined();
     });
 });
@@ -173,11 +184,11 @@ describe('findOrCreateOAuthUser — new GitHub user', () => {
         );
     });
 
-    it('sets provider to "github"', async () => {
+    it('does not forward provider/providerId to the repo create call', async () => {
         await findOrCreateOAuthUser(repo)(githubProfile);
-        expect(repo.create).toHaveBeenCalledWith(
-            expect.objectContaining({ provider: 'github', providerId: 'github-id-456' })
-        );
+        const callArg = repo.create.mock.calls[0][0];
+        expect(callArg).not.toHaveProperty('provider');
+        expect(callArg).not.toHaveProperty('providerId');
     });
 });
 

@@ -1,42 +1,73 @@
 import { jest } from '@jest/globals';
 
-const mockTransferTasks = jest.fn();
+// ── Mocks ────────────────────────────────────────────────────────────────────
 
-jest.unstable_mockModule('../../../infrastructure/repositories/task_repo', () => ({
-  transferTasks: mockTransferTasks,
+jest.unstable_mockModule('../../../infrastructure/repositories/task_repo.js', () => ({
+    transferTasks:      jest.fn(),
+    transferSingleTask: jest.fn(),
 }));
 
-const { transferTasks } = await import('../../../app/task_uc/transfer_task.uc');
+// ── Import SUT after mocks ────────────────────────────────────────────────────
 
-describe('transferTasks use case', () => {
-  const fromUserId = '507f1f77bcf86cd799439012';
-  const toUserId = '507f1f77bcf86cd799439013';
+// Source exports transferWritingTasks and transferSingleWritingTask, not transferTasks
+const { transferWritingTasks, transferSingleWritingTask } =
+    await import('../../../app/task_uc/transfer_task.uc.js');
+const taskRepo = await import('../../../infrastructure/repositories/task_repo.js');
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
-  it('should transfer tasks successfully', async () => {
-    const mockResult = { transferred: 5 };
-    mockTransferTasks.mockResolvedValue(mockResult);
+describe('transferWritingTasks use case', () => {
+    const fromUserId = '507f1f77bcf86cd799439012';
+    const toUserId   = '507f1f77bcf86cd799439013';
 
-    const result = await transferTasks(fromUserId, toUserId);
+    beforeEach(() => jest.clearAllMocks());
 
-    expect(mockTransferTasks).toHaveBeenCalledWith(fromUserId, toUserId, null);
-    expect(result).toEqual(mockResult);
-  });
+    it('transfers tasks and returns the repo result', async () => {
+        taskRepo.transferTasks.mockResolvedValue({ transferred: 5 });
 
-  it('should pass session if provided', async () => {
-    const session = { id: 'session123' };
-    mockTransferTasks.mockResolvedValue({ transferred: 2 });
+        const result = await transferWritingTasks(fromUserId, toUserId);
 
-    await transferTasks(fromUserId, toUserId, session);
+        expect(taskRepo.transferTasks).toHaveBeenCalledWith(fromUserId, toUserId, null);
+        expect(result).toEqual({ transferred: 5 });
+    });
 
-    expect(mockTransferTasks).toHaveBeenCalledWith(fromUserId, toUserId, session);
-  });
+    it('passes session through to the repo when provided', async () => {
+        const session = { id: 'session-123' };
+        taskRepo.transferTasks.mockResolvedValue({ transferred: 2 });
 
-  it('should propagate repository errors', async () => {
-    mockTransferTasks.mockRejectedValue(new Error('Invalid user ID'));
-    await expect(transferTasks(fromUserId, toUserId)).rejects.toThrow('Invalid user ID');
-  });
+        await transferWritingTasks(fromUserId, toUserId, session);
+
+        expect(taskRepo.transferTasks).toHaveBeenCalledWith(fromUserId, toUserId, session);
+    });
+
+    it('propagates repository errors', async () => {
+        taskRepo.transferTasks.mockRejectedValue(new Error('Invalid user ID'));
+        await expect(transferWritingTasks(fromUserId, toUserId)).rejects.toThrow('Invalid user ID');
+    });
+});
+
+describe('transferSingleWritingTask use case', () => {
+    const taskId     = '507f1f77bcf86cd799439011';
+    const fromUserId = '507f1f77bcf86cd799439012';
+    const toUserId   = '507f1f77bcf86cd799439013';
+
+    beforeEach(() => jest.clearAllMocks());
+
+    it('transfers a single task and returns the repo result', async () => {
+        taskRepo.transferSingleTask.mockResolvedValue({ transferred: 1 });
+
+        const result = await transferSingleWritingTask(taskId, fromUserId, toUserId);
+
+        expect(taskRepo.transferSingleTask).toHaveBeenCalledWith(taskId, fromUserId, toUserId, null);
+        expect(result).toEqual({ transferred: 1 });
+    });
+
+    it('passes session through to the repo when provided', async () => {
+        const session = { id: 'session-123' };
+        taskRepo.transferSingleTask.mockResolvedValue({ transferred: 1 });
+
+        await transferSingleWritingTask(taskId, fromUserId, toUserId, session);
+
+        expect(taskRepo.transferSingleTask).toHaveBeenCalledWith(taskId, fromUserId, toUserId, session);
+    });
 });

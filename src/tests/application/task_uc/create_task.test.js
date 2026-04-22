@@ -1,153 +1,106 @@
 import { jest } from '@jest/globals';
 
-const mockCreateTask = jest.fn();
+// ── Mocks ────────────────────────────────────────────────────────────────────
 
-jest.unstable_mockModule('../../../infrastructure/repositories/task_repo', () => ({
-  createTask: mockCreateTask,
+jest.unstable_mockModule('../../../infrastructure/repositories/task_repo.js', () => ({
+    createTask: jest.fn(),
 }));
 
-jest.unstable_mockModule('../../../core/errors/task.errors', () => ({
-  TaskNotFoundError: class TaskNotFoundError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskNotFoundError'; }
-  },
-  TaskValidationError: class TaskValidationError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskValidationError'; }
-  },
-  TaskTitleRequiredError: class TaskTitleRequiredError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskTitleRequiredError'; }
-  },
-  TaskTitleTooShortError: class TaskTitleTooShortError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskTitleTooShortError'; }
-  },
-  TaskTitleTooLongError: class TaskTitleTooLongError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskTitleTooLongError'; }
-  },
-  TaskInvalidStatusError: class TaskInvalidStatusError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidStatusError'; }
-  },
-  TaskInvalidPriorityError: class TaskInvalidPriorityError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidPriorityError'; }
-  },
-  TaskInvalidDueDateError: class TaskInvalidDueDateError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidDueDateError'; }
-  },
-  TaskDueDateInPastError: class TaskDueDateInPastError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskDueDateInPastError'; }
-  },
-  TaskUserIdRequiredError: class TaskUserIdRequiredError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskUserIdRequiredError'; }
-  },
-  TaskInvalidUserIdError: class TaskInvalidUserIdError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidUserIdError'; }
-  },
-  TaskExtraFieldsError: class TaskExtraFieldsError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskExtraFieldsError'; }
-  },
-  TaskBusinessRuleError: class TaskBusinessRuleError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskBusinessRuleError'; }
-  },
-  TaskAlreadyCompletedError: class TaskAlreadyCompletedError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskAlreadyCompletedError'; }
-  },
-  TaskNotInProgressError: class TaskNotInProgressError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskNotInProgressError'; }
-  },
-  TaskNotPendingError: class TaskNotPendingError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskNotPendingError'; }
-  },
-  TaskCannotEditDeletedError: class TaskCannotEditDeletedError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskCannotEditDeletedError'; }
-  },
-  TaskDueDateChangeAfterCompletionError: class TaskDueDateChangeAfterCompletionError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskDueDateChangeAfterCompletionError'; }
-  },
-  TaskOwnershipError: class TaskOwnershipError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskOwnershipError'; }
-  },
-  TaskDuplicateTitleError: class TaskDuplicateTitleError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskDuplicateTitleError'; }
-  },
-  TaskInvalidIdError: class TaskInvalidIdError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidIdError'; }
-  },
-  TaskInvalidIdStatusError: class TaskInvalidIdStatusError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidIdStatusError'; }
-  },
+// Source uses task_validator — must mock it
+jest.unstable_mockModule('../../../app/validators/task_validator.js', () => ({
+    validateRequired:    jest.fn((val, name) => {
+        if (!val) throw new Error(`${name} is required`);
+    }),
+    validateStringLength: jest.fn((val, name, min, max) => {
+        if (!val || val.length < min) throw new Error(`${name} must be at least ${min} characters`);
+        if (val.length > max)         throw new Error(`${name} must be at most ${max} characters`);
+        return val;
+    }),
+    validateEnum:        jest.fn((val, enumObj, name) => {
+        if (val !== undefined && !Object.values(enumObj).includes(val))
+            throw new Error(`Invalid ${name}: ${val}`);
+        return val;
+    }),
 }));
 
-const { createTask } = await import('../../../app/task_uc/create_task.uc');
-const { TaskPriority } = await import('../../../domain/base/task_enums');
+jest.unstable_mockModule('../../../domain/base/task_enums.js', () => ({
+    TaskType: { TASK1: 'TASK1', TASK2: 'TASK2' },
+    ExamType: { ACADEMIC: 'ACADEMIC', GENERAL: 'GENERAL' },
+}));
 
-describe('createTask use case', () => {
-  const userId = '507f1f77bcf86cd799439012';
-  const validInput = {
-    title: 'My Task',
-    description: 'Do something',
-    priority: 'HIGH',
-    dueDate: '2025-06-01',
-  };
+// ── Import SUT after mocks ────────────────────────────────────────────────────
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+// Source exports createWritingTask, not createTask
+const { createWritingTask } = await import('../../../app/task_uc/create_task.uc.js');
+const taskRepo              = await import('../../../infrastructure/repositories/task_repo.js');
 
-  it('should create a task successfully', async () => {
-    const mockTask = { id: '123', title: 'My Task', userId };
-    mockCreateTask.mockResolvedValue(mockTask);
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
-    const result = await createTask(userId, validInput);
+describe('createWritingTask use case', () => {
+    const userId    = '507f1f77bcf86cd799439012';
+    const validInput = {
+        title:         'My Essay',
+        description:   'Write something',
+        taskType:      'TASK1',
+        examType:      'ACADEMIC',
+        questionPrompt: 'Discuss the topic.',
+    };
 
-    expect(mockCreateTask).toHaveBeenCalledWith({
-      title: 'My Task',
-      description: 'Do something',
-      status: undefined,
-      priority: TaskPriority.HIGH,
-      dueDate: new Date('2025-06-01'),
-      userId,
+    beforeEach(() => jest.clearAllMocks());
+
+    it('creates a task with all valid fields and returns it', async () => {
+        const mockTask = { id: 'new-1', ...validInput, userId };
+        taskRepo.createTask.mockResolvedValue(mockTask);
+
+        const result = await createWritingTask(userId, validInput);
+
+        expect(taskRepo.createTask).toHaveBeenCalledWith({
+            title:         'My Essay',
+            description:   'Write something',
+            taskType:      'TASK1',
+            examType:      'ACADEMIC',
+            questionPrompt: 'Discuss the topic.',
+            userId,
+        });
+        expect(result).toEqual(mockTask);
     });
-    expect(result).toEqual(mockTask);
-  });
 
-  it('should create task with minimal fields', async () => {
-    const input = { title: 'Minimal' };
-    const mockTask = { id: '123', title: 'Minimal', userId };
-    mockCreateTask.mockResolvedValue(mockTask);
+    it('uses empty string for description and questionPrompt when omitted', async () => {
+        taskRepo.createTask.mockResolvedValue({ id: 'new-2' });
+        const input = { title: 'Minimal', taskType: 'TASK1', examType: 'ACADEMIC' };
 
-    const result = await createTask(userId, input);
+        await createWritingTask(userId, input);
 
-    expect(mockCreateTask).toHaveBeenCalledWith({
-      title: 'Minimal',
-      description: '',
-      status: undefined,
-      priority: undefined,
-      dueDate: null,
-      userId,
+        expect(taskRepo.createTask).toHaveBeenCalledWith(
+            expect.objectContaining({ description: '', questionPrompt: '' })
+        );
     });
-    expect(result).toEqual(mockTask);
-  });
 
-  it('should throw if userId is missing', async () => {
-    await expect(createTask(null, validInput)).rejects.toThrow(/userId is required/);
-    expect(mockCreateTask).not.toHaveBeenCalled();
-  });
+    it('throws when userId is missing', async () => {
+        await expect(createWritingTask(null, validInput)).rejects.toThrow(/userId is required/);
+        expect(taskRepo.createTask).not.toHaveBeenCalled();
+    });
 
-  it('should throw if title is too short', async () => {
-    const input = { ...validInput, title: 'ab' };
-    await expect(createTask(userId, input)).rejects.toThrow(/at least 3 characters/);
-  });
+    it('throws when title is too short', async () => {
+        const input = { ...validInput, title: 'ab' };
+        await expect(createWritingTask(userId, input)).rejects.toThrow(/at least 3 characters/);
+        expect(taskRepo.createTask).not.toHaveBeenCalled();
+    });
 
-  it('should throw if priority is invalid', async () => {
-    const input = { ...validInput, priority: 'URGENT' };
-    await expect(createTask(userId, input)).rejects.toThrow(/Invalid priority/);
-  });
+    it('throws when taskType is invalid', async () => {
+        const input = { ...validInput, taskType: 'INVALID' };
+        await expect(createWritingTask(userId, input)).rejects.toThrow(/Invalid taskType/);
+        expect(taskRepo.createTask).not.toHaveBeenCalled();
+    });
 
-  it('should throw if dueDate is invalid', async () => {
-    const input = { ...validInput, dueDate: 'not-a-date' };
-    await expect(createTask(userId, input)).rejects.toThrow(/Invalid due date/);
-  });
+    it('throws when examType is invalid', async () => {
+        const input = { ...validInput, examType: 'INVALID' };
+        await expect(createWritingTask(userId, input)).rejects.toThrow(/Invalid examType/);
+        expect(taskRepo.createTask).not.toHaveBeenCalled();
+    });
 
-  it('should propagate repository errors', async () => {
-    mockCreateTask.mockRejectedValue(new Error('Duplicate title'));
-    await expect(createTask(userId, validInput)).rejects.toThrow('Duplicate title');
-  });
+    it('propagates repository errors', async () => {
+        taskRepo.createTask.mockRejectedValue(new Error('DB write failed'));
+        await expect(createWritingTask(userId, validInput)).rejects.toThrow('DB write failed');
+    });
 });

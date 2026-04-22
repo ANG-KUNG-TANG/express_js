@@ -1,60 +1,79 @@
 import { jest } from '@jest/globals';
 
-const mockFindTaskByID = jest.fn();
-const mockDeleteTask = jest.fn();
-const mockEnsureTaskOwnership = jest.fn((task, userId) => {
-  if (task.userId !== userId) throw new Error('User does not own task');
-});
+// ── Mocks ────────────────────────────────────────────────────────────────────
 
-jest.unstable_mockModule('../../../infrastructure/repositories/task_repo', () => ({
-  findTaskByID: mockFindTaskByID,
-  deleteTask: mockDeleteTask,
-  ensureTaskOwnership: mockEnsureTaskOwnership,
+jest.unstable_mockModule('../../../infrastructure/repositories/task_repo.js', () => ({
+    findTaskByID:        jest.fn(),
+    deleteTask:          jest.fn(),
+    ensureTaskOwnership: jest.fn(),
 }));
 
-const { deleteTask } = await import('../../../app/task_uc/delete_task.uc');
-const { createFakeTask } = await import('../__mock__/task_helpers');
+jest.unstable_mockModule('../../../core/services/audit.service.js', () => ({
+    recordAudit:   jest.fn(),
+    recordFailure: jest.fn(),
+}));
 
-describe('deleteTask use case', () => {
-  const taskId = '507f1f77bcf86cd799439011';
-  const userId = '507f1f77bcf86cd799439012';
-  const fakeTask = createFakeTask({ id: taskId, userId });
+jest.unstable_mockModule('../../../domain/base/audit_enums.js', () => ({
+    AuditAction: { TASK_DELETED: 'TASK_DELETED' },
+}));
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockFindTaskByID.mockResolvedValue(fakeTask);
-    mockDeleteTask.mockResolvedValue(true);
-    mockEnsureTaskOwnership.mockImplementation((task, uid) => {
-      if (task.userId !== uid) throw new Error('User does not own task');
+// ── Import SUT after mocks ────────────────────────────────────────────────────
+
+// Source exports deleteWritingTask, not deleteTask
+const { deleteWritingTask } = await import('../../../app/task_uc/delete_task.uc.js');
+const taskRepo              = await import('../../../infrastructure/repositories/task_repo.js');
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const makeTask = (overrides = {}) => ({
+    id:          '507f1f77bcf86cd799439011',
+    _id:         '507f1f77bcf86cd799439011',
+    userId:      '507f1f77bcf86cd799439012',
+    _title:      'Test Essay',
+    _source:     'SELF',
+    _assignedBy: null,
+    ...overrides,
+});
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe('deleteWritingTask use case', () => {
+    const taskId = '507f1f77bcf86cd799439011';
+    const userId = '507f1f77bcf86cd799439012';
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        taskRepo.findTaskByID.mockResolvedValue(makeTask({ userId }));
+        taskRepo.deleteTask.mockResolvedValue(undefined);
+        taskRepo.ensureTaskOwnership.mockImplementation(() => {});
     });
-  });
 
-  it('should delete task successfully', async () => {
-    const result = await deleteTask(taskId, userId);
+    it('deletes task and returns { deleted, taskId, title }', async () => {
+        const result = await deleteWritingTask(taskId, userId);
 
-    expect(mockFindTaskByID).toHaveBeenCalledWith(taskId);
-    expect(mockDeleteTask).toHaveBeenCalledWith(taskId);
-    expect(result).toBe(true);
-  });
+        expect(taskRepo.findTaskByID).toHaveBeenCalledWith(taskId);
+        expect(taskRepo.deleteTask).toHaveBeenCalledWith(taskId);
+        // Source returns { deleted: true, taskId, title } — not a boolean
+        expect(result).toMatchObject({ deleted: true, taskId, title: 'Test Essay' });
+    });
 
-  it('should throw ownership error if user does not own task', async () => {
-    const wrongUser = 'another-user';
-    // Task is owned by the real userId, not wrongUser — so ownership check will throw
-    const otherTask = createFakeTask({ id: taskId, userId });
-    mockFindTaskByID.mockResolvedValue(otherTask);
+    it('throws ownership error if user does not own task', async () => {
+        taskRepo.ensureTaskOwnership.mockImplementation(() => {
+            throw new Error('User does not own task');
+        });
 
-    await expect(deleteTask(taskId, wrongUser)).rejects.toThrow(/does not own task/);
-    expect(mockDeleteTask).not.toHaveBeenCalled();
-  });
+        await expect(deleteWritingTask(taskId, 'wrong-user')).rejects.toThrow('User does not own task');
+        expect(taskRepo.deleteTask).not.toHaveBeenCalled();
+    });
 
-  it('should propagate not found error from findTaskByID', async () => {
-    mockFindTaskByID.mockRejectedValue(new Error('Task not found'));
-    await expect(deleteTask(taskId, userId)).rejects.toThrow('Task not found');
-    expect(mockDeleteTask).not.toHaveBeenCalled();
-  });
+    it('propagates not-found error from findTaskByID', async () => {
+        taskRepo.findTaskByID.mockRejectedValue(new Error('Task not found'));
+        await expect(deleteWritingTask(taskId, userId)).rejects.toThrow('Task not found');
+        expect(taskRepo.deleteTask).not.toHaveBeenCalled();
+    });
 
-  it('should propagate error from deleteTask', async () => {
-    mockDeleteTask.mockRejectedValue(new Error('Delete failed'));
-    await expect(deleteTask(taskId, userId)).rejects.toThrow('Delete failed');
-  });
+    it('propagates error from deleteTask', async () => {
+        taskRepo.deleteTask.mockRejectedValue(new Error('Delete failed'));
+        await expect(deleteWritingTask(taskId, userId)).rejects.toThrow('Delete failed');
+    });
 });

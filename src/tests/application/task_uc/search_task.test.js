@@ -1,116 +1,85 @@
 import { jest } from '@jest/globals';
 
-const mockFindTaskByID = jest.fn();
-const mockEnsureTaskOwnership = jest.fn();
+// ── Mocks ────────────────────────────────────────────────────────────────────
 
-jest.unstable_mockModule('../../../infrastructure/repositories/task_repo', () => ({
-  findTaskByID: mockFindTaskByID,
-  ensureTaskOwnership: mockEnsureTaskOwnership,
+jest.unstable_mockModule('../../../infrastructure/repositories/task_repo.js', () => ({
+    searchTasksByTitle: jest.fn(),
 }));
 
-jest.unstable_mockModule('../../../core/errors/task.errors', () => ({
-  TaskNotFoundError: class TaskNotFoundError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskNotFoundError'; }
-  },
-  TaskValidationError: class TaskValidationError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskValidationError'; }
-  },
-  TaskTitleRequiredError: class TaskTitleRequiredError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskTitleRequiredError'; }
-  },
-  TaskTitleTooShortError: class TaskTitleTooShortError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskTitleTooShortError'; }
-  },
-  TaskTitleTooLongError: class TaskTitleTooLongError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskTitleTooLongError'; }
-  },
-  TaskInvalidStatusError: class TaskInvalidStatusError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidStatusError'; }
-  },
-  TaskInvalidPriorityError: class TaskInvalidPriorityError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidPriorityError'; }
-  },
-  TaskInvalidDueDateError: class TaskInvalidDueDateError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidDueDateError'; }
-  },
-  TaskDueDateInPastError: class TaskDueDateInPastError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskDueDateInPastError'; }
-  },
-  TaskUserIdRequiredError: class TaskUserIdRequiredError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskUserIdRequiredError'; }
-  },
-  TaskInvalidUserIdError: class TaskInvalidUserIdError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidUserIdError'; }
-  },
-  TaskExtraFieldsError: class TaskExtraFieldsError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskExtraFieldsError'; }
-  },
-  TaskBusinessRuleError: class TaskBusinessRuleError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskBusinessRuleError'; }
-  },
-  TaskAlreadyCompletedError: class TaskAlreadyCompletedError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskAlreadyCompletedError'; }
-  },
-  TaskNotInProgressError: class TaskNotInProgressError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskNotInProgressError'; }
-  },
-  TaskNotPendingError: class TaskNotPendingError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskNotPendingError'; }
-  },
-  TaskCannotEditDeletedError: class TaskCannotEditDeletedError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskCannotEditDeletedError'; }
-  },
-  TaskDueDateChangeAfterCompletionError: class TaskDueDateChangeAfterCompletionError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskDueDateChangeAfterCompletionError'; }
-  },
-  TaskOwnershipError: class TaskOwnershipError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskOwnershipError'; }
-  },
-  TaskDuplicateTitleError: class TaskDuplicateTitleError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskDuplicateTitleError'; }
-  },
-  TaskInvalidIdError: class TaskInvalidIdError extends Error {
-    constructor(...args) { super(args[0]); this.name = 'TaskInvalidIdError'; }
-  },
+jest.unstable_mockModule('../../../core/errors/task.errors.js', () => ({
+    TaskValidationError: class TaskValidationError extends Error {
+        constructor(...args) { super(args[0]); this.name = 'TaskValidationError'; }
+    },
 }));
 
-const { getTaskById } = await import('../../../app/task_uc/get_task.uc');
-const { TaskOwnershipError } = await import('../../../core/errors/task.errors');
-const { createFakeTask } = await import('../__mock__/task_helpers');
+// ── Import SUT after mocks ────────────────────────────────────────────────────
 
-describe('getTaskById use case', () => {
-  const taskId = '507f1f77bcf86cd799439011';
-  const userId = '507f1f77bcf86cd799439012';
-  const fakeTask = createFakeTask({ id: taskId, userId });
+// Source exports searchWritingTasks — the original file imported get_task.uc by mistake
+const { searchWritingTasks } = await import('../../../app/task_uc/search_task.uc.js');
+const taskRepo               = await import('../../../infrastructure/repositories/task_repo.js');
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockFindTaskByID.mockResolvedValue(fakeTask);
-  });
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-  it('should return task without ownership check if no userId provided', async () => {
-    const result = await getTaskById(taskId);
+const makeTask = (userId, overrides = {}) => ({
+    id:      'task-1',
+    _title:  'Test Essay',
+    _userId: { toString: () => userId },
+    ...overrides,
+});
 
-    expect(mockFindTaskByID).toHaveBeenCalledWith(taskId);
-    expect(result).toEqual(fakeTask);
-  });
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
-  it('should return task if ownership matches', async () => {
-    const result = await getTaskById(taskId, userId);
-    expect(result).toEqual(fakeTask);
-  });
+describe('searchWritingTasks use case', () => {
+    const userId = '507f1f77bcf86cd799439012';
 
-  it('should throw ownership error if userId does not match', async () => {
-    const wrongUser = 'another-user';
-    mockEnsureTaskOwnership.mockImplementation((task, uid) => {
-      if (task.userId !== uid) throw new TaskOwnershipError('User does not own task');
+    beforeEach(() => jest.clearAllMocks());
+
+    it('returns all matching tasks when no userId filter is given', async () => {
+        const tasks = [makeTask(userId), makeTask('other-user')];
+        taskRepo.searchTasksByTitle.mockResolvedValue(tasks);
+
+        const result = await searchWritingTasks('Essay');
+
+        expect(taskRepo.searchTasksByTitle).toHaveBeenCalledWith('Essay', {});
+        expect(result).toHaveLength(2);
     });
 
-    await expect(getTaskById(taskId, wrongUser)).rejects.toThrow(TaskOwnershipError);
-  });
+    it('filters results by userId when provided', async () => {
+        const tasks = [makeTask(userId), makeTask('other-user')];
+        taskRepo.searchTasksByTitle.mockResolvedValue(tasks);
 
-  it('should propagate not found error from repo', async () => {
-    mockFindTaskByID.mockRejectedValue(new Error('Task not found'));
-    await expect(getTaskById(taskId, userId)).rejects.toThrow('Task not found');
-  });
+        const result = await searchWritingTasks('Essay', {}, userId);
+
+        expect(result).toHaveLength(1);
+        expect(result[0]._userId.toString()).toBe(userId);
+    });
+
+    it('passes options to the repo', async () => {
+        taskRepo.searchTasksByTitle.mockResolvedValue([]);
+
+        await searchWritingTasks('Essay', { limit: 5 });
+
+        expect(taskRepo.searchTasksByTitle).toHaveBeenCalledWith('Essay', { limit: 5 });
+    });
+
+    it('throws TaskValidationError when searchTerm is empty string', async () => {
+        await expect(searchWritingTasks('')).rejects.toMatchObject({ name: 'TaskValidationError' });
+        expect(taskRepo.searchTasksByTitle).not.toHaveBeenCalled();
+    });
+
+    it('throws TaskValidationError when searchTerm is not a string', async () => {
+        await expect(searchWritingTasks(null)).rejects.toMatchObject({ name: 'TaskValidationError' });
+        expect(taskRepo.searchTasksByTitle).not.toHaveBeenCalled();
+    });
+
+    it('returns empty array when no tasks match', async () => {
+        taskRepo.searchTasksByTitle.mockResolvedValue([]);
+        const result = await searchWritingTasks('nonexistent');
+        expect(result).toEqual([]);
+    });
+
+    it('propagates repository errors', async () => {
+        taskRepo.searchTasksByTitle.mockRejectedValue(new Error('DB error'));
+        await expect(searchWritingTasks('Essay')).rejects.toThrow('DB error');
+    });
 });

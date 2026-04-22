@@ -1,52 +1,70 @@
 import { jest } from '@jest/globals';
 
-const mockFindTasks = jest.fn();
+// ── Mocks ────────────────────────────────────────────────────────────────────
 
-jest.unstable_mockModule('../../../infrastructure/repositories/task_repo', () => ({
-  findTasks: mockFindTasks,
+jest.unstable_mockModule('../../../infrastructure/repositories/task_repo.js', () => ({
+    findTasks: jest.fn(),
 }));
 
-const { listTasks } = await import('../../../app/task_uc/list_task.uc');
-const { createFakeTask } = await import('../__mock__/task_helpers');
+// ── Import SUT after mocks ────────────────────────────────────────────────────
 
-describe('listTasks use case', () => {
-  const userId = '507f1f77bcf86cd799439012';
-  const fakeTasks = [
-    createFakeTask({ id: '1', userId }),
-    createFakeTask({ id: '2', userId }),
-  ];
+// Source exports listWritingTasks, not listTasks
+const { listWritingTasks } = await import('../../../app/task_uc/list_task.uc.js');
+const taskRepo             = await import('../../../infrastructure/repositories/task_repo.js');
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
-  it('should return tasks without userId filter', async () => {
-    mockFindTasks.mockResolvedValue(fakeTasks);
+describe('listWritingTasks use case', () => {
+    const userId = '507f1f77bcf86cd799439012';
 
-    const result = await listTasks({ status: 'PENDING' }, { limit: 10 });
+    beforeEach(() => jest.clearAllMocks());
 
-    expect(mockFindTasks).toHaveBeenCalledWith({ status: 'PENDING' }, { limit: 10 });
-    expect(result).toEqual(fakeTasks);
-  });
+    it('merges filters into options and calls findTasks with empty first arg', async () => {
+        // Source: finalOptions = { ...options, ...filters } → findTasks({}, finalOptions)
+        // filters are spread INTO options, so status ends up in the options object
+        taskRepo.findTasks.mockResolvedValue([]);
 
-  it('should inject userId into options when provided', async () => {
-    mockFindTasks.mockResolvedValue(fakeTasks);
+        await listWritingTasks({ status: 'PENDING' }, { limit: 10 });
 
-    const result = await listTasks({ status: 'PENDING' }, { limit: 10 }, userId);
+        expect(taskRepo.findTasks).toHaveBeenCalledWith(
+            {},
+            { limit: 10, status: 'PENDING' }
+        );
+    });
 
-    expect(mockFindTasks).toHaveBeenCalledWith(
-      { status: 'PENDING' },
-      { limit: 10, userId }
-    );
-    expect(result).toEqual(fakeTasks);
-  });
+    it('injects userId into finalOptions when provided', async () => {
+        taskRepo.findTasks.mockResolvedValue([]);
 
-  it('should pass empty filters and default options', async () => {
-    mockFindTasks.mockResolvedValue([]);
+        await listWritingTasks({ status: 'PENDING' }, { limit: 10 }, userId);
 
-    const result = await listTasks();
+        expect(taskRepo.findTasks).toHaveBeenCalledWith(
+            {},
+            { limit: 10, status: 'PENDING', userId }
+        );
+    });
 
-    expect(mockFindTasks).toHaveBeenCalledWith({}, {});
-    expect(result).toEqual([]);
-  });
+    it('calls findTasks with empty objects when no args given', async () => {
+        taskRepo.findTasks.mockResolvedValue([]);
+
+        await listWritingTasks();
+
+        expect(taskRepo.findTasks).toHaveBeenCalledWith({}, {});
+    });
+
+    it('does not add userId to options when userId is null', async () => {
+        taskRepo.findTasks.mockResolvedValue([]);
+
+        await listWritingTasks({}, {}, null);
+
+        const callArg = taskRepo.findTasks.mock.calls[0][1];
+        expect(callArg).not.toHaveProperty('userId');
+    });
+
+    it('returns the tasks from the repo', async () => {
+        const fakeTasks = [{ id: '1' }, { id: '2' }];
+        taskRepo.findTasks.mockResolvedValue(fakeTasks);
+
+        const result = await listWritingTasks();
+        expect(result).toEqual(fakeTasks);
+    });
 });
