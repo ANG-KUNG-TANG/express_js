@@ -32,13 +32,24 @@ const userSchema = new mongoose.Schema(
         },
         password: {
             type:      String,
-            required:  true,
+            required:  function(){
+                return !this.provider || this.provider === 'local';
+            },
             minlength: 8
         },
         role: {
             type:    String,
             enum:    Object.values(UserRole),
             default: UserRole.USER
+        },
+        provider: {
+            type: String,
+            enum: ["local", "google", "github"],
+            default: "local"
+        },
+        providerId: {
+            type: String,
+            default: null
         },
         interests: {
             type:    [String],
