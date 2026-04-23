@@ -27,12 +27,14 @@ import { passwordResetRouter } from './interfaces/routes/password_reset.router.j
 import { authenticate } from './middleware/auth.middelware.js';
 import { initSocket }                        from './core/services/socket.service.js';
 import { connectRedis, disconnectRedis }     from './core/services/redis.service.js';
-
+import cookieParser from 'cookie-parser';
+import passport from 'passport';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app = express();
+
 
 app.use(cors({
     origin: true,
@@ -43,6 +45,7 @@ app.use(cors({
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(express.json());
+app.use(cookieParser());
 app.use(requestLoggerMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -56,6 +59,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // ── Passport ──────────────────────────────────────────────────────────────────
 initPassport(app);
+app.use(passport.initialize());
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/api/writing-tasks', writingTaskRouter);
