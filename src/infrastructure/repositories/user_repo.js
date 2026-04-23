@@ -1,7 +1,7 @@
 import UserModel from "../../domain/models/user_model.js";
-import { User } from "../../domain/entities/user_entity.js";
+import { User }    from "../../domain/entities/user_entity.js";
 import { UserRole } from "../../domain/base/user_enums.js";
-import mongoose from 'mongoose';
+import mongoose    from 'mongoose';
 import {
     UserValidationError,
     UserEmailNotFoundError,
@@ -23,6 +23,8 @@ const toDomain = (doc) => {
         email:       doc.email,
         password:    doc.password,
         role:        doc.role,
+        provider:    doc.provider   ?? 'local',  // FIX: was missing — OAuth users always mapped back as 'local'
+        providerId:  doc.providerId ?? null,      // FIX: was missing — lost after every read
         avatarUrl:   doc.avatarUrl   ?? null,
         coverUrl:    doc.coverUrl    ?? null,
         bio:         doc.bio         ?? '',
@@ -42,12 +44,14 @@ const toPersistence = (user) => {
         email:       user._email.toLowerCase(),
         password:    user._password,
         role:        user._role,
+        provider:    user._provider   ?? 'local',  // FIX: was missing — never persisted to MongoDB
+        providerId:  user._providerId ?? null,      // FIX: was missing — never persisted to MongoDB
         avatarUrl:   user._avatarUrl,
         coverUrl:    user._coverUrl,
         bio:         user._bio,
         targetBand:  user._targetBand,
         examDate:    user._examDate,
-        attachments: user._attachments,
+        attachments: user._attachments ?? [],
         createdAt:       user._createdAt,
         updatedAt:       user._updatedAt,
         assignedTeacher: user._assignedTeacher ?? null,
@@ -58,13 +62,14 @@ const toPersistence = (user) => {
     return persistence;
 };
 
-export const   sanitizeUser = (user) => {
+export const sanitizeUser = (user) => {
     if (!user) return null;
     return {
         id:          user.id,
         name:        user._name,
         email:       user.email,
         role:        user._role,
+        provider:    user._provider   ?? 'local',
         avatarUrl:   user._avatarUrl  ?? null,
         coverUrl:    user._coverUrl   ?? null,
         bio:         user._bio        ?? '',
@@ -115,10 +120,6 @@ export const lisAllUsers = async () => {
     return docs.map(toDomain);
 };
 
-/**
- * findAll({ assignedTeacher?, role? })
- * Used by teacher_list_students.uc.js to get all users linked to a teacher.
- */
 export const findAll = async (filter = {}) => {
     const query = {};
     if (filter.assignedTeacher) {
@@ -135,17 +136,6 @@ export const findAll = async (filter = {}) => {
     return docs.map(toDomain);
 };
 
-/**
- * findStudentsByTeacher(teacherId)
- *
- * Returns all users whose assignedTeacher matches this teacher.
- * Used by teacher_assign_task.uc.js for bulk assignment.
- *
- * FIX: removed `role: UserRole.STUDENT` filter — linked users commonly have
- * role 'user' (the default), not 'student'. Filtering by role caused bulk
- * assign to find zero students and silently skip all notifications.
- * teacher_list_students.uc.js already excludes teachers/admins client-side.
- */
 export const findStudentsByTeacher = async (teacherId) => {
     if (!mongoose.Types.ObjectId.isValid(teacherId)) {
         throw new UserValidationError('invalid teacherId format');
@@ -154,8 +144,6 @@ export const findStudentsByTeacher = async (teacherId) => {
 
     const docs = await UserModel.find({
         assignedTeacher: new mongoose.Types.ObjectId(teacherId),
-        // Do NOT filter by role here — users may have role 'user' not 'student'.
-        // Exclude staff roles instead so all linked non-staff users are included.
         role: { $nin: ['teacher', 'admin'] },
     })
         .select('_id name email')
@@ -170,29 +158,39 @@ export const findStudentsByTeacher = async (teacherId) => {
     }));
 };
 
-// Alias used by send_noti_uc.js (imported as * as userRepo → userRepo.findById)
-export const findById = findUserById;
-
 // ---------------------------------------------------------------------------
 // Writes
 // ---------------------------------------------------------------------------
 
 export const createUser = async (userData) => {
-    logger.debug('userRepo.createUser', { email: userData.email });
+    logger.debug('userRepo.createUser', { email: userData._email ?? userData.email });
 
-    const existing = await UserModel.findOne({ email: userData.email.toLowerCase() });
+    const emailToCheck = (userData._email ?? userData.email).toLowerCase();
+    const existing = await UserModel.findOne({ email: emailToCheck });
     if (existing) {
-        logger.warn('userRepo.createUser: email already exists', { email: userData.email });
+        logger.warn('userRepo.createUser: email already exists', { email: emailToCheck });
         throw new UserEmailAlreadyExistsError("UserEmailAlreadyExistsError");
     }
 
-    const user = new User(userData);
-    const persistence = toPersistence(user);
+    // FIX: was calling new User(userData) here, double-constructing when
+    // userData is already a User entity (as passed from createUserUsecase
+    // and findOrCreateOAuthUser). The entity was re-wrapped unnecessarily.
+    // toPersistence reads the private _fields directly so it works on any
+    // User instance without re-construction.
+    const persistence = toPersistence(userData);
     const [doc] = await UserModel.create([persistence]);
 
     logger.debug('userRepo.createUser: user saved', { id: doc._id });
     return toDomain(doc);
 };
+
+// ---------------------------------------------------------------------------
+// Aliases — for dependency-injected callers (oauth_user.uc, send_noti_uc …)
+// MUST be after createUser definition — const is not hoisted (TDZ).
+// ---------------------------------------------------------------------------
+export const findById    = findUserById;
+export const findByEmail = findUserByEmail;
+export const create      = createUser;
 
 export const updateUser = async (id, updates) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
