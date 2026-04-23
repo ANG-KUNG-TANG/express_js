@@ -6,6 +6,8 @@
  */
 
 import crypto                          from 'crypto';
+import { User }                        from '../../domain/entities/user_entity.js';
+import { UserRole }                    from '../../domain/base/user_enums.js';
 import { recordAudit, recordFailure }  from '../../core/services/audit.service.js';
 import { AuditAction }                 from '../../domain/base/audit_enums.js';
 
@@ -14,7 +16,6 @@ export const findOrCreateOAuthUser = (userRepo) => async (profile, req = null) =
     try {
         normalized = normalizeProfile(profile);
     } catch (err) {
-        // Profile normalization failed — no email returned by provider
         recordFailure(AuditAction.AUTH_OAUTH_FAILURE, null, {
             provider: profile?.provider ?? 'unknown',
             reason:   err.message,
@@ -22,34 +23,51 @@ export const findOrCreateOAuthUser = (userRepo) => async (profile, req = null) =
         throw err;
     }
 
-    const provider   = normalized.provider; // 'google' | 'github'
-    const actionKey  = provider === 'google'
+    const provider  = normalized.provider; // 'google' | 'github'
+    const actionKey = provider === 'google'
         ? AuditAction.AUTH_OAUTH_LOGIN_GOOGLE
         : AuditAction.AUTH_OAUTH_LOGIN_GITHUB;
 
-    // Check if user already exists
-    const existing = await userRepo.findByEmail(normalized.email);
+    // ── Returning user ────────────────────────────────────────────────────────
+    // findByEmail throws UserEmailNotFoundError when not found (does not return null),
+    // so we catch that specific error and treat it as "no existing user".
+    let existing = null;
+    try {
+        existing = await userRepo.findByEmail(normalized.email);
+    } catch (err) {
+        if (err.name !== 'UserEmailNotFoundError') throw err;
+    }
     if (existing) {
         recordAudit(actionKey, existing.id ?? existing._id, {
-            email:    normalized.email,
+            email:     normalized.email,
             provider,
             isNewUser: false,
         }, req);
         return existing;
     }
 
-    // Create new OAuth user
-    const created = await userRepo.create({
-        name:      normalized.name,
-        email:     normalized.email,
-        // Random password — OAuth users never use it, but schema requires it
-        password:  crypto.randomBytes(32).toString('hex'),
-        role:      'user',
-        avatarUrl: normalized.avatarUrl,
+    // ── New OAuth user ────────────────────────────────────────────────────────
+    // FIX 1: provider and providerId were missing — schema requires provider to
+    //         satisfy the conditional password `required` check, and providerId
+    //         is needed for future provider-scoped lookups.
+    // FIX 2: now constructs through the User entity so domain rules are applied
+    //         consistently (same as createUserUsecase for local accounts).
+    // NOTE:   password is a random hex string — OAuth users never use it, but
+    //         the schema requires a value when provider is not yet saved.
+    const userEntity = new User({
+        name:       normalized.name,
+        email:      normalized.email.toLowerCase(),
+        password:   crypto.randomBytes(32).toString('hex'),
+        role:       UserRole.USER,
+        provider:   normalized.provider,
+        providerId: normalized.providerId,
+        avatarUrl:  normalized.avatarUrl ?? null,
     });
 
+    const created = await userRepo.create(userEntity);
+
     recordAudit(actionKey, created.id ?? created._id, {
-        email:    normalized.email,
+        email:     normalized.email,
         provider,
         isNewUser: true,
     }, req);
