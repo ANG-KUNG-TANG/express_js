@@ -17,15 +17,26 @@ export const authenticateUserUseCase = async ({ email, password }, req = null) =
 
     const user = await findUserByEmailWithPassword(email.toLowerCase());
 
+    if (user && user.provider && user.provider !== 'local') {
+        // FIX: was `recodFailure` (typo) — caused a ReferenceError crash before throw
+        recordFailure(AuditAction.AUTH_LOGIN, user._id, {
+            email:  email.toLowerCase(),
+            reason: 'oauth user tried password login'
+        }, req);
+
+        throw new InvalidCredentialsError("User OAuth login");
+    }
+    
     if (!user || !verifyPassword(password, user._password)) {
-        // Record failed login — no userId available, store email in details
-        recordFailure(AuditAction.AUTH_LOGIN, null, { email: email.toLowerCase(), reason: 'invalid credentials' }, req);
+        recordFailure(AuditAction.AUTH_LOGIN, null, {
+            email:  email.toLowerCase(),
+            reason: 'invalid credentials'
+        }, req);
         throw new InvalidCredentialsError();
     }
 
     const sanitized = sanitizeUser(user);
 
-    // Record successful login
     recordAudit(AuditAction.AUTH_LOGIN, sanitized.id ?? sanitized._id, {
         email: sanitized.email ?? sanitized._email,
         role:  sanitized.role  ?? sanitized._role,
