@@ -24,7 +24,7 @@ export const forgotPassword = async (req, res) => {
 
     logger.debug('passwordReset.forgotPassword called', { requestId: req.id, email });
 
-    const result = await requestPasswordResetUseCase({ email });
+    const result = await requestPasswordResetUseCase({ email }, req);
 
     auditLogger.log('auth.password_reset.requested', { email }, req);
 
@@ -54,7 +54,7 @@ export const resetPassword = async (req, res) => {
 
     logger.debug('passwordReset.resetPassword called', { requestId: req.id });
 
-    const result = await resetPasswordUseCase({ rawToken: token, password });
+    const result = await resetPasswordUseCase({ rawToken: token, password }, req);
 
     auditLogger.log('auth.password_reset.completed', {}, req);
 
