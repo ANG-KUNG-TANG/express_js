@@ -3,13 +3,22 @@
 
 import nodemailer from 'nodemailer';
 
-const createTransporter = () =>
-    nodemailer.createTransport({
+const createTransporter = () => {
+    // Gmail: use service:'gmail' + App Password (SMTP_PASS).
+    // For other providers set SMTP_HOST/PORT/SECURE instead.
+    if (process.env.SMTP_SERVICE === 'gmail') {
+        return nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        });
+    }
+    return nodemailer.createTransport({
         host:   process.env.SMTP_HOST,
         port:   parseInt(process.env.SMTP_PORT) || 587,
         secure: process.env.SMTP_SECURE === 'true',
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
     });
+};
 
 // ── HTML templates ───────────────────────────────────────────────────────────
 
@@ -48,7 +57,7 @@ const notificationHtml = ({ userName, title, body, ctaText, ctaUrl }) => baseLay
 
 export const emailService = {
     async sendPasswordResetEmail({ toEmail, userName, rawToken }) {
-        const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+        const resetUrl = `${process.env.FRONTEND_URL}/pages/auth/reset_password.html?token=${rawToken}`;
         return createTransporter().sendMail({
             from:    `"IELTS Platform" <${process.env.SMTP_FROM}>`,
             to:      toEmail,
