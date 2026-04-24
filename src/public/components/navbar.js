@@ -118,7 +118,7 @@ export const initNavbar = async () => {
         <div class="topnav-left">
             <a href="/pages/dashboard.html" class="topnav-brand">
                 <span class="brand-mark">W</span>
-                WorkFlow
+                WritingSystem
             </a>
             <div class="topnav-tabs">${tabs}</div>
         </div>

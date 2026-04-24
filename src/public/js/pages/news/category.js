@@ -18,9 +18,8 @@ const nextBtn     = document.getElementById('next-page-btn');
 
 let nextPage = null;
 
-// Pre-select from URL ?category=
+// Pre-select from URL ?category= (applied after options are loaded)
 const preCategory = getParam('category');
-if (preCategory) categoryEl.value = preCategory;
 
 // ---------------------------------------------------------------------------
 // Load by category
@@ -65,6 +64,11 @@ const loadCategories = async () => {
             opt.textContent = c.charAt(0).toUpperCase() + c.slice(1);
             categoryEl.appendChild(opt);
         });
+        // Apply URL pre-selection now that options exist, then load
+        if (preCategory) {
+            categoryEl.value = preCategory;
+            loadCategory();
+        }
     } catch (err) {
         toast('Failed to load categories', 'error');
     }

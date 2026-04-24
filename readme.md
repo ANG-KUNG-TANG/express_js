@@ -1,93 +1,192 @@
-# Docker Setup Guide
+# 🚀 Express App Setup Guide
 
-## For YOU (dev mode — hot reload)
+A full-stack Express-based application with support for local development and Dockerized deployment.
+
+---
+
+# 📦 1. Prerequisites
+
+Ensure the following tools are installed:
+
+* Node.js (v18+ recommended)
+* pnpm
+* Docker (optional)
+
+---
+
+# ⚡ 2. Local Development (Recommended)
+
+Run the application directly for the fastest workflow.
+
+## Install dependencies
+
+```bash
+pnpm install
+```
+
+## Setup environment variables
+
+```bash
+cp .env.example .env
+```
+
+Fill in required values inside `.env`.
+
+## Start development server
+
+```bash
+pnpm run dev
+```
+
+* App runs on: [http://localhost:3000](http://localhost:3000) (or configured port)
+* Hot reload enabled
+
+---
+
+# 🧠 3. Development Workflow
+
+```bash
+# Start
+pnpm run dev
+
+# Stop
+CTRL + C
+```
+
+Reinstall dependencies only when:
+
+* New packages are added
+* package.json changes
+
+```bash
+pnpm install
+```
+
+---
+
+# 🐳 4. Docker (Development)
 
 ```bash
 docker-compose -f docker-compose.dev.yml up --build
 ```
 
-Your source code is mounted live. Edit files → changes reflect instantly. No rebuild needed.
+* Live code mounting enabled
+* No rebuild needed for code changes
 
----
-
-## When you want to share with your friend (build prod image)
-
-```bash
-# 1. Build the prod image
-docker build -f Dockerfile.prod -t YOUR_DOCKERHUB_USERNAME/express-app:latest .
-
-# 2. Push to Docker Hub
-docker push YOUR_DOCKERHUB_USERNAME/express-app:latest
-```
-
-Do this whenever you have a stable version to share.
-
----
-
-## For your FRIEND
+Stop containers:
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
-cd YOUR_REPO
-
-# 2. Copy env template and fill in values (you send real values privately)
-cp .env.example .env
-
-# 3. Start everything
-docker-compose up
-```
-
-That's it. The backend image is pulled from Docker Hub automatically.
-
----
-
-## File purposes
-
-| File | Purpose | Commit to Git? |
-|------|---------|----------------|
-| Dockerfile.dev | Your dev container | YES |
-| Dockerfile.prod | Friend's container | YES |
-| docker-compose.dev.yml | Your local stack | YES |
-| docker-compose.yml | Friend's stack | YES |
-| .env.example | Env template | YES |
-| .env | Real secrets | NO — never |
-
-Here's your complete reference for everything:---
-
-**Your daily routine as a developer:**
-
-```bash
-# Morning — start work
-docker-compose -f docker-compose.dev.yml up
-
-# Evening — stop work
 docker-compose -f docker-compose.dev.yml down
 ```
 
-Only use `--build` when you install a new package or change the Dockerfile. Normal code changes don't need it because your source is live-mounted.
+---
+
+# 📦 5. Production (Docker)
+
+```bash
+# Build image
+docker build -f Dockerfile.prod -t YOUR_DOCKERHUB_USERNAME/express-app:latest .
+
+# Push image
+docker push YOUR_DOCKERHUB_USERNAME/express-app:latest
+```
+
+Run production:
+
+```bash
+docker-compose up
+```
 
 ---
 
-**Your friend's one-time setup:**
+# 👥 6. Sharing Setup
+
+## First-time setup
 
 ```bash
-# 1. Clone repo
-git clone https://github.com/baw1463i/YOURREPO.git
-cd YOURREPO
+git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git
+cd YOUR_REPO
 
-# 2. Create .env
 cp .env.example .env
-# fill in values you send privately
+# Fill values
 
-# 3. Start
-docker-compose -f docker-compose.prod.yml up
+docker-compose up
 ```
 
-Every time you push a new image, they just run:
+## Update to latest version
+
 ```bash
-docker-compose -f docker-compose.prod.yml pull
-docker-compose -f docker-compose.prod.yml up
+docker-compose pull
+docker-compose up
 ```
 
-![alt text](image.png)
+---
+
+# 📁 7. Project Structure
+
+| File                   | Purpose               | Commit |
+| ---------------------- | --------------------- | ------ |
+| Dockerfile.dev         | Development container | YES    |
+| Dockerfile.prod        | Production image      | YES    |
+| docker-compose.dev.yml | Dev environment       | YES    |
+| docker-compose.yml     | Production setup      | YES    |
+| .env.example           | Template              | YES    |
+| .env                   | Secrets               | NO     |
+
+---
+
+# 🔐 8. Environment Variables
+
+* Store sensitive data in `.env`
+* Never commit `.env`
+
+---
+
+# 🧩 9. Common Commands
+
+```bash
+pnpm run dev
+pnpm install
+docker-compose up
+docker-compose down
+```
+
+---
+
+# ⚠️ 10. Troubleshooting
+
+### Dependency issues
+
+```bash
+pnpm install
+```
+
+### Port conflict
+
+* Change port in `.env`
+
+### Docker issues
+
+```bash
+docker-compose down
+docker-compose up --build
+```
+
+---
+
+# 🎯 11. Best Practices
+
+* Use pnpm for development speed
+* Use Docker for consistency
+* Keep secrets secure
+* Build production images only when stable
+
+---
+
+# 📌 Summary
+
+| Use Case    | Approach     |
+| ----------- | ------------ |
+| Development | pnpm run dev |
+| Consistency | Docker dev   |
+| Sharing     | Docker prod  |

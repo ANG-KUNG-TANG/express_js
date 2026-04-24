@@ -3,19 +3,22 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Writing — IELTS Platform</title>
+  <title>Writing — WritingSystem</title>
   <script src="/js/core/theme.js"></script>
   <link rel="stylesheet" href="/css/base.css"/>
   <link rel="stylesheet" href="/css/pages/tasks.css"/>
+  <link rel="stylesheet" href="/css/pages/write.css"/>
 </head>
 <body class="write-body">
 
   <div class="writing-app">
 
-    <!-- LEFT PANEL -->
+    <!-- ── LEFT PANEL ───────────────────────────────────── -->
     <aside id="left-panel" class="task-panel">
+
       <div class="task-panel__inner">
-        <div>
+
+        <div class="task-panel__section">
           <div class="task-panel__label">Task</div>
           <div id="task-title-display">Loading…</div>
           <div id="task-info"></div>
@@ -35,47 +38,66 @@
             <span class="stat-value" id="word-counter-display">0</span>
             <span class="stat-label">/<span id="target-display">250</span></span>
           </div>
-          <div class="progress-bar"><div id="progress-bar-fill" class="progress-fill"></div></div>
+          <div class="progress-bar">
+            <div id="progress-bar-fill" class="progress-fill"></div>
+          </div>
           <div class="wc-details">
             <span id="progress-pct">0%</span>
             <span>min <span id="target-display2">250</span></span>
           </div>
         </div>
 
-        <div class="autosave-indicator">
+        <div class="task-panel__section autosave-indicator">
           <span id="autosave-dot" class="dot"></span>
           <span id="autosave-label">Saved</span>
         </div>
 
-        <div class="task-panel__label">Question Prompt</div>
-        <div class="prompt-card" id="question-prompt">Loading prompt…</div>
+        <div class="task-panel__section">
+          <div class="task-panel__label">Question Prompt</div>
+          <div class="prompt-card" id="question-prompt">Loading prompt…</div>
+        </div>
 
-        <button id="submit-btn" class="btn btn--primary btn--full btn--lg" style="margin-top:auto;" disabled>
+        <button id="submit-btn" class="btn btn--primary btn--full btn--lg" disabled>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
           Submit Writing
         </button>
+
       </div>
-      <button id="toggle-left" class="panel-toggle" title="Collapse panel"></button>
+
+      <!-- Ghost label visible when panel is collapsed -->
+      <div class="panel-ghost" aria-hidden="true"><span>Task Info</span></div>
+
+      <button id="toggle-left" class="panel-toggle" title="Toggle panel" aria-label="Toggle left panel"></button>
     </aside>
 
-    <!-- CENTER EDITOR -->
+    <!-- ── CENTER EDITOR ─────────────────────────────────── -->
     <main class="editor-panel">
       <div class="editor-toolbar">
         <a href="/pages/tasks/list.html" class="back-link">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
           My Tasks
         </a>
         <span id="paper-title" class="paper-title-display">Untitled Essay</span>
         <div class="step-indicator">
-          <div class="step step--done"><span class="step__num">✓</span><span>Setup</span></div>
+          <div class="step step--done">
+            <span class="step__num">✓</span><span>Setup</span>
+          </div>
           <span class="step__connector"></span>
-          <div class="step step--active"><span class="step__num">2</span><span>Write</span></div>
+          <div class="step step--active">
+            <span class="step__num">2</span><span>Write</span>
+          </div>
           <span class="step__connector"></span>
-          <div class="step"><span class="step__num">3</span><span>Submit</span></div>
+          <div class="step">
+            <span class="step__num">3</span><span>Submit</span>
+          </div>
         </div>
       </div>
+
       <div class="editor-body">
         <div class="paper">
           <textarea id="submission-textarea" placeholder="Begin writing here… your progress is saved automatically."></textarea>
@@ -83,39 +105,53 @@
       </div>
     </main>
 
-    <!-- RIGHT PANEL -->
+    <!-- ── RIGHT PANEL ───────────────────────────────────── -->
     <aside id="right-panel" class="vocab-panel">
-      <button id="toggle-right" class="panel-toggle" title="Collapse panel"></button>
-      <div class="vocab-header">
-        <h3>Vocabulary</h3>
-        <div class="tab-bar">
-          <button class="tab active" data-tab="search">Search</button>
-          <button class="tab" data-tab="browse">Browse</button>
+
+      <button id="toggle-right" class="panel-toggle" title="Toggle panel" aria-label="Toggle right panel"></button>
+
+      <!-- Ghost label visible when panel is collapsed -->
+      <div class="panel-ghost panel-ghost--right" aria-hidden="true"><span>Vocabulary</span></div>
+
+      <div class="vocab-panel__body">
+        <div class="vocab-header">
+          <h3>Vocabulary</h3>
+          <div class="tab-bar">
+            <button class="tab active" data-tab="search">Search</button>
+            <button class="tab" data-tab="browse">Browse</button>
+          </div>
+        </div>
+
+        <!-- Search tab -->
+        <div id="tab-search" class="tab-content">
+          <div class="search-box">
+            <input type="text" id="vocab-search" placeholder="Search any word…" autocomplete="on"/>
+            <button id="vocab-search-btn" title="Search">
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="9" cy="9" r="6"/><path d="m15 15 3 3" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+          <div id="search-results">
+            <div class="vocab-empty">Search for a word to see its definition and insert it into your essay.</div>
+          </div>
+        </div>
+
+        <!-- Browse tab -->
+        <div id="tab-browse" class="tab-content" hidden>
+          <select id="topic-select" class="topic-select">
+            <option value="all">All Topics</option>
+            <option value="environment">Environment</option>
+            <option value="education">Education</option>
+            <option value="technology">Technology</option>
+            <option value="health">Health</option>
+          </select>
+          <div id="browse-results">
+            <div class="vocab-empty">Select a topic above to browse relevant vocabulary.</div>
+          </div>
         </div>
       </div>
 
-      <div id="tab-search" class="tab-content" style="display:block;">
-        <div class="search-box">
-          <input type="text" id="vocab-search" placeholder="Search any word…" autocomplete="on"/>
-          <button id="vocab-search-btn" title="Search">🔍</button>
-        </div>
-        <div id="search-results">
-          <div class="vocab-empty">Search for a word to insert it into your essay</div>
-        </div>
-      </div>
-
-      <div id="tab-browse" class="tab-content" style="display:none;">
-        <select id="topic-select" class="topic-select">
-          <option value="all">All Topics</option>
-          <option value="environment">Environment</option>
-          <option value="education">Education</option>
-          <option value="technology">Technology</option>
-          <option value="health">Health</option>
-        </select>
-        <div id="browse-results">
-          <div class="vocab-empty">Select a topic to see vocabulary</div>
-        </div>
-      </div>
     </aside>
 
   </div>

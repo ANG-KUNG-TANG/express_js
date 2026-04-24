@@ -44,8 +44,10 @@ const loadCategories = async () => {
 // Search
 // ---------------------------------------------------------------------------
 const search = async (page = null, append = false) => {
-    const q        = inputEl.value.trim();
-    const category = categoryEl.value;
+    // When paginating (append), use the frozen query/category from the original search
+    // so a mid-pagination edit to the inputs doesn't corrupt the result set.
+    const q        = append ? lastQuery    : inputEl.value.trim();
+    const category = append ? lastCategory : categoryEl.value;
 
     if (!q) {
         gridEl.innerHTML = '<p class="empty-state">Enter a keyword to search.</p>';

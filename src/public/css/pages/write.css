@@ -1,184 +1,93 @@
 /* ============================================================
-   write.css — full-screen writing editor
+   write.css — writing editor page overrides
+   Base layout and panel styles live in tasks.css.
+   This file only adds page-specific refinements.
    ============================================================ */
 
-body.write-page {
+/* ── Body lock ─────────────────────────────────────────────── */
+body.write-body {
   overflow: hidden;
 }
 
-/* ── Layout ─────────────────────────────────────────────────── */
-.write-layout {
-  display: grid;
-  grid-template-columns: 380px 1fr;
-  height: 100vh;
-  padding-top: var(--nav-h);
-}
-
-/* ── Prompt panel (left) ────────────────────────────────────── */
-.prompt-panel {
-  background: var(--bg-2);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.prompt-panel__header {
-  padding: 24px 24px 20px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.prompt-panel__label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-
-.prompt-panel__task-info {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  margin-top: 6px;
-  display: flex;
-  gap: 8px;
-}
-
-.prompt-panel__body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-
-.prompt-panel__body::-webkit-scrollbar { width: 4px; }
-.prompt-panel__body::-webkit-scrollbar-track { background: transparent; }
-.prompt-panel__body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-#question-prompt {
-  font-size: 0.97rem;
-  color: var(--text-muted);
-  line-height: 1.85;
-  font-style: italic;
-  font-family: var(--font-display);
-}
-
-/* ── Editor panel (right) ───────────────────────────────────── */
-.editor-panel {
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  overflow: hidden;
-}
-
-/* ── Toolbar ────────────────────────────────────────────────── */
-.editor-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 32px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  gap: 20px;
-  background: var(--bg-2);
-}
-
-.editor-toolbar__left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  flex: 1;
-}
-
-.progress-wrap {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  max-width: 280px;
-}
-
-.progress-wrap .progress-bar {
-  flex: 1;
-}
-
-/* ── Textarea ───────────────────────────────────────────────── */
+/* ── Textarea polish ───────────────────────────────────────── */
 #submission-textarea {
-  flex: 1;
-  resize: none;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  padding: 40px 72px;
-  font-size: 1.05rem;
-  line-height: 1.9;
-  color: var(--text);
-  outline: none;
-  box-shadow: none !important;
-  overflow-y: auto;
-  font-family: var(--font-body);
   caret-color: var(--accent);
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
+#submission-textarea::-webkit-scrollbar        { width: 4px; }
+#submission-textarea::-webkit-scrollbar-track  { background: transparent; }
+#submission-textarea::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 4px; }
 
-#submission-textarea:focus {
-  border: none !important;
-  box-shadow: none !important;
+/* ── Left panel scrollbar ──────────────────────────────────── */
+.task-panel__inner {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
+.task-panel__inner::-webkit-scrollbar        { width: 3px; }
+.task-panel__inner::-webkit-scrollbar-track  { background: transparent; }
+.task-panel__inner::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; }
 
-#submission-textarea::placeholder {
-  color: var(--text-dim);
-  font-style: italic;
+/* ── Right panel scrollbar ─────────────────────────────────── */
+.tab-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
+.tab-content::-webkit-scrollbar        { width: 3px; }
+.tab-content::-webkit-scrollbar-track  { background: transparent; }
+.tab-content::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; }
 
-#submission-textarea::-webkit-scrollbar { width: 4px; }
-#submission-textarea::-webkit-scrollbar-track { background: transparent; }
-#submission-textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-/* ── Auto-save indicator ────────────────────────────────────── */
-.autosave-indicator {
-  font-size: 0.75rem;
-  color: var(--text-dim);
+/* ── Submit button ─────────────────────────────────────────── */
+#submit-btn {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: none;
+  border-radius: var(--r-lg);
+  background: var(--text);
+  color: var(--surface);
+  font-family: var(--font-b);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.16s, box-shadow 0.16s, transform 0.1s;
+  margin-top: auto;
+}
+#submit-btn:hover:not(:disabled) {
+  background: var(--text2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+#submit-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+#submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+#submit-btn svg { flex-shrink: 0; }
+
+/* ── Paper focus state ─────────────────────────────────────── */
+.paper:focus-within {
+  border-color: var(--border-hi, var(--border));
 }
 
-.autosave-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--text-dim);
-  transition: background 0.3s;
+/* ── Editor body scrollbar ─────────────────────────────────── */
+.editor-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
+.editor-body::-webkit-scrollbar        { width: 5px; }
+.editor-body::-webkit-scrollbar-track  { background: transparent; }
+.editor-body::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 5px; }
 
-.autosave-dot--saving { background: var(--orange); }
-.autosave-dot--saved  { background: var(--green); }
-
-/* ── Responsive ─────────────────────────────────────────────── */
+/* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  body.write-page { overflow: auto; }
-  .write-layout {
-    grid-template-columns: 1fr;
-    height: auto;
-  }
-  .prompt-panel {
-    max-height: 280px;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-  }
-  #submission-textarea {
-    padding: 24px 20px;
-    min-height: 60vh;
-  }
-  .editor-toolbar { padding: 12px 20px; }
+  .paper { padding: 32px 28px; }
 }
-
-@media (max-width: 600px) {
-  .editor-toolbar { flex-direction: column; align-items: stretch; gap: 12px; }
-  .editor-toolbar__left { flex-direction: column; align-items: flex-start; }
-  .progress-wrap { max-width: 100%; }
+@media (max-width: 640px) {
+  .paper { padding: 20px 16px; }
+  #submission-textarea { font-size: 0.97rem; }
 }
