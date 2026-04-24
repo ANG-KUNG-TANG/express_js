@@ -40,7 +40,6 @@ let pollTimer    = null;
 const LIMIT      = 20;
 const POLL_MS    = 30_000;
 const renderedIds = new Set();
-let latestSeenId  = null;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const esc = s =>
@@ -108,7 +107,8 @@ const getFilters = () => {
     if (to)      params.to      = to;
     if (searchQuery) {
         if (/^[a-f\d]{24}$/i.test(searchQuery)) params.requesterId = searchQuery;
-        else params.action = params.action || searchQuery;
+        else if (searchQuery.includes('@'))       params.email       = searchQuery;
+        else                                      params.action      = params.action || searchQuery;
     }
     return params;
 };
@@ -163,7 +163,6 @@ const loadLogs = async () => {
 
         renderedIds.clear();
         logs.forEach(l => { if (l.id) renderedIds.add(l.id); });
-        if (logs[0]?.id) latestSeenId = logs[0].id;
 
         renderLogs(logs);
         renderPagination(pages);
@@ -237,11 +236,12 @@ const prependRow = (log) => {
     if (!tbody) { loadLogs(); return; }
 
     tbody.insertAdjacentHTML('afterbegin', buildRow(log, true));
-    setTimeout(() => document.getElementById(`row-${log.id}`)?.classList.remove('row--flash'), 1500);
+    setTimeout(() => document.getElementById(`row-${esc(log.id)}`)?.classList.remove('row--flash'), 1500);
 
     const countEl = document.getElementById('log-count');
     if (countEl) {
-        const next = (parseInt(countEl.textContent) || 0) + 1;
+        const current = parseInt(countEl.textContent.replace(/[^0-9]/g, ''), 10) || 0;
+        const next    = current + 1;
         countEl.textContent = `${next.toLocaleString()} entr${next === 1 ? 'y' : 'ies'}`;
     }
 };
@@ -254,7 +254,6 @@ const pollForNewLogs = async () => {
         const logs   = result.logs ?? result.data ?? (Array.isArray(result) ? result : []);
         if (!logs.length) return;
         const newEntries = logs.filter(l => l.id && !renderedIds.has(l.id));
-        if (logs[0]?.id) latestSeenId = logs[0].id;
         for (const entry of newEntries.reverse()) prependRow(entry);
     } catch { /* swallow — polling errors are non-fatal */ }
 };
@@ -271,7 +270,7 @@ const setupSocket = () => {
 
     socket.on('connect',    () => { setLiveIndicator(true);  stopPolling(); });
     socket.on('disconnect', () => { setLiveIndicator(false); startPolling(); });
-    socket.on('reconnect',  () => { setLiveIndicator(true);  stopPolling(); loadLogs(); });
+    socket.io.on('reconnect', () => { setLiveIndicator(true); stopPolling(); loadLogs(); });
 
     // Real-time push from server
     socket.on('audit:new', (log) => prependRow(log));
