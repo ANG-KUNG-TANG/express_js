@@ -33,7 +33,7 @@ export const resetPasswordUseCase = async ({ rawToken, password }, req = null) =
     }
 
     const hashedPassword = await hashPassword(password);
-    await userRepo.updatePassword(tokenEntity.userId, hashedPassword);
+    await userRepo.updateUser(tokenEntity.userId, { password: hashedPassword });
 
     tokenEntity.markUsed();
     await passwordResetTokenRepo.save(tokenEntity);

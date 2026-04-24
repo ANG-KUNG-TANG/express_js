@@ -13,15 +13,20 @@ const TOKEN_EXPIRY_MINUTES = 30;
 
 // req passed from controller so IP is captured in the audit log
 export const requestPasswordResetUseCase = async ({ email }, req = null) => {
-    const user = await userRepo.findByEmail(email.toLowerCase());
-
-    if (!user) {
-        // Don't expose whether the email exists — but do log the attempt
-        recordFailure(AuditAction.AUTH_PASSWORD_RESET_REQUEST, null, {
-            email:  email.toLowerCase(),
-            reason: 'email not found',
-        }, req);
-        throw new PasswordResetUserNotFoundError();
+    // findByEmail throws UserEmailNotFoundError when not found — treat it as "no user"
+    // and respond with the same generic message to avoid email enumeration.
+    let user = null;
+    try {
+        user = await userRepo.findByEmail(email.toLowerCase());
+    } catch (err) {
+        if (err.name === 'UserEmailNotFoundError') {
+            recordFailure(AuditAction.AUTH_PASSWORD_RESET_REQUEST, null, {
+                email:  email.toLowerCase(),
+                reason: 'email not found',
+            }, req);
+            return { message: 'If an account with that email exists, a reset link has been sent.' };
+        }
+        throw err;
     }
 
     const userId = user.id ?? user._id;
