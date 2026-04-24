@@ -1,112 +1,82 @@
-// js/pages/auth/forgot_password.js
+// public/js/pages/auth/forgot_pass.js
 
-import { apiFetch } from '../../core/api.js';
-import { toast }    from '../../core/toast.js';
+const form       = document.getElementById('forgotForm');
+const submitBtn  = document.getElementById('submitBtn');
+const btnText    = document.getElementById('btnText');
+const btnRing    = document.getElementById('btnRing');
+const emailErr   = document.getElementById('emailError');
+const stepReq    = document.getElementById('stepRequest');
+const stepSent   = document.getElementById('stepSent');
+const sentEmail  = document.getElementById('sentEmail');
+const resendBtn  = document.getElementById('resendBtn');
+const timerWrap  = document.getElementById('timerWrap');
+const timerCount = document.getElementById('timerCount');
 
-// ── DOM refs ──────────────────────────────────────────────────────────────────
-const forgotForm  = document.getElementById('forgotForm');
-const emailInput  = document.getElementById('email');
-const emailError  = document.getElementById('emailError');
-const submitBtn   = document.getElementById('submitBtn');
+let lastEmail   = '';
+let countdownId = null;
 
-// FIX #1: HTML uses id="btnText" and id="btnRing", not .btn-text / .btn-spinner
-const btnText     = document.getElementById('btnText');
-const btnSpinner  = document.getElementById('btnRing');
-
-const stepRequest = document.getElementById('stepRequest');
-// FIX #2: HTML uses id="stepSent", not id="stepSuccess"
-const stepSuccess = document.getElementById('stepSent');
-const sentEmail   = document.getElementById('sentEmail');
-const resendBtn   = document.getElementById('resendBtn');
-
-let lastEmail = '';
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const setLoading = (on) => {
     submitBtn.disabled = on;
     btnText.classList.toggle('hidden', on);
-    btnSpinner.classList.toggle('hidden', !on);
+    btnRing.classList.toggle('hidden', !on);
 };
 
-const showError = (el, msg) => {
-    el.textContent = msg;
+const showError = (msg) => {
+    emailErr.textContent = msg;
+    document.getElementById('email').classList.add('is-error');
+};
+const clearError = () => {
+    emailErr.textContent = '';
+    document.getElementById('email').classList.remove('is-error');
 };
 
-const clearError = (el) => {
-    el.textContent = '';
+const startCooldown = (seconds = 60) => {
+    resendBtn.disabled = true;
+    timerWrap.classList.remove('hidden');
+    timerCount.textContent = seconds;
+    countdownId = setInterval(() => {
+        seconds--;
+        timerCount.textContent = seconds;
+        if (seconds <= 0) {
+            clearInterval(countdownId);
+            resendBtn.disabled = false;
+            timerWrap.classList.add('hidden');
+        }
+    }, 1000);
 };
 
-const showStep = (hideEl, showEl) => {
-    hideEl.classList.add('hidden');
-    showEl.classList.remove('hidden');
-};
-
-// ── Validation ────────────────────────────────────────────────────────────────
-const validateEmail = (value) => {
-    if (!value.trim()) return 'Email is required.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Enter a valid email address.';
-    return null;
-};
-
-// ── Submit ────────────────────────────────────────────────────────────────────
-const handleSubmit = async (email) => {
+const submitRequest = async (email) => {
+    clearError();
     setLoading(true);
     try {
-        // FIX #3: apiFetch is a plain function, not an object — use apiFetch(url, options)
-        // FIX #4: correct endpoint path with /api prefix to match password_reset.router.js
-        await apiFetch('/api/auth/forgot-password', {
-            method: 'POST',
-            body: JSON.stringify({ email }),
+        await fetch('/api/auth/forgot-password', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ email }),
         });
-
-        lastEmail = email;
         sentEmail.textContent = email;
-        showStep(stepRequest, stepSuccess);
-    } catch (err) {
-        // FIX #5: toast is a plain function, not toast.error()
-        toast(err.message || 'Something went wrong. Please try again.', 'error');
+        stepReq.classList.add('hidden');
+        stepSent.classList.remove('hidden');
+        startCooldown(60);
+    } catch {
+        showError('Something went wrong. Please try again.');
     } finally {
         setLoading(false);
     }
 };
 
-// ── Form listener ─────────────────────────────────────────────────────────────
-forgotForm.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = emailInput.value.trim().toLowerCase();
-    const err   = validateEmail(email);
-
-    if (err) {
-        showError(emailError, err);
-        emailInput.classList.add('is-error');
-        return;
+    const email = document.getElementById('email').value.trim();
+    if (!email) { showError('Please enter your email address.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError('Please enter a valid email address.'); return;
     }
-    clearError(emailError);
-    emailInput.classList.remove('is-error');
-
-    handleSubmit(email);
+    lastEmail = email;
+    await submitRequest(email);
 });
 
-emailInput.addEventListener('input', () => clearError(emailError));
-
-// ── Resend ────────────────────────────────────────────────────────────────────
 resendBtn.addEventListener('click', async () => {
-    resendBtn.disabled = true;
-    resendBtn.textContent = 'Sending…';
-    try {
-        // FIX #3 + #4: same fix — apiFetch as function with /api prefix
-        await apiFetch('/api/auth/forgot-password', {
-            method: 'POST',
-            body: JSON.stringify({ email: lastEmail }),
-        });
-        // FIX #5: toast is a plain function
-        toast('Reset link resent!', 'success');
-    } catch {
-        toast('Could not resend. Try again shortly.', 'error');
-    } finally {
-        setTimeout(() => {
-            resendBtn.disabled    = false;
-            resendBtn.textContent = 'Resend email';
-        }, 30_000); // 30s cooldown
-    }
+    if (!lastEmail) return;
+    await submitRequest(lastEmail);
 });

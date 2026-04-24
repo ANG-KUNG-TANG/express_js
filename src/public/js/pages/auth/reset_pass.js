@@ -1,146 +1,118 @@
-// js/pages/auth/reset_password.js
-// Reads ?token= from URL, validates with backend, then handles reset
+// public/js/pages/auth/reset_password.js
 
-// FIX #1: 'apijs' → 'api.js' (missing dot in import path)
-import { apiFetch } from '../../core/api.js';
-import { toast }    from '../../core/toast.js';
-
-// ── DOM refs ──────────────────────────────────────────────────────────────────
 const stepValidating = document.getElementById('stepValidating');
 const stepInvalid    = document.getElementById('stepInvalid');
 const stepForm       = document.getElementById('stepForm');
 const stepDone       = document.getElementById('stepDone');
 
-const resetForm      = document.getElementById('resetForm');
-const passwordInput  = document.getElementById('password');
-const confirmInput   = document.getElementById('confirmPassword');
-const passwordError  = document.getElementById('passwordError');
-const confirmError   = document.getElementById('confirmError');
-const resetBtn       = document.getElementById('resetBtn');
-const btnText        = resetBtn.querySelector('.btn-text');
-const btnSpinner     = resetBtn.querySelector('.btn-spinner');
-const strengthFill   = document.getElementById('strengthFill');
-const strengthLabel  = document.getElementById('strengthLabel');
-
-const token = new URLSearchParams(window.location.search).get('token');
-
-// ── Step helpers ──────────────────────────────────────────────────────────────
-const showOnly = (...show) => {
-    [stepValidating, stepInvalid, stepForm, stepDone].forEach((el) =>
-        el?.classList.add('hidden')
-    );
-    show.forEach((el) => el?.classList.remove('hidden'));
+const show = (el) => {
+    [stepValidating, stepInvalid, stepForm, stepDone].forEach(s => s.classList.add('hidden'));
+    el.classList.remove('hidden');
 };
 
-// ── Token validation on load ──────────────────────────────────────────────────
-const validateToken = async () => {
-    if (!token) return showOnly(stepInvalid);
-    try {
-        // FIX #2: apiFetch .get(...) → apiFetch(url, { method: 'GET' })
-        // FIX #3: missing /api prefix to match password_reset.router.js mount point
-        await apiFetch(`/api/auth/reset-password/validate?token=${encodeURIComponent(token)}`);
-        showOnly(stepForm);
-    } catch {
-        showOnly(stepInvalid);
-    }
+// ── Read token from URL ───────────────────────────────────────────────────────
+const params   = new URLSearchParams(window.location.search);
+const rawToken = params.get('token');
+
+if (!rawToken) {
+    show(stepInvalid);
+} else {
+    // Validate token on load
+    fetch(`/api/auth/reset-password/validate?token=${encodeURIComponent(rawToken)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) show(stepForm);
+            else              show(stepInvalid);
+        })
+        .catch(() => show(stepInvalid));
+}
+
+// ── Password strength ─────────────────────────────────────────────────────────
+const pwInput     = document.getElementById('password');
+const strengthBar = document.getElementById('strengthBar');
+const strengthLbl = document.getElementById('strengthLbl');
+const reqs = {
+    len:   document.getElementById('req-len'),
+    upper: document.getElementById('req-upper'),
+    lower: document.getElementById('req-lower'),
+    num:   document.getElementById('req-num'),
 };
 
-validateToken();
+const colors = ['', '#ef4444', '#f97316', '#eab308', '#22c55e'];
+const labels = ['', 'Weak', 'Fair', 'Good', 'Strong'];
 
-// ── Password strength meter ───────────────────────────────────────────────────
-const getStrength = (pw) => {
-    let score = 0;
-    if (pw.length >= 8)           score++;
-    if (/[A-Z]/.test(pw))         score++;
-    if (/[0-9]/.test(pw))         score++;
-    if (/[^A-Za-z0-9]/.test(pw))  score++;
-    return score;
-};
-
-const STRENGTH_LABELS = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-
-passwordInput.addEventListener('input', () => {
-    const score = getStrength(passwordInput.value);
-    strengthFill.className = `strength-fill${score ? ` s${score}` : ''}`;
-    strengthLabel.textContent = STRENGTH_LABELS[score] || '';
-    clearFieldError(passwordError, passwordInput);
+pwInput?.addEventListener('input', () => {
+    const pw = pwInput.value;
+    const checks = {
+        len:   pw.length >= 8,
+        upper: /[A-Z]/.test(pw),
+        lower: /[a-z]/.test(pw),
+        num:   /\d/.test(pw),
+    };
+    Object.entries(checks).forEach(([k, ok]) => {
+        reqs[k].classList.toggle('met', ok);
+    });
+    const score = Object.values(checks).filter(Boolean).length;
+    strengthBar.style.width   = `${score * 25}%`;
+    strengthBar.style.background = colors[score] || '#e5e7eb';
+    strengthLbl.textContent   = score ? labels[score] : '';
 });
 
-// ── Validation ────────────────────────────────────────────────────────────────
-const validatePassword = (pw) => {
-    if (!pw) return 'Password is required.';
-    if (pw.length < 8) return 'Must be at least 8 characters.';
-    if (!/[A-Z]/.test(pw)) return 'Must include an uppercase letter.';
-    if (!/[a-z]/.test(pw)) return 'Must include a lowercase letter.';
-    if (!/[0-9]/.test(pw)) return 'Must include a number.';
-    return null;
-};
-
-const showFieldError = (el, input, msg) => {
-    el.textContent = msg;
-    input.classList.add('is-error');
-};
-const clearFieldError = (el, input) => {
-    el.textContent = '';
-    input.classList.remove('is-error');
-};
-
-// ── Show / hide password toggles ──────────────────────────────────────────────
-document.querySelectorAll('.toggle-password').forEach((btn) => {
+// ── Toggle password visibility ────────────────────────────────────────────────
+document.querySelectorAll('.toggle-pw').forEach(btn => {
     btn.addEventListener('click', () => {
-        const targetId = btn.dataset.target;
-        const input    = document.getElementById(targetId);
+        const input = document.getElementById(btn.dataset.for);
         input.type = input.type === 'password' ? 'text' : 'password';
     });
 });
 
-// ── Loading state ─────────────────────────────────────────────────────────────
+// ── Submit reset form ─────────────────────────────────────────────────────────
+const resetForm    = document.getElementById('resetForm');
+const resetBtn     = document.getElementById('resetBtn');
+const resetBtnText = document.getElementById('resetBtnText');
+const resetBtnRing = document.getElementById('resetBtnRing');
+const errPassword  = document.getElementById('errPassword');
+const errConfirm   = document.getElementById('errConfirm');
+
 const setLoading = (on) => {
     resetBtn.disabled = on;
-    btnText.classList.toggle('hidden', on);
-    btnSpinner.classList.toggle('hidden', !on);
+    resetBtnText.classList.toggle('hidden', on);
+    resetBtnRing.classList.toggle('hidden', !on);
 };
 
-// ── Submit ────────────────────────────────────────────────────────────────────
-resetForm.addEventListener('submit', async (e) => {
+resetForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    errPassword.textContent = '';
+    errConfirm.textContent  = '';
 
-    const password = passwordInput.value;
-    const confirm  = confirmInput.value;
+    const password        = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
 
-    let hasError = false;
-
-    const pwErr = validatePassword(password);
-    if (pwErr) {
-        showFieldError(passwordError, passwordInput, pwErr);
-        hasError = true;
+    if (password.length < 8) {
+        errPassword.textContent = 'Password must be at least 8 characters.';
+        return;
     }
-
-    if (password !== confirm) {
-        showFieldError(confirmError, confirmInput, 'Passwords do not match.');
-        hasError = true;
-    } else {
-        clearFieldError(confirmError, confirmInput);
+    if (password !== confirmPassword) {
+        errConfirm.textContent = 'Passwords do not match.';
+        return;
     }
-
-    if (hasError) return;
 
     setLoading(true);
     try {
-        // FIX #2: apiFetch .post(...) → apiFetch(url, { method: 'POST', body: ... })
-        // FIX #3: missing /api prefix
-        await apiFetch('/api/auth/reset-password', {
-            method: 'POST',
-            body: JSON.stringify({ token, password, confirmPassword: confirm }),
+        const res  = await fetch('/api/auth/reset-password', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ token: rawToken, password }),
         });
-        showOnly(stepDone);
-    } catch (err) {
-        // FIX #4: toast is a plain function, not toast.error()
-        toast(err.message || 'Reset failed. The link may have expired.', 'error');
-        setTimeout(() => showOnly(stepInvalid), 2500);
+        const data = await res.json();
+        if (data.success) {
+            show(stepDone);
+        } else {
+            errPassword.textContent = data.error?.message || 'Reset failed. Please try again.';
+        }
+    } catch {
+        errPassword.textContent = 'Something went wrong. Please try again.';
     } finally {
         setLoading(false);
     }
 });
-
-confirmInput.addEventListener('input', () => clearFieldError(confirmError, confirmInput));
