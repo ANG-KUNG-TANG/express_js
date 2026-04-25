@@ -45,8 +45,11 @@
     "eslint": "^10.0.2",
     "globals": "^17.4.0",
     "jest": "^30.2.0",
-    "mongodb-memory-server": "^11.0.1",
+    "mongodb-memory-server": "^7.0.14",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"
+  },
+  "mongodbMemoryServer": {
+    "downloadDir": "./.mongo-binaries"
   }
 }
