@@ -10,7 +10,6 @@
  */
 
 import { apiFetch } from '../../core/api.js';
-import { getUser, logOut } from '../../core/auth.js';
 import { initAdminSidebar} from '../../../components/admin_sidebar.js'
 
 

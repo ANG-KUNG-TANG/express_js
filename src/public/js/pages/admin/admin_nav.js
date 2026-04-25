@@ -152,7 +152,7 @@ apiFetch('/api/admin/flags?status=open&limit=1')
 
 // ── Logout ───────────────────────────────────────────────────────────────────
 document.getElementById('sb-logout').addEventListener('click', async () => {
-  try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch {}
+  try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch { /* ignore — always clear session */ }
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   window.location.replace('/pages/auth/login.html');

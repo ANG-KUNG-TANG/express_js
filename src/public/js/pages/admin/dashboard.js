@@ -13,6 +13,8 @@ import { initAdminSidebar } from '../../../components/admin_sidebar.js';
 requireAdmin();
 initAdminSidebar();
 
+/* global openModal, closeModal */
+
 const fmtTime = d => d ? new Date(d).toLocaleString('en-GB', {
     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
 }) : '—';

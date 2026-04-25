@@ -31,7 +31,6 @@ const LIMIT = 20;
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-const fmtDate = d => d ? new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '—';
 
 const severityBadge = sev => {
     const map = { high: 'badge--high', medium: 'badge--medium', low: 'badge--low' };
@@ -144,7 +143,7 @@ const resolveFlag = async (flagId, btn) => {
 };
 
 // ── Delete content ────────────────────────────────────────────────────────────
-const deleteContent = (taskId, title, btn) => {
+const deleteContent = (taskId, title) => {
     if (!taskId) return;
     document.getElementById('_adm-modal')?.remove();
     const m = document.createElement('div');

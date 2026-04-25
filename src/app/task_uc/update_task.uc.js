@@ -4,7 +4,7 @@ import {
     validateStringLength,
     validateEnum,
 } from '../../app/validators/task_validator.js';
-import { WritingStatus, TaskType, ExamType } from '../../domain/base/task_enums.js';
+import {  TaskType, ExamType } from '../../domain/base/task_enums.js';
 
 export const updateWritingTask = async (taskId, updates, userId) => {
     const existing = await taskRepo.findTaskByID(taskId);

@@ -22,7 +22,7 @@ export const saveSession = (token, user) => {
 export const logOut = async () => {
     try {
         await apiFetch('/api/auth/logout', { method: 'POST' });
-    } catch (_) {
+    } catch {
         // ignore — clear session regardless
     } finally {
         disconnectSocket();

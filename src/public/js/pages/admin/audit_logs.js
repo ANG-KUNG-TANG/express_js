@@ -175,7 +175,7 @@ const loadLogs = async () => {
 // ── Render ────────────────────────────────────────────────────────────────────
 const renderDetails = (details = {}) => {
     if (!details || !Object.keys(details).length) return '—';
-    const { requesterId: _, ...rest } = details;
+    const { requesterId, ...rest } = details; // eslint-disable-line no-unused-vars
     return Object.entries(rest)
         .filter(([, v]) => v !== null && v !== undefined)
         .map(([k, v]) => `<span style="display:block"><b>${esc(k)}:</b> ${esc(String(v))}</span>`)

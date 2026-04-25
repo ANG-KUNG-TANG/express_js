@@ -1,7 +1,7 @@
 // src/app/task_uc/delete_task.uc.js
 
 import * as taskRepo                   from '../../infrastructure/repositories/task_repo.js';
-import { recordAudit, recordFailure }  from '../../core/services/audit.service.js';
+import { recordAudit }  from '../../core/services/audit.service.js';
 import { AuditAction }                 from '../../domain/base/audit_enums.js';
 
 // req passed from controller so IP + userAgent are captured

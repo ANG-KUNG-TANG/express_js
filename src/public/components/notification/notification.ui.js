@@ -175,7 +175,9 @@ const _safeTypeConfig = (type) => {
     try {
         const cfg = getTypeConfig(type);
         if (cfg && cfg.icon) return cfg;
-    } catch {}
+    } catch {
+        // getTypeConfig failed — use fallback below
+    }
     // Fallback defaults by type prefix
     const defaults = {
         task:     { icon: '📋', color: '#3b82f6' },
@@ -238,7 +240,7 @@ export const initNotifications = async () => {
         _unreadCount++;
         _updateBadge();
         _prependCard(noti);
-        try { showNotificationToast(noti); } catch {}
+        try { showNotificationToast(noti); } catch { /* toast unavailable — silently skip */ }
     });
 
     // ── Real-time: another tab marked one read ────────────────────────────────

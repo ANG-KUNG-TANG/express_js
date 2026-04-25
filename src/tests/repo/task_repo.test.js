@@ -54,7 +54,7 @@ describe('Task Repository', () => {
     it('should throw duplicate title error for same user', async () => {
       const taskData = getValidTaskData();
       await taskRepo.createTask(taskData);
-      await expect(taskRepo.createTask(taskData)).rejects.toThrow('Task with title \"Test Title\" already exists');
+      await expect(taskRepo.createTask(taskData)).rejects.toThrow('Task with title\"Test Title\" already exists');
     });
 
     it('should throw validation error when title is missing', async () => {

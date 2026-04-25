@@ -26,7 +26,7 @@ const loadCategories = async () => {
         const res        = await apiFetch('/api/news/categories');
         const categories = res?.data?.categories || [];
         renderGrid(categories);
-    } catch (err) {
+    } catch {
         toast('Failed to load categories', 'error');
     }
 };

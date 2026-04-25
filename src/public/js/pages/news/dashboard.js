@@ -43,7 +43,7 @@ async function loadUserDashboard() {
         recentEl.innerHTML = recent.length
             ? recent.map(taskCard).join('')
             : '<p class="empty-state">No recent tasks.</p>';
-    } catch (err) {
+    } catch {
         toast('Failed to load user dashboard', 'error');
     }
 }
@@ -68,7 +68,7 @@ async function loadTeacherDashboard() {
         queueEl.innerHTML = queue.length
             ? queue.map(taskCard).join('')
             : '<p class="empty-state">No tasks awaiting review.</p>';
-    } catch (err) {
+    } catch {
         toast('Failed to load teacher dashboard', 'error');
     }
 }
@@ -100,7 +100,7 @@ async function loadAdminDashboard() {
         queueEl.innerHTML = queue.length
             ? queue.map(taskCard).join('')
             : '<p class="empty-state">No tasks need attention right now.</p>';
-    } catch (err) {
+    } catch {
         toast('Failed to load admin data', 'error');
     }
 }

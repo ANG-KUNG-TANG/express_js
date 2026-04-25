@@ -89,7 +89,7 @@ export const authStore = {
      */
     setToken: (token) => {
         _state = { ..._state, token };
-        try { localStorage.setItem(STORAGE_TOKEN, token); } catch { }
+        try { localStorage.setItem(STORAGE_TOKEN, token); } catch { /* storage quota or private mode */ }
         _emit();
     },
 
@@ -99,7 +99,7 @@ export const authStore = {
      */
     setUser: (user) => {
         _state = { ..._state, user };
-        try { localStorage.setItem(STORAGE_USER, JSON.stringify(user)); } catch { }
+        try { localStorage.setItem(STORAGE_USER, JSON.stringify(user)); } catch { /* storage quota or private mode */ }
         _emit();
     },
 
@@ -109,7 +109,7 @@ export const authStore = {
      */
     clear: () => {
         _state = { token: null, user: null };
-        try { localStorage.removeItem(STORAGE_TOKEN); localStorage.removeItem(STORAGE_USER); } catch { }
+        try { localStorage.removeItem(STORAGE_TOKEN); localStorage.removeItem(STORAGE_USER); } catch { /* storage quota or private mode */ }
         _emit();
     },
 

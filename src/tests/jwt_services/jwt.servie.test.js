@@ -5,7 +5,7 @@
  * seeded JWT_ACCESS_SECRET and JWT_REFRESH_SECRET before this file loads.
  */
 
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import jwt from 'jsonwebtoken';
 
 // ---------------------------------------------------------------------------

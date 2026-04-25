@@ -37,7 +37,6 @@ export const updateUserInterests = async (userId, interests) => {
         throw new Error('interests must be an array');
     }
 
-    const trimed = interests.map(i => i.trim()).filter(i=>1 !== '');
     const validInterests = interests.filter(i => Object.values(NewsCategory).includes(i));
 
     if (validInterests.length === 0 && interests.length > 0) {

@@ -9,7 +9,6 @@
 import VocabularyModel from "../../domain/models/vocab_model.js";
 import {
   DuplicateVocabularyError,
-  VocabularyNotFoundError,
 } from "../../core/errors/vocab.errors.js";
 import logger from "../../core/logger/logger.js";
 

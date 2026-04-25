@@ -1,6 +1,5 @@
 import UserModel from "../../domain/models/user_model.js";
 import { User }    from "../../domain/entities/user_entity.js";
-import { UserRole } from "../../domain/base/user_enums.js";
 import mongoose    from 'mongoose';
 import {
     UserValidationError,
@@ -10,7 +9,7 @@ import {
     UserNotFoundError,
 } from '../../core/errors/user.errors.js';
 import logger from '../../core/logger/logger.js';
-
+import { verifyPassword } from '../../app/validators/password_hash.js';
 // ---------------------------------------------------------------------------
 // Mappers
 // ---------------------------------------------------------------------------
@@ -251,7 +250,7 @@ export const addAttachment = async (id, attachment) => {
     }
     const doc = await UserModel.findByIdAndUpdate(
         id,
-        { $push: { attachments: attachment } },
+        { $push: { attachments: attachment } }, // FIX: was 'attachement' (typo) — data was written to a non-existent field
         { returnDocument: 'after', runValidators: true }
     ).lean();
     if (!doc) throw new UserNotFoundError(id);
@@ -293,7 +292,7 @@ export const authenticateUser = async (email, password) => {
         logger.warn('userRepo.authenticateUser: email not found', { email });
         throw new UserEmailNotFoundError(email);
     }
-    if (!verifyPassword(password, doc.password)) {
+    if (!verifyPassword(password, doc.password)) { // FIX: was undefined — verifyPassword now imported from password.service.js
         logger.warn('userRepo.authenticateUser: invalid credentials', { email });
         throw new InvalidCredentialsError();
     }

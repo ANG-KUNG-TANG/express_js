@@ -7,7 +7,7 @@ import {
     TaskUserIdRequiredError,
     TaskInvalidStatusError,
 } from '../../core/errors/task.errors.js';
-import { WritingStatus, TaskType, ExamType } from '../../domain/base/task_enums.js';
+import {  TaskType, ExamType } from '../../domain/base/task_enums.js';
 
 export const validateRequired = (value, fieldName) => {
     if (value === undefined || value === null || value === '') {

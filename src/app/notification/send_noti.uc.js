@@ -9,7 +9,6 @@ export const sendNotificationUseCase = async ({
     type,
     title,
     message,
-    emailSubject,
     ctaText,
     ctaUrl,
     metadata = {},

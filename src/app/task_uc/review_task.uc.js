@@ -5,7 +5,7 @@
 
 import * as taskRepo                   from '../../infrastructure/repositories/task_repo.js';
 import { TaskValidationError }         from '../../core/errors/task.errors.js';
-import { recordAudit, recordFailure }  from '../../core/services/audit.service.js';
+import { recordAudit}  from '../../core/services/audit.service.js';
 import { AuditAction }                 from '../../domain/base/audit_enums.js';
 
 // reviewerId = the student's userId (ownership is checked at controller level)

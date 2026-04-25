@@ -311,7 +311,7 @@ const renderActions = (task) => {
 // -----------------------------------------------------------------------
 // Extra actions (Transfer + Share) — Transfer only visible to admins
 // -----------------------------------------------------------------------
-const renderExtraActions = (task) => {
+const renderExtraActions = () => {
     const extraEl = document.querySelector('.task-extra-actions');
     if (!extraEl) return;
 

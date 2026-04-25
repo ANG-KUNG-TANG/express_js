@@ -17,7 +17,7 @@
  *   Admin    → Dashboard, Admin Panel, Users, Tasks
  */
 
-import { getUser, isAdmin, logOut } from '../js/core/auth.js';
+import { getUser, isAdmin} from '../js/core/auth.js';
 import { initNotifications }        from './notification/notification.ui.js';
 
 export const initNavbar = async () => {

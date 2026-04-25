@@ -161,7 +161,7 @@ async function loadProfile() {
   try {
     const cached = JSON.parse(localStorage.getItem('user') || '{}');
     populateUI(cached);
-  } catch (_) {}
+  } catch { /* cached value malformed — skip pre-populate */ }
 
   // 2. Top up from API
   try {
@@ -489,7 +489,7 @@ async function signOut() {
   try {
     const { logOut } = await import('/js/core/auth.js');
     logOut();
-  } catch (_) {
+  } catch {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     window.location.replace('/pages/auth/login.html');

@@ -69,7 +69,7 @@ const loadCategories = async () => {
             categoryEl.value = preCategory;
             loadCategory();
         }
-    } catch (err) {
+    } catch {
         toast('Failed to load categories', 'error');
     }
 };

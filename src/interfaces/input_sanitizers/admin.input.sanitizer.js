@@ -1,4 +1,3 @@
-import { ForbiddenError } from '../../core/errors/http.errors.js';
 
 // PATCH /api/admin/writing-tasks/:id/review
 export const sanitizeReviewTask = (req, res, next) => {

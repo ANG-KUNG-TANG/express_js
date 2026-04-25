@@ -1,269 +1,348 @@
 /**
- * js/pages/admin/users.js  — self-contained, no broken imports
+ * js/pages/admin/dashboard.js
+ * Admin dashboard — stats, pending review queue, recent activity,
+ * user management, task management, and audit log widget.
  */
 
-import { getUser, logOut } from '../../core/auth.js';
-import { apiFetch }        from '../../core/api.js';
+import { requireAdmin }     from '../../core/router.js';
+import { apiFetch }         from '../../core/api.js';
+import { statusBadge }      from '../../../components/statusBadge.js';
+import { toast }            from '../../core/toast.js';
 import { initAdminSidebar } from '../../../components/admin_sidebar.js';
 
-// ── Auth guard ────────────────────────────────────────────────────────────────
-const _user = getUser();
-if (!_user || _user.role !== 'admin') {
-    window.location.replace('/pages/auth/login.html');
-}
-
+requireAdmin();
 initAdminSidebar();
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
-const toast = (msg, type = 'success') => {
-    const t    = document.getElementById('toast');
-    const icon = document.querySelector('#toast .t-icon');
-    const text = document.getElementById('toast-msg');
-    if (!t) return;
-    if (text) text.textContent = msg;
-    if (icon) { icon.textContent = type === 'error' ? '✕' : '✓'; icon.style.color = type === 'error' ? 'var(--red)' : 'var(--green)'; }
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 3500);
-};
+/* global openModal, closeModal */
 
-// ── Confirm modal ─────────────────────────────────────────────────────────────
-const showConfirm = ({ title, message, confirmLabel = 'Confirm', danger = false, onConfirm }) => {
-    document.getElementById('_adm-modal')?.remove();
-    const m = document.createElement('div');
-    m.id = '_adm-modal';
-    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(3px)';
-    m.innerHTML = `
-        <div style="background:var(--surface);border:1px solid var(--border-hi);border-radius:16px;padding:28px 30px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.4)">
-            <h3 style="margin:0 0 8px;font-size:1rem;color:var(--text)">${title}</h3>
-            <p style="color:var(--text3);font-size:.85rem;margin:0 0 22px;line-height:1.5">${message}</p>
-            <div style="display:flex;gap:10px;justify-content:flex-end">
-                <button id="_mc-cancel" class="btn btn--ghost btn--sm">Cancel</button>
-                <button id="_mc-confirm" class="btn ${danger ? 'btn--danger' : 'btn--primary'} btn--sm">${confirmLabel}</button>
-            </div>
-        </div>`;
-    document.body.appendChild(m);
-    const cleanup = () => m.remove();
-    document.getElementById('_mc-cancel').onclick = cleanup;
-    m.onclick = e => { if (e.target === m) cleanup(); };
-    document.getElementById('_mc-confirm').onclick = async () => {
-        document.getElementById('_mc-confirm').disabled = true;
-        document.getElementById('_mc-confirm').textContent = 'Please wait…';
-        await onConfirm();
-        cleanup();
-    };
-};
+const fmtTime = d => d ? new Date(d).toLocaleString('en-GB', {
+    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+}) : '—';
 
-// ── Input modal ───────────────────────────────────────────────────────────────
-const showInputModal = ({ title, message, placeholder = '', confirmLabel = 'Confirm', validate }) =>
-    new Promise(resolve => {
-        document.getElementById('_adm-modal')?.remove();
-        const m = document.createElement('div');
-        m.id = '_adm-modal';
-        m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(3px)';
-        m.innerHTML = `
-            <div style="background:var(--surface);border:1px solid var(--border-hi);border-radius:16px;padding:28px 30px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.4)">
-                <h3 style="margin:0 0 8px;font-size:1rem;color:var(--text)">${title}</h3>
-                <p style="color:var(--text3);font-size:.85rem;margin:0 0 14px;line-height:1.5">${message}</p>
-                <input id="_modal-input" class="input input--sm" style="width:100%;margin-bottom:6px" placeholder="${placeholder}" />
-                <p id="_modal-err" style="font-size:.75rem;color:var(--red);min-height:18px;margin-bottom:14px"></p>
-                <div style="display:flex;gap:10px;justify-content:flex-end">
-                    <button id="_mc-cancel" class="btn btn--ghost btn--sm">Cancel</button>
-                    <button id="_mc-confirm" class="btn btn--primary btn--sm">${confirmLabel}</button>
-                </div>
-            </div>`;
-        document.body.appendChild(m);
-        document.getElementById('_mc-cancel').onclick = () => { m.remove(); resolve(null); };
-        m.onclick = e => { if (e.target === m) { m.remove(); resolve(null); } };
-        document.getElementById('_mc-confirm').onclick = () => {
-            const val = document.getElementById('_modal-input').value.trim();
-            if (validate) { const err = validate(val); if (err) { document.getElementById('_modal-err').textContent = err; return; } }
-            m.remove(); resolve(val);
-        };
-        setTimeout(() => document.getElementById('_modal-input')?.focus(), 50);
-    });
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const fmt = d => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fmtTs = d => d
+    ? new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    : '—';
 
 const roleBadge = r => {
     const cls = { admin: 'badge--admin', teacher: 'badge--teacher', user: 'badge--default', student: 'badge--default' };
     return `<span class="badge ${cls[r] ?? 'badge--default'}">${(r ?? '—').toUpperCase()}</span>`;
 };
 
+const setStat = (id, value) => {
+    const el = document.querySelector(`#${id} .stat-card__value`);
+    if (el) el.textContent = value ?? '—';
+};
+
 const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 
-// ── API helpers ───────────────────────────────────────────────────────────────
-const api = (path, opts = {}) => apiFetch(path, opts);
+// Inline confirm modal
+const showConfirm = ({ title, message, confirmLabel = 'Confirm', danger = false, onConfirm }) => {
+    document.getElementById('app-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'app-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:9999;animation:fadeIn .15s ease';
+    modal.innerHTML = `
+        <div style="background:var(--surface,#fff);border:1px solid var(--border);border-radius:var(--radius-lg,14px);padding:28px 32px;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.15)">
+            <h3 style="margin:0 0 8px;font-size:1.1rem">${title}</h3>
+            <p style="color:var(--text2,#64748b);font-size:.9rem;margin:0 0 24px;line-height:1.5">${message}</p>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button id="mc-cancel"  class="btn btn--ghost">Cancel</button>
+                <button id="mc-confirm" class="btn ${danger ? 'btn--danger' : 'btn--primary'}">${confirmLabel}</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    const cleanup = () => modal.remove();
+    document.getElementById('mc-cancel').addEventListener('click', cleanup);
+    modal.addEventListener('click', e => { if (e.target === modal) cleanup(); });
+    document.getElementById('mc-confirm').addEventListener('click', async () => {
+        document.getElementById('mc-confirm').disabled = true;
+        document.getElementById('mc-confirm').textContent = 'Please wait…';
+        await onConfirm();
+        cleanup();
+    });
+};
 
-// ── Load users ────────────────────────────────────────────────────────────────
+// ── Stats + Activity ──────────────────────────────────────────────────────────
+const loadStatsAndActivity = async () => {
+    const actEl = document.getElementById('activity-list');
+    if (actEl) actEl.innerHTML = '<p class="loading">Loading…</p>';
+    try {
+        const { data: stats } = await apiFetch('/api/admin/stats');
+        setStat('stat-total-users', stats.users?.total);
+        setStat('stat-new-users',   stats.users?.newThisWeek);
+        setStat('stat-teachers',    stats.users?.teachers);
+        setStat('stat-pending',     stats.tasks?.submitted);
+        renderActivity(stats.recent ?? []);
+    } catch (err) {
+        toast(err.message, 'error');
+        if (actEl) actEl.innerHTML = '<p class="error-state">Failed to load stats.</p>';
+    }
+};
+
+// ── Pending review queue ──────────────────────────────────────────────────────
+const loadPendingQueue = async () => {
+    const el = document.getElementById('pending-list');
+    if (!el) return;
+    el.innerHTML = '<p class="loading">Loading…</p>';
+    try {
+        const { data: tasks } = await apiFetch('/api/admin/writing-tasks?status=SUBMITTED');
+        const sorted = (tasks ?? []).sort(
+            (a, b) => new Date(a.submittedAt ?? a.createdAt) - new Date(b.submittedAt ?? b.createdAt)
+        );
+        if (!sorted.length) {
+            el.innerHTML = '<p class="empty-state">🎉 No tasks awaiting review.</p>';
+            return;
+        }
+        el.innerHTML = sorted.map(t => {
+            const tid = t._id ?? t.id;
+            return `
+            <div class="queue-row">
+                <div class="queue-row__info">
+                    <span class="queue-row__title">${t.title ?? t._title ?? '—'}</span>
+                    <span class="queue-row__meta">
+                        ${t.taskType ?? t._taskType ?? '—'} ·
+                        Submitted ${fmtTime(t.submittedAt ?? t._submittedAt ?? t.createdAt)}
+                    </span>
+                </div>
+                <a href="/pages/admin/review.html?id=${tid}" class="btn btn--warning btn--sm">Review</a>
+            </div>`;
+        }).join('');
+    } catch (err) {
+        el.innerHTML = '<p class="error-state">Failed to load queue.</p>';
+        toast(err.message, 'error');
+    }
+};
+
+// ── Recent activity ───────────────────────────────────────────────────────────
+const renderActivity = (recent = []) => {
+    const el = document.getElementById('activity-list');
+    if (!el) return;
+    if (!recent.length) { el.innerHTML = '<p class="empty-state">No recent activity.</p>'; return; }
+    el.innerHTML = `
+    <table class="data-table">
+        <thead><tr><th>Title</th><th>Status</th><th>Band</th><th>Updated</th><th>Actions</th></tr></thead>
+        <tbody>
+        ${recent.map(t => `<tr>
+            <td class="col-title">${t.title ?? '—'}</td>
+            <td>${statusBadge(t.status)}</td>
+            <td>${t.bandScore != null ? `Band ${t.bandScore}` : '—'}</td>
+            <td class="col-mono">${fmtTime(t.updatedAt)}</td>
+            <td class="actions-cell">
+                <a href="/pages/admin/review.html?id=${t.id ?? t._id}" class="btn btn--ghost btn--xs">View</a>
+            </td>
+        </tr>`).join('')}
+        </tbody>
+    </table>`;
+};
+
+// ── Audit log widget ──────────────────────────────────────────────────────────
+const AUDIT_OUTCOME_HTML = o => o === 'failure'
+    ? `<span style="display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(239,68,68,.12);color:#ef4444">FAIL</span>`
+    : `<span style="display:inline-block;padding:1px 7px;border-radius:4px;font-size:11px;font-weight:600;background:rgba(34,197,94,.12);color:#16a34a">OK</span>`;
+
+const AUDIT_ACTION_HTML = a =>
+    `<span style="font-family:var(--font-mono,monospace);font-size:11px;background:var(--surface2,rgba(0,0,0,.06));padding:2px 6px;border-radius:4px;white-space:nowrap">${esc(a)}</span>`;
+
+export const loadAuditWidget = async () => {
+    const el = document.getElementById('audit-widget-list');
+    if (!el) return;
+    el.innerHTML = '<p class="loading" style="padding:16px;text-align:center">Loading…</p>';
+    try {
+        const qs  = new URLSearchParams({ page: 1, limit: 8 }).toString();
+        const res = await apiFetch(`/api/admin/audit-logs?${qs}`);
+        const result = res?.data ?? res ?? {};
+        const logs   = result.logs ?? result.data ?? (Array.isArray(result) ? result : []);
+
+        if (!logs.length) {
+            el.innerHTML = '<p class="empty-state" style="padding:16px;text-align:center;color:var(--text3)">No audit events yet.</p>';
+            return;
+        }
+
+        el.innerHTML = `
+        <table class="data-table" style="font-size:12px">
+            <thead><tr>
+                <th>Time</th>
+                <th>Action</th>
+                <th>Result</th>
+                <th>Actor</th>
+            </tr></thead>
+            <tbody>
+            ${logs.map(l => `
+                <tr>
+                    <td class="col-mono" style="font-size:11px;white-space:nowrap;color:var(--text3)">${fmtTs(l.createdAt)}</td>
+                    <td>${AUDIT_ACTION_HTML(l.action)}</td>
+                    <td>${AUDIT_OUTCOME_HTML(l.outcome)}</td>
+                    <td class="col-mono" style="font-size:11px;color:var(--text3);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(l.requesterId ?? '')}">${esc((l.requesterId ?? '—').slice(-8))}</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+    } catch (err) {
+        el.innerHTML = `<p style="padding:16px;text-align:center;color:var(--red)">Failed to load audit logs.</p>`;
+        toast(err.message, 'error');
+    }
+};
+
+// ── User management ───────────────────────────────────────────────────────────
 const loadUsers = async (email = '') => {
     const el = document.getElementById('users-list');
     if (!el) return;
-    el.innerHTML = '<p class="loading" style="text-align:center;padding:32px">Loading…</p>';
+    el.innerHTML = '<p class="loading">Loading…</p>';
     try {
         let users;
         if (email) {
-            const res = await api(`/api/admin/users/email/${encodeURIComponent(email)}`);
-            const u   = res?.data ?? res;
-            users     = u ? [u] : [];
+            const { data: user } = await apiFetch(`/api/admin/users/email/${encodeURIComponent(email)}`);
+            users = user ? [user] : [];
         } else {
-            const res = await api('/api/admin/users');
-            users     = res?.data ?? res ?? [];
+            const { data } = await apiFetch('/api/admin/users');
+            users = data ?? [];
         }
-        renderUsers(Array.isArray(users) ? users : []);
+        renderUsers(users);
     } catch (err) {
-        el.innerHTML = `<p class="error-state" style="text-align:center;padding:32px;color:var(--red)">Failed to load users: ${esc(err.message)}</p>`;
+        el.innerHTML = '<p class="error-state">Failed to load users.</p>';
+        toast(err.message, 'error');
     }
 };
 
-// ── Render ────────────────────────────────────────────────────────────────────
 const renderUsers = (users) => {
     const el = document.getElementById('users-list');
-    if (!users.length) {
-        el.innerHTML = '<p class="empty-state" style="text-align:center;padding:32px;color:var(--text3)">No users found.</p>';
-        return;
-    }
+    if (!el) return;
+    if (!users.length) { el.innerHTML = '<p class="empty-state">No users found.</p>'; return; }
     el.innerHTML = `
-        <div style="overflow-x:auto">
+    <table class="data-table">
+        <thead>
+            <tr><th>Name</th><th>Email</th><th>Role</th><th>User ID</th><th>Teacher</th><th>Joined</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+        ${users.map(u => {
+            const uid        = u._id ?? u.id;
+            const role       = u.role ?? u._role;
+            const isStudent  = role === 'user' || role === 'student';
+            const teacherName = u.teacherName ?? u.teacher?.name ?? u.teacher?.username ?? null;
+            return `<tr>
+                <td>${esc(u.name ?? u.username ?? '—')}</td>
+                <td class="col-mono" style="font-size:.8rem">${esc(u.email ?? '—')}</td>
+                <td>${roleBadge(role)}</td>
+                <td class="col-mono" style="font-size:.75rem;cursor:pointer" onclick="navigator.clipboard.writeText('${uid}');window.__toast?.('ID copied')" title="Click to copy">${uid?.slice(-8) ?? '—'}</td>
+                <td style="font-size:.8rem;color:var(--text2)">${teacherName ? esc(teacherName) : '<span style="color:var(--muted)">—</span>'}</td>
+                <td class="col-mono" style="font-size:.78rem">${fmtTime(u.createdAt ?? u._createdAt)}</td>
+                <td class="actions-cell">
+                    ${isStudent ? `<button class="btn btn--ghost btn--xs" onclick="openLinkTeacher('${uid}')">Link teacher</button>` : ''}
+                    <button class="btn btn--ghost btn--xs" onclick="openResetPassword('${uid}')">Reset pw</button>
+                    <button class="btn btn--danger btn--xs" onclick="deleteUser('${uid}','${esc(u.name ?? u.email ?? '')}')">Delete</button>
+                </td>
+            </tr>`;
+        }).join('')}
+        </tbody>
+    </table>`;
+};
+
+// ── Link teacher modal ────────────────────────────────────────────────────────
+let studentId = null;
+
+window.openLinkTeacher = async (uid) => {
+    studentId = uid;
+    const modal = document.getElementById('modal-link-teacher');
+    if (!modal) return;
+
+    const sel = document.getElementById('link-teacher-select');
+    if (sel) {
+        sel.innerHTML = '<option value="">Loading teachers…</option>';
+        try {
+            const { data } = await apiFetch('/api/admin/users');
+            const teachers = (data ?? []).filter(u => u.role === 'teacher');
+            sel.innerHTML = '<option value="">Select a teacher</option>' +
+                teachers.map(t => `<option value="${t._id ?? t.id}">${esc(t.name ?? t.username ?? t.email)}</option>`).join('');
+        } catch {
+            sel.innerHTML = '<option value="">Failed to load teachers</option>';
+        }
+    }
+    modal.classList.add('open');
+};
+
+document.getElementById('link-confirm')?.addEventListener('click', async () => {
+    const teacherId = document.getElementById('link-teacher-select')?.value;
+    if (!teacherId) { toast('Please select a teacher.', 'error'); return; }
+    const btn = document.getElementById('link-confirm');
+    btn.disabled = true; btn.textContent = 'Linking…';
+    try {
+        await apiFetch(`/api/admin/users/${studentId}/link-teacher`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teacherId }),
+        });
+        toast('Student linked successfully.');
+        document.getElementById('modal-link-teacher')?.classList.remove('open');
+        loadUsers();
+    } catch (err) {
+        toast(err.message, 'error');
+        btn.disabled = false; btn.textContent = 'Link';
+    }
+});
+
+// ── Delete user ───────────────────────────────────────────────────────────────
+window.deleteUser = (uid, name) => {
+    showConfirm({
+        title: 'Delete user',
+        message: `Permanently delete <strong>${name}</strong>? This cannot be undone.`,
+        confirmLabel: 'Delete',
+        danger: true,
+        onConfirm: async () => {
+            try {
+                await apiFetch(`/api/admin/users/${uid}`, { method: 'DELETE' });
+                toast(`${name} deleted.`);
+                loadUsers();
+                loadStatsAndActivity();
+            } catch (err) { toast(err.message, 'error'); }
+        },
+    });
+};
+
+// ── Task management ───────────────────────────────────────────────────────────
+let taskTimer = null;
+
+const loadTasks = async () => {
+    const el     = document.getElementById('tasks-list');
+    if (!el) return;
+    const q      = document.getElementById('task-search')?.value.trim() ?? '';
+    const status = document.getElementById('task-status-filter')?.value ?? '';
+    el.innerHTML = '<p class="loading">Loading…</p>';
+    try {
+        const params = new URLSearchParams();
+        if (status) params.set('status', status);
+        const url = q
+            ? `/api/admin/writing-tasks/search?q=${encodeURIComponent(q)}&${params}`
+            : `/api/admin/writing-tasks?${params}`;
+        const { data: tasks } = await apiFetch(url);
+        if (!(tasks ?? []).length) { el.innerHTML = '<p class="empty-state">No tasks found.</p>'; return; }
+        el.innerHTML = `
         <table class="data-table">
-            <thead><tr>
-                <th>Name</th><th>Email</th><th>Role</th>
-                <th>Teacher linked</th><th>Joined</th><th>Actions</th>
-            </tr></thead>
+            <thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead>
             <tbody>
-            ${users.map(u => {
-                const uid  = u.id ?? u._id;
-                const role = u.role ?? u._role ?? 'user';
-                const isStudent  = role === 'user' || role === 'student';
-                const hasTeacher = !!(u.assignedTeacher ?? u._assignedTeacher);
-                return `
-                <tr data-id="${esc(uid)}">
-                    <td class="col-title">${esc(u.name ?? u._name ?? u.username ?? '—')}</td>
-                    <td class="col-mono" style="font-size:12px">${esc(u.email ?? '—')}</td>
-                    <td>${roleBadge(role)}</td>
-                    <td style="font-size:.8rem">
-                        ${hasTeacher
-                            ? `<span style="color:var(--green);font-weight:600">✓ Linked</span>`
-                            : `<span style="color:var(--text3)">—</span>`}
-                    </td>
-                    <td class="col-mono" style="font-size:12px">${fmt(u.createdAt ?? u._createdAt)}</td>
-                    <td class="actions-cell">
-                        ${role !== 'admin'  ? `<button class="btn btn--secondary btn--xs" data-action="promote" data-id="${esc(uid)}">→ Admin</button>` : ''}
-                        ${isStudent         ? `<button class="btn btn--info btn--xs" data-action="assign-teacher" data-id="${esc(uid)}">→ Teacher</button>` : ''}
-                        ${isStudent         ? `<button class="btn btn--ghost btn--xs" style="color:var(--green);border-color:rgba(5,150,105,.3)" data-action="link-teacher" data-id="${esc(uid)}">Link teacher</button>` : ''}
-                        ${isStudent && hasTeacher ? `<button class="btn btn--ghost btn--xs" data-action="unlink-teacher" data-id="${esc(uid)}">Unlink</button>` : ''}
-                        ${role !== 'admin'  ? `<button class="btn btn--danger btn--xs" data-action="delete" data-id="${esc(uid)}">Delete</button>` : ''}
-                    </td>
+            ${tasks.map(t => {
+                const tid = t._id ?? t.id;
+                const st  = t.status ?? t._status;
+                const action = st === 'SUBMITTED'
+                    ? `<a href="/pages/admin/review.html?id=${tid}" class="btn btn--warning btn--xs">Review</a>`
+                    : st === 'REVIEWED'
+                    ? `<a href="/pages/admin/review.html?id=${tid}" class="btn btn--info    btn--xs">Score</a>`
+                    : `<a href="/pages/admin/review.html?id=${tid}" class="btn btn--ghost   btn--xs">View</a>`;
+                return `<tr>
+                    <td class="col-title">${t.title ?? t._title ?? '—'}</td>
+                    <td>${t.taskType ?? t._taskType ?? '—'}</td>
+                    <td>${statusBadge(st)}</td>
+                    <td class="col-mono">${fmtTime(t.updatedAt ?? t._updatedAt)}</td>
+                    <td class="actions-cell">${action}</td>
                 </tr>`;
             }).join('')}
             </tbody>
-        </table>
-        </div>`;
-
-    el.querySelectorAll('[data-action]').forEach(btn =>
-        btn.addEventListener('click', () => {
-            const { action, id } = btn.dataset;
-            if (action === 'promote')        promoteUser(id);
-            if (action === 'assign-teacher') assignTeacherRole(id);
-            if (action === 'link-teacher')   linkTeacher(id);
-            if (action === 'unlink-teacher') unlinkTeacher(id);
-            if (action === 'delete')         deleteUser(id);
-        })
-    );
+        </table>`;
+    } catch (err) {
+        el.innerHTML = '<p class="error-state">Failed to load tasks.</p>';
+        toast(err.message, 'error');
+    }
 };
 
-// ── Actions ───────────────────────────────────────────────────────────────────
-const promoteUser = id => showConfirm({
-    title: 'Promote to Admin?', danger: true, confirmLabel: 'Promote',
-    message: 'This user will have full admin access. This cannot be undone.',
-    onConfirm: async () => {
-        try { await api(`/api/admin/users/${id}/promote`, { method: 'PATCH' }); toast('User promoted to Admin.'); loadUsers(); }
-        catch (e) { toast(e.message, 'error'); }
-    },
-});
-
-const assignTeacherRole = id => showConfirm({
-    title: 'Assign Teacher role?', confirmLabel: 'Assign teacher',
-    message: 'This user will become a teacher and can review student submissions.',
-    onConfirm: async () => {
-        try { await api(`/api/admin/users/${id}/assign-teacher`, { method: 'PATCH' }); toast('Teacher role assigned.'); loadUsers(); }
-        catch (e) { toast(e.message, 'error'); }
-    },
-});
-
-const linkTeacher = async (studentId) => {
-    // Load teacher list for a dropdown
-    let teachers = [];
-    try {
-        const res = await api('/api/admin/users');
-        teachers  = (res?.data ?? res ?? []).filter(u => (u.role ?? u._role) === 'teacher');
-    } catch { toast('Could not load teacher list.', 'error'); return; }
-
-    if (!teachers.length) { toast('No teachers found. Assign a teacher role first.', 'error'); return; }
-
-    const options = teachers.map(t => {
-        const tid  = t._id ?? t.id;
-        const name = t.name ?? t._name ?? t.email;
-        return `<option value="${esc(tid)}">${esc(name)} — ${esc(t.email)}</option>`;
-    }).join('');
-
-    document.getElementById('_adm-modal')?.remove();
-    const m = document.createElement('div');
-    m.id = '_adm-modal';
-    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(3px)';
-    m.innerHTML = `
-        <div style="background:var(--surface);border:1px solid var(--border-hi);border-radius:16px;padding:28px 30px;max-width:440px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.4)">
-            <h3 style="margin:0 0 8px;font-size:1rem;color:var(--text)">Link student to a teacher</h3>
-            <p style="color:var(--text3);font-size:.85rem;margin:0 0 14px;line-height:1.5">
-                Select the teacher. The student will appear in their teacher's student list.
-            </p>
-            <select id="_link-select" class="input input--sm" style="width:100%;margin-bottom:20px">
-                <option value="">— Choose a teacher —</option>
-                ${options}
-            </select>
-            <div style="display:flex;gap:10px;justify-content:flex-end">
-                <button id="_mc-cancel" class="btn btn--ghost btn--sm">Cancel</button>
-                <button id="_mc-confirm" class="btn btn--primary btn--sm">Link</button>
-            </div>
-        </div>`;
-    document.body.appendChild(m);
-    document.getElementById('_mc-cancel').onclick = () => m.remove();
-    m.onclick = e => { if (e.target === m) m.remove(); };
-    document.getElementById('_mc-confirm').onclick = async () => {
-        const teacherId = document.getElementById('_link-select').value;
-        if (!teacherId) { toast('Please select a teacher.', 'error'); return; }
-        const btn = document.getElementById('_mc-confirm');
-        btn.disabled = true; btn.textContent = 'Linking…';
-        try {
-            await api(`/api/admin/users/${studentId}/link-teacher`, {
-                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ teacherId }),
-            });
-            toast('Student linked to teacher successfully.');
-            m.remove(); loadUsers();
-        } catch (e) { toast(e.message, 'error'); btn.disabled = false; btn.textContent = 'Link'; }
-    };
-};
-
-const unlinkTeacher = id => showConfirm({
-    title: 'Unlink student from teacher?', danger: true, confirmLabel: 'Unlink',
-    message: 'The student will no longer appear in their teacher\'s student list.',
-    onConfirm: async () => {
-        try { await api(`/api/admin/users/${id}/unlink-teacher`, { method: 'PATCH' }); toast('Student unlinked.'); loadUsers(); }
-        catch (e) { toast(e.message, 'error'); }
-    },
-});
-
-const deleteUser = id => showConfirm({
-    title: 'Delete this user?', danger: true, confirmLabel: 'Delete',
-    message: 'All their data will be permanently removed. This cannot be undone.',
-    onConfirm: async () => {
-        try { await api(`/api/admin/users/${id}`, { method: 'DELETE' }); toast('User deleted.'); loadUsers(); }
-        catch (e) { toast(e.message, 'error'); }
-    },
-});
-
-// ── Search events ─────────────────────────────────────────────────────────────
+// ── Listeners ─────────────────────────────────────────────────────────────────
 document.getElementById('search-btn')?.addEventListener('click', () =>
     loadUsers(document.getElementById('search-email')?.value.trim() ?? ''));
 document.getElementById('search-email')?.addEventListener('keydown', e => {
@@ -272,5 +351,107 @@ document.getElementById('search-email')?.addEventListener('keydown', e => {
 document.getElementById('clear-search-btn')?.addEventListener('click', () => {
     document.getElementById('search-email').value = ''; loadUsers();
 });
+document.getElementById('task-search')?.addEventListener('input', () => {
+    clearTimeout(taskTimer); taskTimer = setTimeout(loadTasks, 400);
+});
+document.getElementById('task-status-filter')?.addEventListener('change', loadTasks);
 
-loadUsers();
+// Audit log refresh button
+document.getElementById('audit-widget-refresh')?.addEventListener('click', loadAuditWidget);
+
+// Expose toast globally for inline onclick handlers
+window.__toast = toast;
+
+// ── Promote user via Roles panel ──────────────────────────────────────────────
+document.getElementById('promote-apply-btn')?.addEventListener('click', async () => {
+    const email = document.getElementById('promote-email')?.value.trim();
+    const role  = window.__selectedPromoteRole;
+    if (!email || !role) { toast('Enter an email and select a role.', 'error'); return; }
+    try {
+        const { data: found } = await apiFetch(`/api/admin/users/email/${encodeURIComponent(email)}`);
+        if (!found) { toast('User not found.', 'error'); return; }
+        const uid = found._id ?? found.id;
+        await apiFetch(`/api/admin/users/${uid}/promote`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role }),
+        });
+        toast(`Role updated to ${role}.`);
+        loadUsers();
+    } catch (err) { toast(err.message, 'error'); }
+});
+
+window.promoteUser = () => document.getElementById('promote-apply-btn')?.click();
+
+// ── Create user ───────────────────────────────────────────────────────────────
+window.createUser = async () => {
+    const first = document.getElementById('cu-firstname')?.value.trim();
+    const last  = document.getElementById('cu-lastname')?.value.trim();
+    const email = document.getElementById('cu-email')?.value.trim();
+    const uname = document.getElementById('cu-username')?.value.trim();
+    const role  = document.getElementById('cu-role')?.value;
+    const pw    = document.getElementById('cu-password')?.value;
+
+    if (!first || !email || !uname || !pw) {
+        toast('Please fill all required fields.', 'error'); return;
+    }
+    const btn = document.querySelector('[onclick="createUser()"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Creating…'; }
+    try {
+        await apiFetch('/api/admin/users', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ name: `${first} ${last}`.trim(), email, username: uname, role, password: pw }),
+        });
+        toast(`User ${first} ${last} created.`);
+        if (typeof closeModal === 'function') closeModal('modal-create-user');
+        ['cu-firstname','cu-lastname','cu-email','cu-username','cu-password']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        loadUsers();
+        loadStatsAndActivity();
+    } catch (err) {
+        toast(err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Create user'; }
+    }
+};
+
+// ── Reset password ────────────────────────────────────────────────────────────
+let __resetPasswordUserId = null;
+
+window.openResetPassword = (id) => {
+    __resetPasswordUserId = id;
+    const input = document.getElementById('reset-pw-input');
+    if (input) input.value = '';
+    if (typeof openModal === 'function') openModal('modal-reset-password');
+};
+
+window.confirmResetPassword = async () => {
+    const pw = document.getElementById('reset-pw-input')?.value;
+    if (!pw || pw.length < 8) { toast('Password must be 8+ characters.', 'error'); return; }
+    if (!__resetPasswordUserId) return;
+    const btn = document.querySelector('[onclick="confirmResetPassword()"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Resetting…'; }
+    try {
+        await apiFetch(`/api/admin/users/${__resetPasswordUserId}/reset-password`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ password: pw }),
+        });
+        toast('Password reset successfully.');
+        if (typeof closeModal === 'function') closeModal('modal-reset-password');
+    } catch (err) {
+        toast(err.message, 'error');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Reset password'; }
+    }
+};
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+Promise.all([
+    loadStatsAndActivity(),
+    loadPendingQueue(),
+    loadUsers(),
+    loadTasks(),
+    loadAuditWidget(),
+]);

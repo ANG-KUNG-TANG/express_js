@@ -35,7 +35,7 @@ const loadCategories = async () => {
             opt.textContent = c.charAt(0).toUpperCase() + c.slice(1);
             categoryEl.appendChild(opt);
         });
-    } catch (err) {
+    } catch {
         toast('Failed to load categories', 'error');
     }
 };

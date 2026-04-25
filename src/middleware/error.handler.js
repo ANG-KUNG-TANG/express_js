@@ -49,11 +49,11 @@ const OPERATIONAL_NAMES = new Set([
 // Register ONCE at the bottom of app.js: app.use(errorHandler)
 // ---------------------------------------------------------------------------
 
+// eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
     // ── Resolve status code ────────────────────────────────────────────────
     // Priority: err.statusCode (set on all custom errors) → err.status → 500
     let status = err.statusCode ?? err.status ?? 500;
-    let code   = err.code       ?? err.name   ?? 'INTERNAL_SERVER_ERROR';
 
     // ── 1. Known AppError subclasses ───────────────────────────────────────
     if (err instanceof AppError) {

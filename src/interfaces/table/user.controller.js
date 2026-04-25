@@ -6,22 +6,20 @@ import { promoteUserToAdminUseCase } from "../../app/user_uc/promote_user.uc.js"
 import { sendSuccess } from '../response_formatter.js';
 import { HTTP_STATUS } from '../http_status.js';
 import { sanitizeCreateInput, sanitizeUpdateInput } from "../input_sanitizers/user.input_sanitizer.js";
-import { generateTokenPair, verifyRefreshToken } from '../../core/services/jwt.service.js';
-import { saveRefreshToken } from '../../core/services/token_store.service.js';
 import { listAllUsersUseCase } from "../../app/user_uc/list_user.uc.js";
 import logger from '../../core/logger/logger.js';
 import { recordAudit } from '../../core/services/audit.service.js';
 import { AuditAction } from '../../domain/base/audit_enums.js';
-import { InvalidCredentialsError, UserEmailNotFoundError, UserNotFoundError, UserValidationError } from "../../core/errors/user.errors.js";
-import UserModel from "../../domain/models/user_model.js";
-import { sanitizeUser } from "../../infrastructure/repositories/user_repo.js";
 
-const REFRESH_COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure:   process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge:   7 * 24 * 60 * 60 * 1000,
-};
+// FIX: removed stale imports for UserModel, sanitizeUser, and error classes that were only
+// needed by the misplaced repo functions below — keeping them would hide future dead-import lint warnings.
+
+// const REFRESH_COOKIE_OPTIONS = {
+//     httpOnly: true,
+//     secure:   process.env.NODE_ENV === 'production',
+//     sameSite: 'strict',
+//     maxAge:   7 * 24 * 60 * 60 * 1000,
+// };
 
 // ---------------------------------------------------------------------------
 // Create user  (POST /users)
@@ -107,59 +105,13 @@ export const updateUser = async (req, res) => {
 // ---------------------------------------------------------------------------
 // Delete user  (DELETE /users/:id)
 // ---------------------------------------------------------------------------
-export const updateProfileInfo = async (id, { name, email, bio, targetBand, examDate}) => {
-    logger.debug('UserRepo.updateProfileInfo', {id});
-    return await updateUser(id, {name, email, bio, targetBand, examDate})
-};
 
-export const updateAvatarUrl = async (id, avatarUrl) => {
-    logger.debug('userRepo.updateAvatarUrl', {id});
-    return await updateUser(id, { avatarUrl});
-};
-
-export const updateCoverUrl = async (id, coverUrl) => {
-    logger.debug('UserRepo.updateAvatarUrl', {id});
-    return await updateUser(id, {coverUrl});
-};
-
-export const addAttachemet = async (id, attachment) => {
-    logger.debug('usrRepo.addAttachment', {id, file: attachment.originalName});
-    if (!mongoose.Types.ObjectId.isValid(id)){
-        throw new UserValidationError('invalid user id format')
-    }
-    const doc = await UserModel.findByIdAndUpdate(
-        id, 
-        {$push: {attachement: attachment}},
-        {returnDocument: 'after', runValidators: true}
-    ).lean();
-    if (!doc) throw new UserNotFoundError(id);
-    return toDomain(doc);
-}
-
-export const getAttachments = async (userId) => {
-    logger.debug('userRepo.getAttachments', { userId });
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-        throw new UserValidationError('invalid user id format');
-    }
-    const doc = await UserModel.findById(userId).select('attachments').lean();
-    if (!doc) throw new UserNotFoundError(userId);
-    return doc.attachments ?? [];
-};
-
-export const authenticateUser = async (email, password) => {
-    logger.debug('userRepo.authenticateUser', {email});
-    const doc = await UserModel.findOne({email: email.toLowerCase()});
-    if (!doc){
-        logger.warn('userRepo.authenticateUser: email not found', {email});
-        throw new UserEmailNotFoundError(email);
-    }
-    if (doc.password !== password ) {
-        logger.warn('userRepo.authenticateUser: invalid credentials', { email});
-        throw new InvalidCredentialsError();
-    }
-    logger.debug('userRep.authenticateUers: credentials valid', {email});
-    return sanitizeUser(toDomain(doc));
-}
+// FIX: removed updateProfileInfo, updateAvatarUrl, updateCoverUrl, addAttachemet,
+// getAttachments, and authenticateUser — these are repository-layer functions that
+// were copy-pasted here by mistake. They referenced `mongoose` and `toDomain` without
+// importing either (guaranteed ReferenceError at runtime), and authenticateUser used
+// plain string equality for password comparison instead of hashed verification
+// (security vulnerability). All correct implementations live in user_repo.js.
 
 export const deleteUser = async (req, res) => {
     const { id } = req.params;

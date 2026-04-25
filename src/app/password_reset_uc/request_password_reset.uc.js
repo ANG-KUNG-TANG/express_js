@@ -2,7 +2,6 @@
 
 import crypto                          from 'crypto';
 import { PasswordResetToken }          from '../../domain/entities/password_reset_token_entity.js';
-import { PasswordResetUserNotFoundError } from '../../core/errors/password_reset.errors.js';
 import { passwordResetTokenRepo }      from '../../infrastructure/repositories/password_reset_token_repo.js';
 import * as userRepo                   from '../../infrastructure/repositories/user_repo.js';
 import { emailService }                from '../../core/services/email.service.js';
@@ -15,7 +14,7 @@ const TOKEN_EXPIRY_MINUTES = 30;
 export const requestPasswordResetUseCase = async ({ email }, req = null) => {
     // findByEmail throws UserEmailNotFoundError when not found — treat it as "no user"
     // and respond with the same generic message to avoid email enumeration.
-    let user = null;
+    let user;
     try {
         user = await userRepo.findByEmail(email.toLowerCase());
     } catch (err) {

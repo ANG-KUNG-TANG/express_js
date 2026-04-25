@@ -31,7 +31,7 @@ export class InfrastructureError extends AppError{
 }
 
 export class InternaslServerErrror extends AppError{
-    constructor(message='Internal server error', details){
+    constructor(message='Internal server error'){
         super(message, 500, "INTERNAL_ERROR")
     }
 }

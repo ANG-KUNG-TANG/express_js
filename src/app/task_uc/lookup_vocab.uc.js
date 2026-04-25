@@ -1,7 +1,6 @@
 import { lookupVocab } from '../../infrastructure/repositories/task_repo.js';
 import {
     TaskValidationError,
-    TaskNotFoundError,
 } from '../../core/errors/task.errors.js';
 import logger from '../../core/logger/logger.js';
 

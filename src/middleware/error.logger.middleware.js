@@ -1,4 +1,3 @@
-
 import logger from "../core/logger/logger.js"
 import auditLogger from "../core/logger/audit.logger.js";
 import { HTTP_STATUS } from ".././interfaces/http_status.js ";
@@ -15,6 +14,7 @@ const ERROR_STATUS_MAP = {
 // Errors that are "expected" operational errors — logged at warn, not error
 const OPERATIONAL_ERRORS = new Set(Object.keys(ERROR_STATUS_MAP));
 
+// eslint-disable-next-line no-unused-vars
 export const errorLoggerMiddleware = (err, req, res, next) => {
   const status = ERROR_STATUS_MAP[err.name] || HTTP_STATUS.INTERNAL_SERVER_ERROR;
   const isOperational = OPERATIONAL_ERRORS.has(err.name);

@@ -3,7 +3,7 @@
 import * as userRepo            from '../../infrastructure/repositories/user_repo.js';
 import { findByAssignedBy }     from '../../infrastructure/repositories/task_repo.js';
 import { WritingStatus, AssignmentStatus } from '../../domain/base/task_enums.js';
-import { redisGet, redisSet, redisDel, CacheKeys, TTL } from '../../core/services/redis.service.js';
+import { redisGet, redisSet, CacheKeys, TTL } from '../../core/services/redis.service.js';
 import logger                   from '../../core/logger/logger.js';
 
 export const teacherListStudentsUC = async (teacher, { includeTaskStats = false } = {}) => {

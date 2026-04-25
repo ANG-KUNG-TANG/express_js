@@ -74,7 +74,7 @@ describe('createUserUseCase', () => {
     });
 
     it('should default role to USER when role is not provided', async () => {
-        const { role, ...withoutRole } = validInput;
+        const {  ...withoutRole } = validInput;
         await createUserUsecase(withoutRole);
         const calledWith = userRepo.createUser.mock.calls[0][0];
         expect(calledWith._role).toBe(UserRole.USER);

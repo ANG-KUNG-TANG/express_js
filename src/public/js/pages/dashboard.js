@@ -11,7 +11,6 @@ import { apiFetch }          from '../core/api.js';
 import { initNavbar }        from '../../components/navbar.js';
 import { statusBadge }       from '../../components/statusBadge.js';
 import { newsCard }          from '../../components/newsCard.js';
-import { toast }             from '../core/toast.js';
 import { initSocket }        from '../core/socket.js';
 
 requireAuth();

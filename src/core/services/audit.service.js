@@ -1,5 +1,5 @@
 import auditLogger from '../logger/audit.logger.js';
-import { AuditAction, isKnownAction } from '../../domain/base/audit_enums.js';
+import { AuditAction} from '../../domain/base/audit_enums.js';
 import { findLogs } from '../../infrastructure/repositories/audit_log_repo.js';
 
 // ---------------------------------------------------------------------------
