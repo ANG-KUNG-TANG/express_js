@@ -190,3 +190,60 @@ docker-compose up --build
 | Development | pnpm run dev |
 | Consistency | Docker dev   |
 | Sharing     | Docker prod  |
+
+diff --git a/readme.md b/readme.md
+index 1e058757a28a1e067778cc11bed24162663ab5cb..52bb41e3205f9754021182be78bfb4296ea54f48 100644
+--- a/readme.md
++++ b/readme.md
+@@ -168,25 +168,51 @@ pnpm install
+ ### Docker issues
+ 
+ ```bash
+ docker-compose down
+ docker-compose up --build
+ ```
+ 
+ ---
+ 
+ # 🎯 11. Best Practices
+ 
+ * Use pnpm for development speed
+ * Use Docker for consistency
+ * Keep secrets secure
+ * Build production images only when stable
+ 
+ ---
+ 
+ # 📌 Summary
+ 
+ | Use Case    | Approach     |
+ | ----------- | ------------ |
+ | Development | pnpm run dev |
+ | Consistency | Docker dev   |
+ | Sharing     | Docker prod  |
++
++
++---
++
++# 📚 12. Documentation
++
++- Project architecture and module map: `docs/PROJECT_DOCUMENTATION.md`
++- API endpoints reference: `docs/API_REFERENCE.md`
++- Database optimization + rate-limit audit: `docs/DB_RATE_LIMIT_AUDIT.md`
++
++---
++
++# 🛡️ 13. Rate Limiting
++
++The API uses `express-rate-limit` for baseline abuse protection:
++
++- Global API limiter on `/api`
++- Stricter auth limiter on `/api/auth` login/register/refresh/logout
++- Password reset limiter on `/api/auth/forgot-password` and `/api/auth/reset-password`
++
++Optional environment variables:
++
++```bash
++RATE_LIMIT_API_MAX=300
++RATE_LIMIT_AUTH_MAX=20
++```

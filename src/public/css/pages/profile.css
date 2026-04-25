@@ -72,15 +72,15 @@
 .profile-avatar-large {
   width: 88px; height: 88px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--gold) 100%);
   border: 4px solid var(--bg);
-  box-shadow: 0 4px 18px rgba(99,102,241,0.35);
+  box-shadow: 0 4px 18px rgba(30,45,74,.25);
   display: flex; align-items: center; justify-content: center;
   font-size: 28px; font-weight: 800; color: #fff;
   overflow: hidden; cursor: pointer;
   transition: box-shadow 0.2s;
 }
-.profile-avatar-large:hover { box-shadow: 0 4px 24px rgba(99,102,241,0.6); }
+.profile-avatar-large:hover { box-shadow: 0 4px 24px rgba(30,45,74,.42); }
 .profile-avatar-large img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
 .avatar-edit-badge {
@@ -92,7 +92,7 @@
   transition: background 0.15s, transform 0.15s;
 }
 .profile-avatar-wrap label:hover .avatar-edit-badge {
-  background: #818cf8; transform: scale(1.12);
+  background: var(--gold); transform: scale(1.12);
 }
 
 .profile-identity__info { flex: 1; min-width: 0; padding-bottom: 4px; }
@@ -108,12 +108,12 @@
   display: inline-flex; align-items: center; gap: 5px;
   font-size: 12px; font-weight: 600;
   padding: 3px 10px; border-radius: 999px;
-  background: rgba(99,102,241,0.12); color: var(--accent);
-  border: 1px solid rgba(99,102,241,0.22);
+  background: var(--accent-dim); color: var(--accent);
+  border: 1px solid rgba(30,45,74,.20);
 }
-.badge--admin  { background: rgba(245,158,11,0.12); color: #f59e0b; border-color: rgba(245,158,11,0.25); }
-.badge--teacher { background: rgba(16,185,129,0.12); color: #10b981; border-color: rgba(16,185,129,0.25); }
-.badge--active { background: rgba(16,185,129,0.1);  color: #10b981; border-color: rgba(16,185,129,0.2); }
+.badge--admin  { background: var(--role-admin-bg); color: var(--role-admin); border-color: var(--role-admin-border); }
+.badge--teacher { background: var(--role-teacher-bg); color: var(--role-teacher); border-color: var(--role-teacher-border); }
+.badge--active { background: var(--green-dim); color: var(--green); border-color: rgba(5,150,105,.20); }
 
 /* ══ Stats strip ══ */
 .stats-strip {
@@ -184,7 +184,7 @@
 .field select:focus,
 .field textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 .field input[readonly] { opacity: 0.48; cursor: not-allowed; }
 .field textarea { resize: vertical; min-height: 76px; line-height: 1.55; }
@@ -195,12 +195,12 @@
 .pw-bar  { flex: 1; height: 3px; border-radius: 2px; background: var(--border); transition: background 0.2s; }
 .pw-bar.s-weak   { background: #ef4444; }
 .pw-bar.s-fair   { background: #f59e0b; }
-.pw-bar.s-strong { background: #3b82f6; }
+.pw-bar.s-strong { background: var(--accent); }
 .pw-bar.s-great  { background: #10b981; }
 .pw-hint { font-size: 11.5px; margin-top: 4px; color: var(--text-muted); min-height: 16px; display: block; }
 .pw-hint.s-weak   { color: #ef4444; }
 .pw-hint.s-fair   { color: #f59e0b; }
-.pw-hint.s-strong { color: #3b82f6; }
+.pw-hint.s-strong { color: var(--accent); }
 .pw-hint.s-great  { color: #10b981; }
 
 /* ══ File drop zone ══ */
@@ -214,11 +214,11 @@
 }
 .dropzone:hover, .dropzone.drag-over {
   border-color: var(--accent);
-  background: rgba(99,102,241,0.05);
+  background: var(--accent-soft);
 }
 .dropzone__icon {
   width: 42px; height: 42px; border-radius: 10px;
-  background: rgba(99,102,241,0.12);
+  background: var(--accent-dim);
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 10px; color: var(--accent);
 }
@@ -249,7 +249,7 @@
   font-size: 10px; font-weight: 800; flex-shrink: 0;
 }
 .file-type.pdf  { background: rgba(239,68,68,0.12);  color: #ef4444; }
-.file-type.doc  { background: rgba(59,130,246,0.12); color: #3b82f6; }
+.file-type.doc  { background: var(--accent-dim); color: var(--accent); }
 .file-type.img  { background: rgba(16,185,129,0.12); color: #10b981; }
 .file-type.xls  { background: rgba(5,150,105,0.12);  color: #059669; }
 .file-type.ppt  { background: rgba(245,158,11,0.12); color: #f59e0b; }

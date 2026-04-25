@@ -177,6 +177,7 @@ export const refreshTokens = (req, res) => {
       error:     err.message,
     });
     recordFailure(AuditAction.AUTH_TOKEN_REFRESH_FAILED, null, { reason: 'invalid_or_expired' }, req);
+    res.clearCookie('refreshToken');
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'Invalid or expired refresh token' });
   }
 
@@ -189,6 +190,7 @@ export const refreshTokens = (req, res) => {
     recordFailure(AuditAction.AUTH_TOKEN_REUSE_DETECTED, decoded.id, {
       action: 'all_sessions_revoked',
     }, req);
+    res.clearCookie('refreshToken');
     return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'Refresh token reuse detected' });
   }
 

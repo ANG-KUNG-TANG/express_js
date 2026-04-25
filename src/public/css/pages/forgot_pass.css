@@ -1,6 +1,6 @@
 /* css/pages/forgot_password.css
    Extends auth.css with password-reset-specific styles
-   Design: refined, academic — cool slate tones, serif accents */
+   Design: dark academic — tokens from base.css only, zero hardcoded colours */
 
 /* ── Auth card base overrides ─────────────────────────────────────────────── */
 .auth-card {
@@ -34,25 +34,25 @@
   width: 64px;
   height: 64px;
   border-radius: 16px;
-  background: #f0f4ff;
+  background: var(--accent-dim);
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 24px;
 }
 
-.auth-icon svg { width: 30px; height: 30px; color: #3b5bdb; }
-.auth-icon.success { background: #ecfdf5; }
-.auth-icon.success svg { color: #059669; }
-.auth-icon.error { background: #fff1f2; }
-.auth-icon.error svg { color: #e11d48; }
-.auth-icon.loading { background: #f8fafc; }
+.auth-icon svg { width: 30px; height: 30px; color: var(--accent); }
+.auth-icon.success { background: var(--green-dim); }
+.auth-icon.success svg { color: var(--green); }
+.auth-icon.error { background: var(--red-dim); }
+.auth-icon.error svg { color: var(--red); }
+.auth-icon.loading { background: var(--surface2); }
 
 /* ── Spinner ring ─────────────────────────────────────────────────────────── */
 .spinner-ring {
   width: 32px; height: 32px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #3b5bdb;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   display: block;
@@ -63,7 +63,7 @@
 .auth-title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
   text-align: center;
   margin: 0 0 10px;
   letter-spacing: -0.02em;
@@ -71,7 +71,7 @@
 
 .auth-subtitle {
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--text2);
   text-align: center;
   line-height: 1.6;
   margin: 0 0 28px;
@@ -79,7 +79,7 @@
 
 .auth-hint {
   font-size: 0.82rem;
-  color: #94a3b8;
+  color: var(--text3);
   text-align: center;
   margin: 0 0 16px;
 }
@@ -93,7 +93,7 @@
   display: block;
   font-size: 0.82rem;
   font-weight: 600;
-  color: #374151;
+  color: var(--text2);
   margin-bottom: 6px;
   letter-spacing: 0.01em;
 }
@@ -108,32 +108,32 @@
   top: 50%;
   transform: translateY(-50%);
   width: 16px; height: 16px;
-  color: #94a3b8;
+  color: var(--text3);
   pointer-events: none;
 }
 
 .input-wrapper input {
   width: 100%;
   padding: 11px 44px 11px 38px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   font-size: 0.9rem;
-  color: #0f172a;
-  background: #f8fafc;
+  color: var(--text);
+  background: var(--surface2);
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   box-sizing: border-box;
   outline: none;
 }
 
 .input-wrapper input:focus {
-  border-color: #3b5bdb;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgb(59 91 219 / .12);
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 
 .input-wrapper input.is-error {
-  border-color: #e11d48;
-  box-shadow: 0 0 0 3px rgb(225 29 72 / .1);
+  border-color: var(--red);
+  box-shadow: 0 0 0 3px var(--red-dim);
 }
 
 /* ── Show/hide password toggle ────────────────────────────────────────────── */
@@ -146,12 +146,12 @@
   border: none;
   cursor: pointer;
   padding: 4px;
-  color: #94a3b8;
+  color: var(--text3);
   transition: color 0.15s;
   display: flex;
   align-items: center;
 }
-.toggle-password:hover { color: #3b5bdb; }
+.toggle-password:hover { color: var(--accent); }
 .eye-icon { width: 16px; height: 16px; }
 
 /* ── Password strength bar ────────────────────────────────────────────────── */
@@ -164,7 +164,7 @@
 .strength-track {
   flex: 1;
   height: 4px;
-  background: #e2e8f0;
+  background: var(--border);
   border-radius: 99px;
   overflow: hidden;
 }
@@ -174,17 +174,17 @@
   border-radius: 99px;
   transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), background 0.35s;
 }
-.strength-fill.s1 { width: 25%; background: #ef4444; }
-.strength-fill.s2 { width: 50%; background: #f97316; }
-.strength-fill.s3 { width: 75%; background: #eab308; }
-.strength-fill.s4 { width: 100%; background: #22c55e; }
-.strength-label { font-size: 0.75rem; color: #64748b; white-space: nowrap; }
+.strength-fill.s1 { width: 25%; background: var(--red); }
+.strength-fill.s2 { width: 50%; background: var(--amber); }
+.strength-fill.s3 { width: 75%; background: var(--gold); }
+.strength-fill.s4 { width: 100%; background: var(--green); }
+.strength-label { font-size: 0.75rem; color: var(--text3); white-space: nowrap; }
 
 /* ── Field error ──────────────────────────────────────────────────────────── */
 .field-error {
   display: block;
   font-size: 0.78rem;
-  color: #e11d48;
+  color: var(--red);
   margin-top: 5px;
   min-height: 16px;
 }
@@ -193,8 +193,8 @@
 .btn-primary {
   width: 100%;
   padding: 12px;
-  background: #3b5bdb;
-  color: #fff;
+  background: var(--accent);
+  color: #e8edf4;
   border: none;
   border-radius: 10px;
   font-size: 0.9rem;
@@ -208,7 +208,7 @@
   transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
   text-decoration: none;
 }
-.btn-primary:hover { background: #2f4ac4; box-shadow: 0 4px 12px rgb(59 91 219 / .3); }
+.btn-primary:hover { background: var(--accent-h); box-shadow: 0 4px 12px rgba(30,45,74,.3); }
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -216,16 +216,16 @@
   width: 100%;
   padding: 11px;
   background: transparent;
-  color: #3b5bdb;
-  border: 1.5px solid #3b5bdb;
+  color: var(--accent);
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
   margin-bottom: 12px;
 }
-.btn-secondary:hover { background: #f0f4ff; }
+.btn-secondary:hover { background: var(--accent-dim); border-color: var(--accent); }
 
 /* ── Btn spinner ──────────────────────────────────────────────────────────── */
 .btn-spinner {
@@ -245,9 +245,9 @@
   gap: 6px;
   margin-top: 20px;
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--text2);
   text-decoration: none;
   transition: color 0.15s;
 }
 .auth-back-link svg { width: 14px; height: 14px; }
-.auth-back-link:hover { color: #3b5bdb; }
+.auth-back-link:hover { color: var(--accent); }

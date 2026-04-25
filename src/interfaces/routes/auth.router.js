@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../async_handler.js';
+import { authLimiter } from '../../middleware/rate_limit.middleware.js';
 import {
   googleAuth,
   googleCallback,
@@ -23,12 +24,13 @@ router.get('/google/callback', ...googleCallback);
 router.get('/github/callback', ...githubCallback);
 
 // ── Token management ─────────────────────────────────────────────────────────
-router.post('/refresh',        asyncHandler(refreshTokens));
-router.post('/register',       asyncHandler(registerUser));
-router.post('/login',          asyncHandler(loginUser));
-router.post('/logout',         asyncHandler(logout));
+router.post('/refresh',        authLimiter, asyncHandler(refreshTokens));
+router.post('/register',       authLimiter, asyncHandler(registerUser));
+router.post('/login',          authLimiter, asyncHandler(loginUser));
+router.post('/logout',         authLimiter, asyncHandler(logout));
 
 // ── Failure fallback ─────────────────────────────────────────────────────────
 router.get('/failure',         authFailure);
 
 export default router;
+

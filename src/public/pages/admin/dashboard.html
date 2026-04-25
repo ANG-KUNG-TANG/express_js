@@ -89,15 +89,15 @@
             <canvas id="roleChart" width="110" height="110" style="width:110px;height:110px;flex-shrink:0"></canvas>
             <div class="donut-legend">
               <div class="legend-item">
-                <div class="legend-left"><span class="legend-dot" style="background:#5b6ef5"></span>Students</div>
+                <div class="legend-left"><span class="legend-dot" style="background:#c8a84b"></span>Students</div>
                 <div class="legend-val" id="role-students">—</div>
               </div>
               <div class="legend-item">
-                <div class="legend-left"><span class="legend-dot" style="background:#38bdf8"></span>Teachers</div>
+                <div class="legend-left"><span class="legend-dot" style="background:#2d7a55"></span>Teachers</div>
                 <div class="legend-val" id="role-teachers">—</div>
               </div>
               <div class="legend-item">
-                <div class="legend-left"><span class="legend-dot" style="background:#a78bfa"></span>Admins</div>
+                <div class="legend-left"><span class="legend-dot" style="background:#1e2d4a"></span>Admins</div>
                 <div class="legend-val" id="role-admins">—</div>
               </div>
             </div>
@@ -588,13 +588,13 @@ function drawSignupChart() {
     new Chart(ctx, {
         type: 'line',
         data: { labels, datasets: [{ data, fill: true,
-            backgroundColor: 'rgba(91,110,245,0.10)',
-            borderColor: '#5b6ef5', borderWidth: 2, pointRadius: 0, tension: 0.4 }] },
+            backgroundColor: 'rgba(200,168,75,0.10)',
+            borderColor: '#c8a84b', borderWidth: 2, pointRadius: 0, tension: 0.4 }] },
         options: { responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { ticks:{ color:'#7a8099', font:{size:10}, maxTicksLimit:8 }, grid:{ color:'rgba(255,255,255,0.04)' }, border:{display:false} },
-                y: { ticks:{ color:'#7a8099', font:{size:10} }, grid:{ color:'rgba(255,255,255,0.04)' }, border:{display:false} }
+                x: { ticks:{ color:'#7a7160', font:{size:10}, maxTicksLimit:8 }, grid:{ color:'rgba(255,255,255,0.04)' }, border:{display:false} },
+                y: { ticks:{ color:'#7a7160', font:{size:10} }, grid:{ color:'rgba(255,255,255,0.04)' }, border:{display:false} }
             }
         }
     });
@@ -606,7 +606,7 @@ function drawRoleChart() {
     new Chart(ctx, {
         type: 'doughnut',
         data: { labels: ['Students','Teachers','Admins'],
-            datasets: [{ data:[192,48,8], backgroundColor:['#5b6ef5','#38bdf8','#a78bfa'], borderWidth:0 }] },
+            datasets: [{ data:[192,48,8], backgroundColor:['#c8a84b','#2d7a55','#1e2d4a'], borderWidth: 0, borderRadius: 3 }] },
         options: { responsive:false, cutout:'72%',
             plugins: { legend:{ display:false }, tooltip:{ enabled:true } } }
     });
@@ -619,12 +619,12 @@ function drawRequestChart() {
     const data   = [120,80,60,45,40,55,200,450,620,700,680,710,650,600,580,610,700,750,680,600,400,300,200,140];
     new Chart(ctx, {
         type: 'bar',
-        data: { labels, datasets: [{ data, backgroundColor: data.map(v=>v>600?'#5b6ef5':'rgba(91,110,245,0.3)'), borderRadius:3, borderWidth:0 }] },
+        data: { labels, datasets: [{ data, backgroundColor: data.map(v=>v>600?'#c8a84b':'rgba(200,168,75,0.28)'), borderRadius:3, borderWidth:0 }] },
         options: { responsive:true, maintainAspectRatio:false,
             plugins: { legend:{ display:false } },
             scales: {
-                x: { ticks:{ color:'#7a8099', font:{size:10}, maxTicksLimit:12 }, grid:{ display:false }, border:{display:false} },
-                y: { ticks:{ color:'#7a8099', font:{size:10} }, grid:{ color:'rgba(255,255,255,0.04)' }, border:{display:false} }
+                x: { ticks:{ color:'#7a7160', font:{size:10}, maxTicksLimit:12 }, grid:{ display:false }, border:{display:false} },
+                y: { ticks:{ color:'#7a7160', font:{size:10} }, grid:{ color:'rgba(255,255,255,0.04)' }, border:{display:false} }
             }
         }
     });
@@ -632,12 +632,12 @@ function drawRequestChart() {
 
 // ── System log ────────────────────────────────────────────────────────────────
 const LOG_TEMPLATES = [
-    () => `<span style="color:#5b6ef5">[INFO]</span>  GET /api/tasks 200 — 45ms`,
-    () => `<span style="color:#2dd4a0">[INFO]</span>  POST /api/auth/login 200 — 88ms`,
-    () => `<span style="color:#f5a623">[WARN]</span>  Slow query detected: 340ms`,
-    () => `<span style="color:#5b6ef5">[INFO]</span>  Socket connected: user-${Math.floor(Math.random()*200+10)}`,
-    () => `<span style="color:#5b6ef5">[INFO]</span>  PATCH /api/users/${Math.floor(Math.random()*10+1)} 200 — 31ms`,
-    () => `<span style="color:#f05b5b">[ERROR]</span> Rate limit hit: 192.168.1.${Math.floor(Math.random()*50)}`,
+    () => `<span style="color:#c8a84b">[INFO]</span>  GET /api/tasks 200 — 45ms`,
+    () => `<span style="color:#5db87a">[INFO]</span>  POST /api/auth/login 200 — 88ms`,
+    () => `<span style="color:#d4954a">[WARN]</span>  Slow query detected: 340ms`,
+    () => `<span style="color:#c8a84b">[INFO]</span>  Socket connected: user-${Math.floor(Math.random()*200+10)}`,
+    () => `<span style="color:#c8a84b">[INFO]</span>  PATCH /api/users/${Math.floor(Math.random()*10+1)} 200 — 31ms`,
+    () => `<span style="color:#e07070">[ERROR]</span> Rate limit hit: 192.168.1.${Math.floor(Math.random()*50)}`,
 ];
 function appendSystemLog() {
     const el = document.getElementById('system-log');
