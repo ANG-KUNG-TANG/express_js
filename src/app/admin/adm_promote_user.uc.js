@@ -1,6 +1,6 @@
 // app/admin/adm_promote_user.uc.js
-
-import { promoteToAdmin, sanitizeUser } from '../../infrastructure/repositories/user_repo.js';
+import { sanitizeUser } from '../../infrastructure/mapper/user.mapper.js';
+import { promoteToAdmin,  } from '../../infrastructure/repositories/user_repo.js';
 import { NotificationService }                        from '../../core/services/notification.service.js';
 import logger                                         from '../../core/logger/logger.js';
 

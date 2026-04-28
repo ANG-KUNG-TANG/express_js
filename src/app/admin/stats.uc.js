@@ -1,4 +1,4 @@
-import UserModel        from '../../domain/models/user_model.js';
+import UserModel        from '../../infrastructure/models/user_model.js';
 import { findTasks }    from '../../infrastructure/repositories/task_repo.js';
 import { UserRole }     from '../../domain/base/user_enums.js';
 import logger           from '../../core/logger/logger.js';

@@ -247,3 +247,51 @@ index 1e058757a28a1e067778cc11bed24162663ab5cb..52bb41e3205f9754021182be78bfb429
 +RATE_LIMIT_API_MAX=300
 +RATE_LIMIT_AUTH_MAX=20
 +```
+
+
+COMPOSE_DEV  = docker compose -f docker-compose.dev.yml
+COMPOSE_PROD = docker compose -f docker-compose.prod.yml
+IMAGE        = baw1463i/ielts-js:latest
+
+# ── Dev ───────────────────────────────────────────────────────────────────────
+dev-up:
+	$(COMPOSE_DEV) up
+
+dev-up-d:
+	$(COMPOSE_DEV) up -d
+
+dev-down:
+	$(COMPOSE_DEV) down
+
+dev-restart:
+	$(COMPOSE_DEV) restart app
+
+dev-logs:
+	$(COMPOSE_DEV) logs -f app
+
+# ── Prod (local image build + push) ──────────────────────────────────────────
+build:
+	docker build -f Dockerfile.prod -t $(IMAGE) .
+
+push: build
+	docker push $(IMAGE)
+
+# ── Prod (on server: pull + up) ───────────────────────────────────────────────
+prod-pull:
+	docker pull $(IMAGE)
+
+prod-up: prod-pull
+	$(COMPOSE_PROD) up -d
+
+prod-down:
+	$(COMPOSE_PROD) down
+
+prod-logs:
+	$(COMPOSE_PROD) logs -f app
+
+# ── Utility ───────────────────────────────────────────────────────────────────
+ps:
+	docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+prune:
+	docker system prune -f

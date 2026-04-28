@@ -16,7 +16,7 @@
   color: #64748b;
   transition: background 0.15s, color 0.15s;
 }
-.noti-trigger:hover { background: #f1f5f9; color: #3b5bdb; }
+.noti-trigger:hover { background: var(--surface2); color: var(--accent); }
 .noti-trigger svg { width: 20px; height: 20px; }
 
 /* ── Badge ────────────────────────────────────────────────────────────────── */
@@ -25,7 +25,7 @@
   top: 4px; right: 4px;
   min-width: 16px; height: 16px;
   padding: 0 4px;
-  background: #e11d48;
+  background: var(--red);
   color: #fff;
   font-size: 0.65rem;
   font-weight: 700;
@@ -305,7 +305,7 @@
 .noti-title   { font-weight: 600; font-size: 14px; }
 .noti-mark-all {
     background: none; border: none; cursor: pointer;
-    font-size: 12px; color: #378ADD;
+    font-size: 12px; color: var(--accent);
 }
 .noti-mark-all:hover { text-decoration: underline; }
 
@@ -320,13 +320,13 @@
     transition: background .12s;
 }
 .noti-card:hover           { background: rgba(0,0,0,.03); }
-.noti-card--unread         { background: rgba(55,138,221,.05); }
-.noti-card--unread:hover   { background: rgba(55,138,221,.09); }
+.noti-card--unread         { background: var(--accent-soft); }
+.noti-card--unread:hover   { background: var(--accent-dim); }
 .noti-icon                 { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
 .noti-body                 { flex: 1; min-width: 0; }
 .noti-card-title           { font-weight: 600; font-size: 13px; margin: 0 0 2px; }
-.noti-card-msg             { font-size: 12px; color: var(--color-text-secondary, #666); margin: 0 0 4px; line-height: 1.4; }
-.noti-time                 { font-size: 11px; color: var(--color-text-tertiary, #999); }
+.noti-card-msg             { font-size: 12px; color: var(--text2); margin: 0 0 4px; line-height: 1.4; }
+.noti-time                 { font-size: 11px; color: var(--text3); }
 
 /* ── Footer / load more ───────────────────────────────────────────────────── */
 .noti-load-more {
@@ -337,11 +337,11 @@
     border: none;
     cursor: pointer;
     font-size: 13px;
-    color: #378ADD;
+    color: var(--accent);
     text-align: center;
 }
-.noti-load-more:hover { background: rgba(0,0,0,.03); }
-.noti-empty { padding: 24px 16px; text-align: center; color: var(--color-text-tertiary, #999); font-size: 13px; }
+.noti-load-more:hover { background: var(--surface2); }
+.noti-empty { padding: 24px 16px; text-align: center; color: var(--text3); font-size: 13px; }
 
 /* ── Toast ────────────────────────────────────────────────────────────────── */
 .noti-toast {

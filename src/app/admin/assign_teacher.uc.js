@@ -1,4 +1,5 @@
-import { findUserById, updateUser, sanitizeUser } from '../../infrastructure/repositories/user_repo.js';
+import { findUserById, updateUser } from '../../infrastructure/repositories/user_repo.js';
+import { sanitizeUser } from '../../infrastructure/mapper/user.mapper.js';
 import { UserRole } from '../../domain/base/user_enums.js';
 import { UserAlreadyAdminError } from '../../core/errors/user.errors.js';
 import logger from '../../core/logger/logger.js';

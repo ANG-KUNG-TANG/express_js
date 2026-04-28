@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Review Task — WriteSystem</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
+</head>
+
+<body class="admin-layout">
+
+    <div id="admin-sidebar"></div>
+
+    <main class="admin-main">
+        <header class="page-header">
+            <div>
+                <a href="/pages/admin/review.html" class="btn btn--sm btn--ghost" style="margin-bottom:.75rem">
+                    ← Back to Queue
+                </a>
+                <h1 class="page-title" id="task-title">Loading…</h1>
+                <p class="page-subtitle" id="task-type"></p>
+            </div>
+            <div id="task-status"></div>
+        </header>
+
+        <!-- Task details card -->
+        <div class="card" style="margin-bottom:1.5rem">
+            <h2 class="section-title">Prompt</h2>
+            <p id="task-prompt" class="text-muted" style="white-space:pre-wrap"></p>
+        </div>
+
+        <!-- Submission card -->
+        <div class="card" style="margin-bottom:1.5rem">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
+                <h2 class="section-title" style="margin:0">Student Submission</h2>
+                <span id="task-wordcount" class="badge badge--default"></span>
+            </div>
+            <p id="task-submission" class="text-muted" style="white-space:pre-wrap"></p>
+        </div>
+
+        <!-- Review section -->
+        <div id="review-section" class="card" style="margin-bottom:1.5rem; display:none">
+            <h2 class="section-title">Feedback</h2>
+            <textarea
+                id="feedback-input"
+                class="form-control"
+                rows="6"
+                placeholder="Write your feedback for the student…"
+                style="width:100%; margin-bottom:1rem"
+            ></textarea>
+            <button id="review-btn" class="btn btn--primary">Save Review</button>
+        </div>
+
+        <!-- Score section -->
+        <div id="score-section" class="card" style="display:none">
+            <h2 class="section-title">Band Score</h2>
+            <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap">
+                <input
+                    id="score-input"
+                    type="number"
+                    class="form-control"
+                    min="0" max="9" step="0.5"
+                    placeholder="0 – 9"
+                    style="width:120px"
+                />
+                <button id="score-btn" class="btn btn--primary">Save Score</button>
+                <span id="final-score" class="badge badge--success" style="display:none; font-size:1rem; padding:.4rem .9rem"></span>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="alert">
+        <span class="t-icon"></span>
+        <span id="toast-msg"></span>
+    </div>
+
+    <script type="module" src="/js/pages/admin/review_detail.js"></script>
+
+</body>
+</html>

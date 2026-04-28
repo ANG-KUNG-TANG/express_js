@@ -1,6 +1,6 @@
 import { initNavbar } from "../../../components/navbar.js";
 import { taskCard } from "../../../components/taskCard.js";
-import { toast } from "../../core/toast.js";
+import { toast } from "../../utils/toast.js";
 import { requireAuth } from "../../core/router.js";
 import { isAdmin, isTeacher, getUser } from "../../core/auth.js";
 import { apiFetch } from "../../core/api.js";

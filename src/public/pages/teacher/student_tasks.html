@@ -6,34 +6,10 @@
     <title>Student Tasks — WriteSystem</title>
     <script src="/js/core/theme.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/pages/admin.css" />
-    <style>
-        /* ── Teacher accent ───────────────────────────────────────────────── */
-        .btn--primary {
-            background: var(--sage, #3a7d5a)   !important;
-            border-color: var(--sage, #3a7d5a) !important;
-        }
-        .btn--primary:hover:not(:disabled) {
-            background: #4a9d6a   !important;
-            border-color: #4a9d6a !important;
-        }
-
-        /* ── Stat pills ──────────────────────────────────────────────────── */
-        .stat-pill {
-            font-size: 11px; padding: 2px 9px; border-radius: 20px;
-            background: rgba(255,255,255,.06); color: var(--text2);
-            border: 1px solid var(--border); font-family: var(--font-mono, monospace);
-        }
-        .stat-pill--warning { background: var(--amber-dim); color: var(--amber); border-color: rgba(212,149,74,.25); }
-        .stat-pill--success { background: var(--green-dim);  color: var(--green); border-color: rgba(93,184,122,.2); }
-
-        /* ── Empty / loading ──────────────────────────────────────────────── */
-        .empty-state { padding: 40px 20px; text-align: center; color: var(--text3); font-size: 14px; }
-        .error-state { padding: 16px 20px; color: var(--red); font-size: 13px; }
-        .loading     { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
-    </style>
+    <link rel="stylesheet" href="/css/pages/teacher.css" />
+    
 </head>
-<body>
+<body data-role="teacher">
 <!--
   Teacher sidebar injected here by initTeacherSidebar().
   Do NOT add a hardcoded <aside>.

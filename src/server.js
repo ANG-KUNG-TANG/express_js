@@ -29,6 +29,7 @@ import { initSocket }                        from './core/services/socket.servic
 import { connectRedis, disconnectRedis }     from './core/services/redis.service.js';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
+import { apiLimiter } from './middleware/rate_limit.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -48,6 +49,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(requestLoggerMiddleware);
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/api ', apiLimiter);
 
 const uploadsDir = path.join(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsDir)) {

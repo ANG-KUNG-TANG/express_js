@@ -20,6 +20,16 @@ import { admListFlagsUC }                 from '../../app/admin/adm_list_flags.u
 import { admDeleteContentUC }             from '../../app/admin/adm_delete_content.uc.js';
 import { admListAuditLogsUC }             from '../../app/admin/adm_list_audit_logs.uc.js';
 import { admSendNotificationUC}           from '../../app/admin/adm_send_noti.uc.js';
+import { adminSearchUsersUC }        from '../../app/admin/adm_search_user.uc.js';
+import { adminSuspendUserUC }        from '../../app/admin/adm_suspend_user.uc.js';
+import { adminReactivateUserUC }     from '../../app/admin/adm_reactivate_user.uc.js';
+import { adminForcePasswordResetUC } from '../../app/admin/adm_force_password_reset.uc.js';
+import { adminDemoteUserUC }         from '../../app/admin/adm_demote_user.uc.js';
+import { adminBulkDeleteUsersUC }    from '../../app/admin/adm_bulk_delete_user.uc.js';
+import { adminBulkSuspendUsersUC }   from '../../app/admin/adm_bulk_suspend_user.uc.js';
+import { adminBulkAssignTeacherUC }  from '../../app/admin/adm_bulk_assign_teacher.uc.js';
+import { adminTeacherWorkloadsUC }   from '../../app/admin/adm_teacher_workload.uc.js';
+import { adminUserActivityUC }       from '../../app/admin/adm_user_activity.uc.js';
 import { sendSuccess }                     from '../response_formatter.js';
 import { HTTP_STATUS }                     from '../http_status.js';
 import auditLogger                         from '../../core/logger/audit.logger.js';
@@ -173,4 +183,96 @@ export const sendNotification = async (req, res) => {
     });
     auditLogger.log(AuditAction.NOTIFICATION_SENT, { audience, targetUserId, ...result }, req);
     return sendSuccess(res, result, HTTP_STATUS.CREATED);
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Users — Search & Filter
+// GET /admin/users/search?q=&role=&status=&from=&to=&page=&limit=
+// ─────────────────────────────────────────────────────────────────────────────
+export const searchUsers = async (req, res) => {
+    const { q, role, status, from, to, page, limit } = req.query;
+    const result = await adminSearchUsersUC({ q, role, status, from, to, page, limit });
+    return sendSuccess(res, result, HTTP_STATUS.OK);
+};
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Users — Suspend / Reactivate
+// PATCH /admin/users/:id/suspend
+// PATCH /admin/users/:id/reactivate
+// ─────────────────────────────────────────────────────────────────────────────
+export const suspendUser = async (req, res) => {
+    const user = await adminSuspendUserUC(req.user.id, req.params.id);
+    auditLogger.log(AuditAction.USER_SUSPENDED, { targetUserId: req.params.id }, req);
+    return sendSuccess(res, user, HTTP_STATUS.OK);
+};
+ 
+export const reactivateUser = async (req, res) => {
+    const user = await adminReactivateUserUC(req.user.id, req.params.id);
+    auditLogger.log(AuditAction.USER_REACTIVATED, { targetUserId: req.params.id }, req);
+    return sendSuccess(res, user, HTTP_STATUS.OK);
+};
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Users — Force Password Reset
+// POST /admin/users/:id/force-password-reset
+// ─────────────────────────────────────────────────────────────────────────────
+export const forcePasswordReset = async (req, res) => {
+    const user = await adminForcePasswordResetUC(req.user.id, req.params.id);
+    auditLogger.log(AuditAction.USER_PASSWORD_RESET_FORCED, { targetUserId: req.params.id }, req);
+    return sendSuccess(res, user, HTTP_STATUS.OK);
+};
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Users — Demote to Student
+// PATCH /admin/users/:id/demote
+// ─────────────────────────────────────────────────────────────────────────────
+export const demoteUser = async (req, res) => {
+    const user = await adminDemoteUserUC(req.user.id, req.params.id);
+    auditLogger.log(AuditAction.USER_DEMOTED, { targetUserId: req.params.id }, req);
+    return sendSuccess(res, user, HTTP_STATUS.OK);
+};
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Users — Bulk Operations
+// DELETE /admin/users/bulk          body: { ids: [] }
+// PATCH  /admin/users/bulk/suspend  body: { ids: [] }
+// PATCH  /admin/users/bulk/assign-teacher  body: { studentIds: [], teacherId }
+// ─────────────────────────────────────────────────────────────────────────────
+export const bulkDeleteUsers = async (req, res) => {
+    const { ids } = req.body;
+    const result = await adminBulkDeleteUsersUC(req.user.id, ids);
+    auditLogger.log(AuditAction.USERS_BULK_DELETED, { count: result.deleted }, req);
+    return sendSuccess(res, result, HTTP_STATUS.OK);
+};
+ 
+export const bulkSuspendUsers = async (req, res) => {
+    const { ids } = req.body;
+    const result = await adminBulkSuspendUsersUC(req.user.id, ids);
+    auditLogger.log(AuditAction.USERS_BULK_SUSPENDED, { count: result.suspended }, req);
+    return sendSuccess(res, result, HTTP_STATUS.OK);
+};
+ 
+export const bulkAssignTeacher = async (req, res) => {
+    const { studentIds, teacherId } = req.body;
+    const result = await adminBulkAssignTeacherUC(req.user.id, { studentIds, teacherId });
+    auditLogger.log(AuditAction.USERS_BULK_TEACHER_ASSIGNED, { teacherId, count: result.assigned }, req);
+    return sendSuccess(res, result, HTTP_STATUS.OK);
+};
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Teachers — Workload Overview
+// GET /admin/teachers/workloads
+// ─────────────────────────────────────────────────────────────────────────────
+export const getTeacherWorkloads = async (req, res) => {
+    const result = await adminTeacherWorkloadsUC();
+    return sendSuccess(res, result, HTTP_STATUS.OK);
+};
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Users — Activity Summary
+// GET /admin/users/:id/activity
+// ─────────────────────────────────────────────────────────────────────────────
+export const getUserActivity = async (req, res) => {
+    const result = await adminUserActivityUC(req.params.id);
+    return sendSuccess(res, result, HTTP_STATUS.OK);
 };

@@ -1,5 +1,5 @@
 
-import { Notification as NotificationModel } from '../../domain/models/notification_model.js';
+import { Notification as NotificationModel } from '../../infrastructure/models/notification_model.js';
 import { Notification }                      from '../../domain/entities/notificaiton_entity.js';
 
 const toEntity = (doc) => doc

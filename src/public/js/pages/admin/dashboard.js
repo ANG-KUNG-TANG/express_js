@@ -7,11 +7,13 @@
 import { requireAdmin }     from '../../core/router.js';
 import { apiFetch }         from '../../core/api.js';
 import { statusBadge }      from '../../../components/statusBadge.js';
-import { toast }            from '../../core/toast.js';
-import { initAdminSidebar } from '../../../components/admin_sidebar.js';
+import { toast }            from '../../utils/toast.js';
+import { initAdminSidebar}  from '../../../components/admin_sidebar.js';
+
 
 requireAdmin();
 initAdminSidebar();
+// Sidebar is injected by admin_nav.js (loaded via <script type="module"> in HTML).
 
 /* global openModal, closeModal */
 
@@ -67,7 +69,8 @@ const loadStatsAndActivity = async () => {
     const actEl = document.getElementById('activity-list');
     if (actEl) actEl.innerHTML = '<p class="loading">Loading…</p>';
     try {
-        const { data: stats } = await apiFetch('/api/admin/stats');
+        const res   = await apiFetch('/api/admin/stats');
+        const stats = res?.data ?? res ?? {};
         setStat('stat-total-users', stats.users?.total);
         setStat('stat-new-users',   stats.users?.newThisWeek);
         setStat('stat-teachers',    stats.users?.teachers);
@@ -85,8 +88,9 @@ const loadPendingQueue = async () => {
     if (!el) return;
     el.innerHTML = '<p class="loading">Loading…</p>';
     try {
-        const { data: tasks } = await apiFetch('/api/admin/writing-tasks?status=SUBMITTED');
-        const sorted = (tasks ?? []).sort(
+        const res   = await apiFetch('/api/admin/writing-tasks?status=SUBMITTED');
+        const tasks = res?.data ?? res ?? [];
+        const sorted = (Array.isArray(tasks) ? tasks : []).sort(
             (a, b) => new Date(a.submittedAt ?? a.createdAt) - new Date(b.submittedAt ?? b.createdAt)
         );
         if (!sorted.length) {
@@ -104,7 +108,7 @@ const loadPendingQueue = async () => {
                         Submitted ${fmtTime(t.submittedAt ?? t._submittedAt ?? t.createdAt)}
                     </span>
                 </div>
-                <a href="/pages/admin/review.html?id=${tid}" class="btn btn--warning btn--sm">Review</a>
+                <a href="/pages/admin/review_detail.html?id=${tid}" class="btn btn--warning btn--sm">Review</a>
             </div>`;
         }).join('');
     } catch (err) {
@@ -128,7 +132,7 @@ const renderActivity = (recent = []) => {
             <td>${t.bandScore != null ? `Band ${t.bandScore}` : '—'}</td>
             <td class="col-mono">${fmtTime(t.updatedAt)}</td>
             <td class="actions-cell">
-                <a href="/pages/admin/review.html?id=${t.id ?? t._id}" class="btn btn--ghost btn--xs">View</a>
+                <a href="/pages/admin/review_detail.html?id=${t.id ?? t._id}" class="btn btn--ghost btn--xs">View</a>
             </td>
         </tr>`).join('')}
         </tbody>
@@ -190,11 +194,13 @@ const loadUsers = async (email = '') => {
     try {
         let users;
         if (email) {
-            const { data: user } = await apiFetch(`/api/admin/users/email/${encodeURIComponent(email)}`);
-            users = user ? [user] : [];
+            const res  = await apiFetch(`/api/admin/users?email=${encodeURIComponent(email)}`);
+            const found = res?.data ?? res ?? [];
+            // API may return a single object or an array
+            users = Array.isArray(found) ? found : (found && found._id || found && found.id ? [found] : []);
         } else {
-            const { data } = await apiFetch('/api/admin/users');
-            users = data ?? [];
+            const res = await apiFetch('/api/admin/users');
+            users = res?.data ?? res ?? [];
         }
         renderUsers(users);
     } catch (err) {
@@ -248,8 +254,8 @@ window.openLinkTeacher = async (uid) => {
     if (sel) {
         sel.innerHTML = '<option value="">Loading teachers…</option>';
         try {
-            const { data } = await apiFetch('/api/admin/users');
-            const teachers = (data ?? []).filter(u => u.role === 'teacher');
+            const res      = await apiFetch('/api/admin/users');
+            const teachers = (res?.data ?? res ?? []).filter(u => u.role === 'teacher');
             sel.innerHTML = '<option value="">Select a teacher</option>' +
                 teachers.map(t => `<option value="${t._id ?? t.id}">${esc(t.name ?? t.username ?? t.email)}</option>`).join('');
         } catch {
@@ -312,20 +318,21 @@ const loadTasks = async () => {
         const url = q
             ? `/api/admin/writing-tasks/search?q=${encodeURIComponent(q)}&${params}`
             : `/api/admin/writing-tasks?${params}`;
-        const { data: tasks } = await apiFetch(url);
-        if (!(tasks ?? []).length) { el.innerHTML = '<p class="empty-state">No tasks found.</p>'; return; }
+        const res   = await apiFetch(url);
+        const tasks = res?.data ?? res ?? [];
+        if (!(Array.isArray(tasks) ? tasks : []).length) { el.innerHTML = '<p class="empty-state">No tasks found.</p>'; return; }
         el.innerHTML = `
         <table class="data-table">
             <thead><tr><th>Title</th><th>Type</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead>
             <tbody>
-            ${tasks.map(t => {
+            ${(Array.isArray(tasks) ? tasks : []).map(t => {
                 const tid = t._id ?? t.id;
                 const st  = t.status ?? t._status;
                 const action = st === 'SUBMITTED'
-                    ? `<a href="/pages/admin/review.html?id=${tid}" class="btn btn--warning btn--xs">Review</a>`
+                    ? `<a href="/pages/admin/review_detail.html?id=${tid}" class="btn btn--warning btn--xs">Review</a>`
                     : st === 'REVIEWED'
-                    ? `<a href="/pages/admin/review.html?id=${tid}" class="btn btn--info    btn--xs">Score</a>`
-                    : `<a href="/pages/admin/review.html?id=${tid}" class="btn btn--ghost   btn--xs">View</a>`;
+                    ? `<a href="/pages/admin/review_detail.html?id=${tid}" class="btn btn--info    btn--xs">Score</a>`
+                    : `<a href="/pages/admin/review_detail.html?id=${tid}" class="btn btn--ghost   btn--xs">View</a>`;
                 return `<tr>
                     <td class="col-title">${t.title ?? t._title ?? '—'}</td>
                     <td>${t.taskType ?? t._taskType ?? '—'}</td>
@@ -368,7 +375,8 @@ document.getElementById('promote-apply-btn')?.addEventListener('click', async ()
     const role  = window.__selectedPromoteRole;
     if (!email || !role) { toast('Enter an email and select a role.', 'error'); return; }
     try {
-        const { data: found } = await apiFetch(`/api/admin/users/email/${encodeURIComponent(email)}`);
+        const res   = await apiFetch(`/api/admin/users/email/${encodeURIComponent(email)}`);
+        const found = res?.data ?? res;
         if (!found) { toast('User not found.', 'error'); return; }
         const uid = found._id ?? found.id;
         await apiFetch(`/api/admin/users/${uid}/promote`, {

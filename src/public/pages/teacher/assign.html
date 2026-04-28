@@ -6,39 +6,10 @@
     <title>Assign Task — WriteSystem</title>
     <script src="/js/core/theme.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/pages/admin.css" />
-    <style>
-        /* ── Teacher accent ───────────────────────────────────────────────── */
-        .btn--primary {
-            background: var(--sage, #3a7d5a)   !important;
-            border-color: var(--sage, #3a7d5a) !important;
-        }
-        .btn--primary:hover:not(:disabled) {
-            background: #4a9d6a   !important;
-            border-color: #4a9d6a !important;
-        }
-        .input:focus, .select:focus, select.input:focus, textarea.input:focus {
-            border-color: var(--sage, #3a7d5a);
-            box-shadow: 0 0 0 3px rgba(58,125,90,.15);
-        }
-
-        /* ── Spinner ──────────────────────────────────────────────────────── */
-        .spinner {
-            display: inline-block; width: 12px; height: 12px;
-            border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
-            border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ── Mode section dividers ───────────────────────────────────────── */
-        #section-new, #section-existing, #section-topic {
-            border-top: 1px solid var(--border);
-            margin-top: 20px;
-            padding-top: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/pages/teacher.css" />
+    
 </head>
-<body>
+<body data-role="teacher">
 <!--
   Teacher sidebar injected here by initTeacherSidebar().
   Do NOT add a hardcoded <aside>.
@@ -76,8 +47,7 @@
             </span>
             <span style="margin-left:auto;font-size:10px;font-weight:700;letter-spacing:1px;
                          padding:2px 9px;border-radius:20px;
-                         border:1px solid var(--sage,#3a7d5a);
-                         color:var(--sage,#3a7d5a);background:rgba(58,125,90,.1)">TEACHER</span>
+                         border:1px solid var(--accent); color:var(--accent); background:var(--accent-dim)">TEACHER</span>
         </div>
 
         <form id="assign-form" novalidate>
@@ -96,7 +66,7 @@
                     </div>
                     <div style="display:flex;align-items:center;gap:8px">
                         <input type="checkbox" id="assign-all"
-                               style="width:15px;height:15px;accent-color:var(--sage,#3a7d5a);cursor:pointer" />
+                               style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer" />
                         <label for="assign-all" id="assign-all-label"
                                style="font-size:.82rem;color:var(--text2);cursor:pointer">
                             Assign to all my students

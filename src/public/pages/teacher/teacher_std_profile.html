@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Profile — WriteSystem</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/teacher.css" />
+</head>
+<body>
+    <div class="admin-main">
+        <!-- Sidebar injected by teacher_nav.js -->
+        <div id="teacher-nav-placeholder"></div>
+
+        <div class="adm-content">
+            <!-- Top bar -->
+            <div class="adm-topbar" id="navbar-placeholder"></div>
+
+            <!-- Page content -->
+            <div class="adm-inner" id="sp-root">
+                <!-- Rendered by teacher_student_profile.js -->
+                <div class="sp-skeleton" style="height:28px;width:200px;margin-bottom:2rem;"></div>
+                <div class="sp-skeleton" style="height:180px;border-radius:14px;margin-bottom:1.5rem;"></div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+                    <div class="sp-skeleton" style="height:80px;border-radius:10px;"></div>
+                    <div class="sp-skeleton" style="height:80px;border-radius:10px;"></div>
+                    <div class="sp-skeleton" style="height:80px;border-radius:10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../../js/teacher/teacher_student_profile.js"></script>
+</body>
+</html>

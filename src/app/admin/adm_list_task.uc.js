@@ -1,4 +1,4 @@
-import TaskModel from '../../domain/models/task_model.js';
+import TaskModel from '../../infrastructure/models/task_model.js';
 import logger from '../../core/logger/logger.js';
 
 export const adminListTasksUC = async ({ status, page = 1, limit = 50 } = {}) => {

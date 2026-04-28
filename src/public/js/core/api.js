@@ -165,6 +165,7 @@ export const taskAPI = {
 };
 
 export const teacherAPI = {
+    // ── Existing ──────────────────────────────────────────────────────────────
     assign:        (data)      => _post('/api/teacher/assign', data),
     listStudents:  ()          => _get('/api/teacher/students'),
     studentTasks:  (studentId) => _get(`/api/teacher/students/${studentId}/tasks`),
@@ -173,31 +174,64 @@ export const teacherAPI = {
     searchTasks:   (q)         => _get(`/api/teacher/writing-tasks/search?q=${encodeURIComponent(q)}`),
     getTask:       (id)        => _get(`/api/teacher/writing-tasks/${id}`),
     reviewTask:    (id, data)  => _patch(`/api/teacher/writing-tasks/${id}/review`, data),
+
+    // ── New ───────────────────────────────────────────────────────────────────
+    // Single student profile (only succeeds if student is assigned to this teacher)
+    getStudent:     (studentId) => _get(`/api/teacher/students/${studentId}`),
+    // Dashboard summary: studentCount, pendingReview, activeAssignments, reviewedThisMonth
+    dashboardStats: ()          => _get('/api/teacher/dashboard/stats'),
+    // Teacher's own profile
+    getProfile:     ()          => _get('/api/teacher/profile'),
+    updateProfile:  (data)      => _patch('/api/teacher/profile', data),
 };
 
 export const adminAPI = {
-    stats:            ()            => _get('/api/admin/stats'),
-    listUsers:        ()            => _get('/api/admin/users'),
-    getUserByEmail:   (email)       => _get(`/api/admin/users/email/${encodeURIComponent(email)}`),
-    promoteUser:      (id, data)    => _patch(`/api/admin/users/${id}/promote`, data),
-    assignTeacher:    (id, data)    => _patch(`/api/admin/users/${id}/assign-teacher`, data),
-    linkTeacher:      (id, data)    => _patch(`/api/admin/users/${id}/link-teacher`, data),
-    unlinkTeacher:    (id)          => _patch(`/api/admin/users/${id}/unlink-teacher`),
-    deleteUser:       (id)          => _del(`/api/admin/users/${id}`),
-    listTasks:        (params = {}) => _get('/api/admin/writing-tasks?' + new URLSearchParams(params)),
-    searchTasks:      (q)           => _get(`/api/admin/writing-tasks/search?q=${encodeURIComponent(q)}`),
-    reviewTask:       (id, data)    => _patch(`/api/admin/writing-tasks/${id}/review`, data),
-    scoreTask:        (id, data)    => _patch(`/api/admin/writing-tasks/${id}/score`, data),
-    transferTasks:    (data)        => _post('/api/admin/writing-tasks/transfer', data),
-    // ── Content moderation ───────────────────────────────────────────────────
-    listFlags:        (params = {}) => _get('/api/admin/flags?' + new URLSearchParams(params)),
-    flagContent:      (data)        => _post('/api/admin/flags', data),
-    resolveFlag:      (flagId)      => _post(`/api/admin/flags/${flagId}/resolve`),
-    deleteContent:    (taskId)      => _del(`/api/admin/content/${taskId}`),
-    // ── Audit logs ───────────────────────────────────────────────────────────
-    listAuditLogs:    (params = {}) => _get('/api/admin/audit-logs?' + new URLSearchParams(params)),
-    // ── Notifications ────────────────────────────────────────────────────────
-    sendNotification: (data)        => _post('/api/admin/notifications', data),
+    // ── Dashboard ─────────────────────────────────────────────────────────────
+    stats:            ()                     => _get('/api/admin/stats'),
+
+    // ── Users — list & lookup ─────────────────────────────────────────────────
+    listUsers:        ()                     => _get('/api/admin/users'),
+    searchUsers:      (params = {})          => _get('/api/admin/users/search?' + new URLSearchParams(params)),
+    getUserByEmail:   (email)                => _get(`/api/admin/users/email/${encodeURIComponent(email)}`),
+    getUserActivity:  (id)                   => _get(`/api/admin/users/${id}/activity`),
+
+    // ── Users — single actions ────────────────────────────────────────────────
+    promoteUser:      (id)                   => _patch(`/api/admin/users/${id}/promote`),
+    assignTeacher:    (id)                   => _patch(`/api/admin/users/${id}/assign-teacher`),
+    linkTeacher:      (id, data)             => _patch(`/api/admin/users/${id}/link-teacher`, data),
+    unlinkTeacher:    (id)                   => _patch(`/api/admin/users/${id}/unlink-teacher`),
+    demoteUser:       (id)                   => _patch(`/api/admin/users/${id}/demote`),
+    suspendUser:      (id)                   => _patch(`/api/admin/users/${id}/suspend`),
+    reactivateUser:   (id)                   => _patch(`/api/admin/users/${id}/reactivate`),
+    forcePasswordReset: (id)                 => _post(`/api/admin/users/${id}/force-password-reset`),
+    deleteUser:       (id)                   => _del(`/api/admin/users/${id}`),
+
+    // ── Users — bulk actions ──────────────────────────────────────────────────
+    bulkDeleteUsers:      (ids)              => apiFetch('/api/admin/users/bulk', { method: 'DELETE', body: JSON.stringify({ ids }) }),
+    bulkSuspendUsers:     (ids)              => _patch('/api/admin/users/bulk/suspend', { ids }),
+    bulkAssignTeacher:    (studentIds, teacherId) => _patch('/api/admin/users/bulk/assign-teacher', { studentIds, teacherId }),
+
+    // ── Teachers ──────────────────────────────────────────────────────────────
+    teacherWorkloads: ()                     => _get('/api/admin/teachers/workloads'),
+
+    // ── Writing tasks ─────────────────────────────────────────────────────────
+    listTasks:        (params = {})          => _get('/api/admin/writing-tasks?' + new URLSearchParams(params)),
+    searchTasks:      (q, status)            => _get(`/api/admin/writing-tasks/search?${new URLSearchParams({ q, ...(status && { status }) })}`),
+    reviewTask:       (id, data)             => _patch(`/api/admin/writing-tasks/${id}/review`, data),
+    scoreTask:        (id, data)             => _patch(`/api/admin/writing-tasks/${id}/score`, data),
+    transferTasks:    (data)                 => _post('/api/admin/writing-tasks/transfer', data),
+
+    // ── Content moderation ────────────────────────────────────────────────────
+    listFlags:        (params = {})          => _get('/api/admin/flags?' + new URLSearchParams(params)),
+    flagContent:      (data)                 => _post('/api/admin/flags', data),
+    resolveFlag:      (flagId)               => _patch(`/api/admin/flags/${flagId}/resolve`),
+    deleteContent:    (taskId)               => _del(`/api/admin/content/${taskId}`),
+
+    // ── Audit logs ────────────────────────────────────────────────────────────
+    listAuditLogs:    (params = {})          => _get('/api/admin/audit-logs?' + new URLSearchParams(params)),
+
+    // ── Notifications ─────────────────────────────────────────────────────────
+    sendNotification: (data)                 => _post('/api/admin/notifications', data),
 };
 
 export const notificationAPI = {

@@ -7,6 +7,12 @@ import { teacherGetTaskUC }             from '../../app/teacher_uc/teacher_get_t
 import { teacherAssignTaskUC }          from '../../app/teacher_uc/teacher_assign_task.uc.js';
 import { teacherListStudentsUC }        from '../../app/teacher_uc/teacher_list_students.uc.js';
 import { teacherListAssignedTasksUC }   from '../../app/teacher_uc/teacher_list_assign_tasks.uc.js';
+// ── New UCs ───────────────────────────────────────────────────────────────────
+import { teacherGetStudentUC }          from '../../app/teacher_uc/teacher_get_student.uc.js';
+import { teacherGetDashboardStatsUC }   from '../../app/teacher_uc/teacher_get_dsh_stats.uc.js';
+import { teacherGetProfileUC }          from '../../app/teacher_uc/teacher_get_profile.uc.js';
+import { teacherUpdateProfileUC }       from '../../app/teacher_uc/teacher_update_profile.uc.js';
+
 import { sendSuccess }                  from '../response_formatter.js';
 import { HTTP_STATUS }                  from '../http_status.js';
 import { recordAudit }                  from '../../core/services/audit.service.js';
@@ -45,9 +51,6 @@ export const getTask = async (req, res) => {
 };
 
 // PATCH /api/teacher/writing-tasks/:id/review
-// Passes a normalised teacher object so teacherReviewTaskUC's ownership check
-// (teacher.id.toString() === task._assignedBy.toString()) never fails silently
-// due to a missing .id field on req.user.
 export const reviewTask = async (req, res) => {
     const teacher             = asTeacher(req.user);
     const { id }              = req.params;
@@ -63,7 +66,7 @@ export const reviewTask = async (req, res) => {
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
-// ── New handlers — assignment system ──────────────────────────────────────────
+// ── Assignment system ─────────────────────────────────────────────────────────
 
 // POST /api/teacher/assign
 export const assignTask = async (req, res) => {
@@ -108,4 +111,44 @@ export const listAssignedTasks = async (req, res) => {
         limit:            req.query.limit,
     });
     return sendSuccess(res, result, HTTP_STATUS.OK);
+};
+
+// ── NEW handlers ──────────────────────────────────────────────────────────────
+
+// GET /api/teacher/students/:studentId
+// Returns the full profile of a single student who is assigned to this teacher.
+// Ownership is enforced at the repo level — a student belonging to another
+// teacher returns 404, not 403, to avoid leaking user existence.
+export const getStudent = async (req, res) => {
+    const teacher       = asTeacher(req.user);
+    const { studentId } = req.params;
+    const student       = await teacherGetStudentUC(teacher, studentId);
+    return sendSuccess(res, student, HTTP_STATUS.OK);
+};
+
+// GET /api/teacher/dashboard/stats
+// Returns aggregated counts for the teacher's dashboard card:
+//   studentCount, pendingReview, activeAssignments, reviewedThisMonth
+export const getDashboardStats = async (req, res) => {
+    const teacher = asTeacher(req.user);
+    const stats   = await teacherGetDashboardStatsUC(teacher);
+    return sendSuccess(res, stats, HTTP_STATUS.OK);
+};
+
+// GET /api/teacher/profile
+// Returns the authenticated teacher's own full profile.
+export const getProfile = async (req, res) => {
+    const teacher  = asTeacher(req.user);
+    const profile  = await teacherGetProfileUC(teacher);
+    return sendSuccess(res, profile, HTTP_STATUS.OK);
+};
+
+// PATCH /api/teacher/profile
+// Allows the teacher to update their own name, email, bio, targetBand, examDate.
+// Role and password changes are not permitted here — those go through admin flows.
+export const updateProfile = async (req, res) => {
+    const teacher  = asTeacher(req.user);
+    const updated  = await teacherUpdateProfileUC(teacher, req.body);
+    recordAudit(AuditAction.USER_UPDATED, teacher.id, { fields: Object.keys(req.body) }, req);
+    return sendSuccess(res, updated, HTTP_STATUS.OK);
 };

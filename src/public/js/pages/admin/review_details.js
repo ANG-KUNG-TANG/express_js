@@ -1,5 +1,6 @@
 /**
- * js/pages/admin/review.js  — self-contained, no broken imports
+ * js/pages/admin/review_detail.js
+ * Handles reviewing and scoring a single writing task.
  */
 
 import { getUser }          from '../../core/auth.js';
@@ -20,8 +21,8 @@ const toast = (msg, type = 'success') => {
     if (!t) return;
     if (text) text.textContent = msg;
     if (icon) {
-        icon.textContent  = type === 'error' ? '✕' : '✓';
-        icon.style.color  = type === 'error' ? 'var(--red)' : 'var(--green)';
+        icon.textContent = type === 'error' ? '✕' : '✓';
+        icon.style.color = type === 'error' ? 'var(--red)' : 'var(--green)';
     }
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3500);
@@ -38,12 +39,12 @@ const statusBadge = (status) => {
     return `<span class="badge ${map[status] ?? 'badge--default'}">${status ?? '—'}</span>`;
 };
 
-// ── Get & validate task ID from URL ──────────────────────────────────────────
-// Guard against missing, literal "null"/"undefined", or non-ObjectId strings
+// ── Get & validate task ID from URL ───────────────────────────────────────────
+// Rejects missing, literal "null"/"undefined", or non-ObjectId strings
 // that would cause the API to throw an invalid-id error.
 const id = new URLSearchParams(window.location.search).get('id');
 if (!id || id === 'null' || id === 'undefined' || !/^[a-f\d]{24}$/i.test(id)) {
-    window.location.replace('/pages/admin/review-queue.html');
+    window.location.replace('/pages/admin/review.html');
 }
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
@@ -77,11 +78,11 @@ const renderTask = (task) => {
     const status   = task.status   ?? task._status;
     const feedback = task.feedback ?? task._feedback;
 
-    if (titleEl)      titleEl.textContent     = task.title           ?? task._title          ?? '—';
-    if (typeEl)       typeEl.textContent       = `${task.taskType ?? task._taskType ?? '—'} · ${task.examType ?? task._examType ?? '—'}`;
+    if (titleEl)      titleEl.textContent     = task.title          ?? task._title          ?? '—';
+    if (typeEl)       typeEl.textContent       = `${task.taskType   ?? task._taskType       ?? '—'} · ${task.examType ?? task._examType ?? '—'}`;
     if (statusEl)     statusEl.innerHTML       = statusBadge(status);
-    if (promptEl)     promptEl.textContent     = task.questionPrompt  ?? task._questionPrompt ?? '—';
-    if (submissionEl) submissionEl.textContent = task.submissionText  ?? task._submissionText ?? '(No submission yet)';
+    if (promptEl)     promptEl.textContent     = task.questionPrompt ?? task._questionPrompt ?? '—';
+    if (submissionEl) submissionEl.textContent = task.submissionText ?? task._submissionText ?? '(No submission yet)';
 
     const wc = task.wordCount ?? task._wordCount;
     if (wordCountEl) wordCountEl.textContent = wc ? `${wc} words` : '';
@@ -142,8 +143,8 @@ scoreBtn?.addEventListener('click', async () => {
             body:    JSON.stringify({ bandScore }),
         });
         toast(`Task scored: Band ${bandScore}`, 'success');
-        // After scoring, return to queue so admin continues working
-        setTimeout(() => window.location.replace('/pages/admin/review-queue.html'), 1200);
+        // Return to queue after scoring so admin continues to next task
+        setTimeout(() => window.location.replace('/pages/admin/review.html'), 1200);
     } catch (err) {
         toast(err.message, 'error');
         scoreBtn.disabled    = false;

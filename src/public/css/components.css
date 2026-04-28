@@ -47,9 +47,8 @@
   --transition-mid:  var(--t-mid);
   --transition-slow: var(--t-slow);
 
-  /* Accent dim (used heavily in tasks/vocab) */
-  --accent-dim:      rgba(37,99,235,.10);
-  --accent-light:    var(--accent);
+  /* accent-light alias for vocab/tasks chips */
+  --accent-light:    var(--accent-dim);
 
   /* Extra semantic colours referenced in page CSS */
   --blue:            var(--accent);
@@ -66,7 +65,7 @@
 
 /* ── Badge extras (teacher + info) ─────────────────────────── */
 .badge--teacher { background: var(--info-dim);   color: var(--info);   border-color: rgba(14,165,233,.25); }
-.badge--info    { background: var(--accent-dim);  color: var(--accent); border-color: rgba(37,99,235,.25); }
+.badge--info    { background: var(--accent-dim);  color: var(--accent); border-color: rgba(79,70,229,.25); }
 .badge--warning { background: var(--amber-dim);   color: var(--amber);  border-color: rgba(217,119,6,.25); }
 .badge--success { background: var(--green-dim);   color: var(--green);  border-color: rgba(5,150,105,.25); }
 .badge--xs {

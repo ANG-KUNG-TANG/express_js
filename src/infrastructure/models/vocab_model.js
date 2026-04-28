@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { TopicEnum } from "../base/topics_enums.js";
+import { TopicEnum } from "../../domain/base/topics_enums.js";
 
 const vocabularySchema = new mongoose.Schema(
   {

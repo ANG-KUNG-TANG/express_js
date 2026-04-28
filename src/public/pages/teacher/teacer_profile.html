@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Profile — WriteSystem</title>
+    <script src="/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/teacher.css" />
+    
+</head>
+<body>
+    <div class="admin-main">
+        <div id="teacher-nav-placeholder"></div>
+
+        <div class="adm-content">
+            <div class="adm-topbar" id="navbar-placeholder"></div>
+
+            <div class="adm-inner">
+                <div class="adm-page-header" style="margin-bottom:1.75rem;">
+                    <h1 class="adm-page-title">My Profile</h1>
+                    <p class="adm-page-sub">Manage your display name, email, and bio.</p>
+                </div>
+
+                <!-- Rendered by teacher_profile.js -->
+                <div id="tp-root">
+                    <!-- Initial skeleton -->
+                    <div class="tp-grid">
+                        <div class="tp-profile-card">
+                            <div class="tp-cover"></div>
+                            <div style="padding:1.5rem;display:flex;flex-direction:column;align-items:center;gap:0.75rem;">
+                                <div class="tp-skeleton" style="width:72px;height:72px;border-radius:50%;margin-top:-36px;"></div>
+                                <div class="tp-skeleton" style="width:120px;height:16px;"></div>
+                                <div class="tp-skeleton" style="width:160px;height:12px;"></div>
+                            </div>
+                        </div>
+                        <div class="tp-form-card">
+                            <div class="tp-skeleton" style="height:18px;width:140px;margin-bottom:1.5rem;"></div>
+                            <div class="tp-skeleton" style="height:40px;margin-bottom:1.25rem;"></div>
+                            <div class="tp-skeleton" style="height:40px;margin-bottom:1.25rem;"></div>
+                            <div class="tp-skeleton" style="height:90px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../../js/teacher/teacher_profile.js"></script>
+</body>
+</html>

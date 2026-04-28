@@ -61,6 +61,13 @@ export const AuditAction = Object.freeze({
     USER_UPDATED:               'user.updated',
     USER_DELETED_GENERAL:       'user.deleted',
     USER_PROMOTED_TO_ADMIN:     'user.promoted_to_admin',
+    USER_SUSPENDED:               'USER_SUSPENDED',
+    USER_REACTIVATED:             'USER_REACTIVATED',
+    USER_DEMOTED:                 'USER_DEMOTED',
+    USER_PASSWORD_RESET_FORCED:   'USER_PASSWORD_RESET_FORCED',
+    USERS_BULK_DELETED:           'USERS_BULK_DELETED',
+    USERS_BULK_SUSPENDED:         'USERS_BULK_SUSPENDED',
+    USERS_BULK_TEACHER_ASSIGNED:  'USERS_BULK_TEACHER_ASSIGNED',
 
     // ── Vocab ───────────────────────────────────────────────
     VOCAB_CREATED:              'vocab.created',

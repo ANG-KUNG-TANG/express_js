@@ -1,0 +1,424 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   teacher.css  — Teacher-portal specific styles
+   Loaded after base.css — uses the same CSS variable tokens.
+
+   SECTIONS
+   ─────────────────────────────────────────────────────────────────────
+   1.  Admin-main layout         (.admin-main, .adm-content)
+   2.  Top bar                   (.adm-topbar, .adm-search, .adm-icon-btn)
+   3.  Cards                     (.adm-card, .adm-card-hd, .adm-card-title …)
+   4.  Original stat bar         (.adm-stat-grid, .adm-stat, modifiers)
+   5.  NEW: Animated stat grid   (.tr-stats-grid, .ts-card, skeleton, urgent)
+   6.  Student cards             (stat-pill--neutral, stat-pill--info additions)
+   7.  Responsive
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. ADMIN-MAIN LAYOUT ──────────────────────────────────────────────────── */
+
+.admin-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    /* sidebar width handled by sidebar component via margin-left */
+    margin-left: 240px;
+    transition: margin-left 0.25s ease;
+}
+
+.adm-content {
+    flex: 1;
+    padding: 24px 28px 56px;
+    max-width: 1200px;
+    width: 100%;
+}
+
+/* ── 2. TOP BAR ────────────────────────────────────────────────────────────── */
+
+.adm-topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 28px;
+    height: 58px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--sh-xs);
+    flex-shrink: 0;
+}
+
+.adm-topbar-title {
+    font-family: var(--font-d);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+
+.adm-topbar-crumb {
+    font-family: var(--font-m);
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 1px;
+}
+
+.adm-topbar-crumb span { color: var(--text2); }
+
+.adm-search {
+    flex: 1;
+    max-width: 340px;
+    position: relative;
+    margin: 0 8px;
+}
+
+.adm-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.adm-search input {
+    width: 100%;
+    height: 34px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: var(--r-md);
+    color: var(--text);
+    font-family: var(--font-b);
+    font-size: 13px;
+    padding: 0 12px 0 32px;
+    outline: none;
+    transition: border-color var(--t), box-shadow var(--t);
+}
+
+.adm-search input:focus {
+    border-color: var(--role-teacher);
+    box-shadow: 0 0 0 3px var(--role-teacher-bg);
+}
+
+.adm-search input::placeholder { color: var(--text4); }
+
+.adm-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.adm-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: var(--r-md);
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 15px;
+    cursor: pointer;
+    position: relative;
+    transition: background var(--t), color var(--t), border-color var(--t);
+}
+
+.adm-icon-btn:hover {
+    background: var(--role-teacher-bg);
+    color: var(--role-teacher);
+    border-color: var(--role-teacher-border);
+}
+
+.adm-icon-btn .dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--amber);
+    border: 1.5px solid var(--surface);
+}
+
+/* ── 3. CARDS ──────────────────────────────────────────────────────────────── */
+
+.adm-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    box-shadow: var(--sh-xs);
+    transition: border-color 0.2s;
+}
+
+.adm-card:hover { border-color: var(--border-hi); }
+
+.adm-card-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+}
+
+.adm-card-title {
+    font-family: var(--font-d);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+}
+
+.adm-card-meta {
+    font-family: var(--font-m);
+    font-size: 11px;
+    color: var(--text3);
+}
+
+.adm-card-action {
+    font-family: var(--font-m);
+    font-size: 11px;
+    color: var(--role-teacher);
+    text-decoration: none;
+    letter-spacing: 0.03em;
+    transition: color var(--t);
+}
+
+.adm-card-action:hover {
+    color: var(--gold);
+    text-decoration: none;
+}
+
+/* ── 4. ORIGINAL STAT BAR (kept for backward-compat, hidden when grid present) */
+
+.adm-stat-grid {
+    display: grid;
+    gap: 14px;
+}
+
+.adm-stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-xl);
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--sh-xs);
+    transition: border-color 0.2s, transform 0.18s;
+}
+
+.adm-stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--border-hi);
+}
+
+.adm-stat:hover { border-color: var(--border-hi); transform: translateY(-2px); }
+
+.adm-stat__icon  { font-size: 18px; color: var(--text3); }
+.adm-stat__label { font-family: var(--font-m); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--text3); }
+.adm-stat__value { font-family: var(--font-m); font-size: 30px; font-weight: 500; color: var(--text); line-height: 1; }
+
+.adm-stat--amber::before { background: var(--amber); }
+.adm-stat--amber .adm-stat__value { color: var(--amber); }
+.adm-stat--blue::before  { background: var(--blue); }
+.adm-stat--blue .adm-stat__value  { color: var(--blue); }
+.adm-stat--teal::before  { background: var(--green); }
+.adm-stat--teal .adm-stat__value  { color: var(--green); }
+
+/* ── 5. NEW: ANIMATED STAT GRID ────────────────────────────────────────────── */
+/*
+    .tr-stats-grid    — responsive grid container (ID: teacher-stats-grid)
+    .ts-card          — individual animated card
+    .ts-card--urgent  — pulsing amber border for actionable items
+    .ts-card--skeleton — shimmer placeholder shown before data loads
+    .ts-skeleton--*   — shimmer shape variants
+
+    Colors reference the same CSS tokens as the rest of teacher.css —
+    no hardcoded values except where matching the original
+    teacher_dashboard_stats.js design.
+*/
+
+.tr-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.ts-card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--card-accent, var(--role-teacher));
+    border-radius: var(--r-xl);
+    overflow: hidden;
+    box-shadow: var(--sh-xs);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s;
+}
+
+/* Soft radial tint behind icon — uses the card accent colour */
+.ts-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        ellipse at top left,
+        color-mix(in srgb, var(--card-accent, var(--role-teacher)) 6%, transparent),
+        transparent 65%
+    );
+    pointer-events: none;
+}
+
+.ts-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-hi);
+    box-shadow: var(--sh-sm);
+}
+
+/* Urgent state — used when pendingReview > 0 */
+.ts-card--urgent {
+    border-left-color: var(--amber);
+    animation: ts-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes ts-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+    50%       { box-shadow: 0 0 0 5px rgba(217, 119, 6, 0.12); }
+}
+
+.ts-card__icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--card-accent, var(--role-teacher));
+}
+
+.ts-card__icon svg { width: 20px; height: 20px; }
+
+.ts-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.ts-card__value {
+    font-family: var(--font-m);
+    font-size: 28px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.ts-card__label {
+    font-family: var(--font-m);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* "Needs attention" badge — top-right of urgent card */
+.ts-card__badge {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    font-family: var(--font-m);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--amber);
+    background: var(--amber-dim);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    padding: 2px 7px;
+    border-radius: var(--r-full);
+}
+
+/* ── Shimmer skeleton ── */
+
+.ts-card--skeleton {
+    pointer-events: none;
+    border-left-color: var(--border);
+}
+
+.ts-card--skeleton::before { display: none; }
+
+.ts-skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--surface3) 25%,
+        var(--bg2)      50%,
+        var(--surface3) 75%
+    );
+    background-size: 200% 100%;
+    animation: ts-shimmer 1.5s infinite;
+    border-radius: var(--r-sm);
+}
+
+@keyframes ts-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.ts-skeleton--icon  { width: 36px; height: 36px; border-radius: var(--r-md); flex-shrink: 0; }
+.ts-skeleton--value { width: 52px; height: 24px; margin-bottom: 5px; }
+.ts-skeleton--label { width: 86px; height: 10px; }
+
+/* ── 6. STUDENT CARD ADDITIONS ──────────────────────────────────────────────── */
+/*
+    stat-pill--neutral  — new modifier for "avg band X.X" pill
+    stat-pill--info     — already in base.css via .badge--info rules,
+                          mirrored here for .stat-pill context
+*/
+
+.stat-pill--neutral {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--role-student-border);
+}
+
+.stat-pill--info {
+    background: var(--blue-dim);
+    color: var(--blue);
+    border-color: rgba(76, 177, 255, 0.25);
+}
+
+/* ── 7. RESPONSIVE ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+    .admin-main  { margin-left: 0; }
+    .adm-content { padding: 18px 16px 48px; }
+    .tr-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 560px) {
+    .tr-stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .ts-card { padding: 14px 14px; gap: 10px; }
+    .ts-card__value { font-size: 22px; }
+    .adm-topbar { padding: 0 16px; }
+}

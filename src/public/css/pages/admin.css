@@ -1,6 +1,6 @@
 /* public/css/pages/admin.css
    Loads AFTER base.css. Extends and overrides for all admin pages.
-   Design: dark navy/indigo sidebar, blue-indigo accent (#5b6ef5).
+   Design: dark sidebar, indigo accent — tokens alias base.css --accent.
    BEM double-dash: .btn--primary etc. (overrides base.css gold buttons)
    ─────────────────────────────────────────────────────────────────── */
 
@@ -8,8 +8,8 @@
 :root {
   --sidebar-w:   260px;
   --topbar-h:    60px;
-  --adm-accent:  #5b6ef5;
-  --adm-accent2: #7c8ff5;
+  --adm-accent:  var(--accent);
+  --adm-accent2: var(--accent-h);
   --adm-teal:    #38bdf8;
   --bg-card:     var(--surface);
   /* Keep --muted, --border2 as aliases so JS-injected elements work */
@@ -45,7 +45,7 @@ body {
 }
 .asb-brand-icon {
   width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(135deg, #5b6ef5, #38bdf8);
+  background: linear-gradient(135deg, var(--accent), var(--adm-teal));
   display: flex; align-items: center; justify-content: center;
   font-weight: 800; font-size: 18px; color: #fff; flex-shrink: 0;
 }
@@ -67,10 +67,10 @@ body {
   transition: color .15s, background .15s; position: relative;
 }
 .asb-nav-item:hover { color: var(--text1, var(--text)); background: rgba(255,255,255,.04); text-decoration: none; }
-.asb-nav-item.is-active { color: var(--text1, var(--text)); background: rgba(91,110,245,.12); }
+.asb-nav-item.is-active { color: var(--text1, var(--text)); background: var(--accent-soft); }
 .asb-nav-item.is-active::before {
   content: ''; position: absolute; left: 0; top: 4px; bottom: 4px;
-  width: 3px; background: linear-gradient(180deg, #5b6ef5, #38bdf8); border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--accent), var(--adm-teal)); border-radius: 0 3px 3px 0;
 }
 .asb-nav-icon  { font-size: 15px; flex-shrink: 0; width: 18px; text-align: center; }
 .asb-nav-label { flex: 1; }
@@ -87,7 +87,7 @@ body {
 .asb-user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .asb-avatar {
   width: 32px; height: 32px; border-radius: 50%;
-  background: linear-gradient(135deg, #5b6ef5, #38bdf8);
+  background: linear-gradient(135deg, var(--accent), var(--adm-teal));
   color: #fff; font-size: 12px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
@@ -163,14 +163,14 @@ body.has-admin-sidebar .admin-main { margin-left: var(--sidebar-w); }
   border-radius: 14px; padding: 20px 22px;
   position: relative; overflow: hidden; transition: border-color .2s, transform .2s;
 }
-.adm-stat:hover { border-color: rgba(91,110,245,.3); transform: translateY(-1px); }
+.adm-stat:hover { border-color: var(--accent-dim); transform: translateY(-1px); }
 .adm-stat::after {
   content: ''; position: absolute; top: 0; right: 0;
   width: 80px; height: 80px; border-radius: 50%;
   opacity: .06; transform: translate(20px,-20px);
 }
-.adm-stat--blue::after  { background: #5b6ef5; }
-.adm-stat--teal::after  { background: #38bdf8; }
+.adm-stat--blue::after  { background: var(--accent); }
+.adm-stat--teal::after  { background: var(--adm-teal); }
 .adm-stat--amber::after { background: var(--amber); }
 .adm-stat--red::after   { background: var(--red); }
 .adm-stat__icon {
@@ -178,9 +178,10 @@ body.has-admin-sidebar .admin-main { margin-left: var(--sidebar-w); }
   width: 36px; height: 36px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
 }
-.adm-stat--blue  .adm-stat__icon { background: rgba(91,110,245,.15); }
+.adm-stat--blue  .adm-stat__icon { background: var(--accent-dim); }
 .adm-stat--teal  .adm-stat__icon { background: rgba(56,189,248,.15); }
 .adm-stat--amber .adm-stat__icon { background: var(--amber-dim); }
+.adm-stat--red   .adm-stat__icon { background: var(--red-dim); }
 .adm-stat--red   .adm-stat__icon { background: var(--red-dim); }
 .adm-stat__label { font-family: var(--font-mono, monospace); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--text3); margin-bottom: 6px; }
 /* .stat-card__value is set by dashboard.js's setStat() — needs to exist */
@@ -322,8 +323,8 @@ body.has-admin-sidebar .admin-main { margin-left: var(--sidebar-w); }
 /* base.css .btn--primary = gold; admin overrides to indigo */
 .btn--primary  { background: var(--adm-accent) !important; color: #fff !important; border-color: var(--adm-accent) !important; box-shadow: none; }
 .btn--primary:hover:not(:disabled)  { background: var(--adm-accent2) !important; border-color: var(--adm-accent2) !important; transform: none; }
-.btn--secondary { background: rgba(91,110,245,.1); color: var(--adm-accent); border-color: rgba(91,110,245,.3); }
-.btn--secondary:hover { background: rgba(91,110,245,.18); }
+.btn--secondary { background: var(--accent-dim); color: var(--accent); border-color: rgba(79,70,229,.3); }
+.btn--secondary:hover { background: var(--accent-soft); }
 /* ghost, danger, warning, info, success from base.css are fine — just ensure correct sizes */
 .btn--sm { height: 30px !important; font-size: .78rem; padding: 0 11px; border-radius: 7px; }
 .btn--xs { height: 24px !important; font-size: .72rem; padding: 0 8px;  border-radius: 6px; }
@@ -341,8 +342,8 @@ body.has-admin-sidebar .admin-main { margin-left: var(--sidebar-w); }
 .input:focus, .form-input:focus,
 .form-select:focus, .form-textarea:focus,
 .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-  border-color: var(--adm-accent);
-  box-shadow: 0 0 0 3px rgba(91,110,245,.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
 }
 .input--sm { height: 32px; font-size: .8rem; padding: 5px 10px; border-radius: 7px; }
 /* form-input / form-select / form-textarea as aliases */
@@ -399,16 +400,16 @@ body.has-admin-sidebar .admin-main { margin-left: var(--sidebar-w); }
   background: var(--surface2); color: var(--text2);
   cursor: pointer; font-size: 12.5px; font-weight: 600; font-family: inherit; transition: all .15s;
 }
-.role-pill:hover    { border-color: var(--adm-accent); color: var(--adm-accent); }
-.role-pill.selected { background: var(--adm-accent); border-color: var(--adm-accent); color: #fff; }
+.role-pill:hover    { border-color: var(--accent); color: var(--accent); }
+.role-pill.selected { background: var(--accent); border-color: var(--accent); color: #fff; }
 .audience-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
 .audience-card {
   padding: 12px 14px; border-radius: 10px;
   border: 1px solid var(--border); background: var(--surface2);
   cursor: pointer; transition: all .15s;
 }
-.audience-card:hover    { border-color: rgba(91,110,245,.4); }
-.audience-card.selected { border-color: var(--adm-accent); background: rgba(91,110,245,.1); }
+.audience-card:hover    { border-color: var(--accent-dim); }
+.audience-card.selected { border-color: var(--accent); background: var(--accent-soft); }
 .a-title { font-size: 13px; font-weight: 600; color: var(--text); }
 .a-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
@@ -450,4 +451,45 @@ body.has-admin-sidebar .admin-main { margin-left: var(--sidebar-w); }
   .admin-sidebar-root { transform: translateX(-100%); }
   .admin-layout { padding: 16px; }
   .adm-content  { padding: 16px; }
+}
+/* ═══════════════════════════════════════════════════════════════
+   Teacher role accent — applied via data-role="teacher" on <body>
+   This replaces the inline !important overrides in teacher HTML files.
+   ═══════════════════════════════════════════════════════════════ */
+[data-role="teacher"] {
+  --accent:      var(--sage);
+  --accent-h:    var(--sage-h);
+  --accent-dim:  var(--sage-dim);
+  --accent-soft: var(--sage-soft);
+}
+[data-role="teacher"] .btn--primary {
+  background: var(--sage) !important;
+  border-color: var(--sage) !important;
+}
+[data-role="teacher"] .btn--primary:hover:not(:disabled) {
+  background: var(--sage-h) !important;
+  border-color: var(--sage-h) !important;
+}
+[data-role="teacher"] .input:focus,
+[data-role="teacher"] .select:focus,
+[data-role="teacher"] select.input:focus,
+[data-role="teacher"] textarea.input:focus {
+  border-color: var(--sage);
+  box-shadow: 0 0 0 3px var(--sage-dim);
+}
+
+/* ── Admin badge (replaces repeated inline style on every admin page) ── */
+.badge-admin {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--red);
+  color: var(--red);
+  background: var(--red-dim);
+  margin-left: auto;
+  flex-shrink: 0;
 }

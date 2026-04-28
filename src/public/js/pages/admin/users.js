@@ -7,7 +7,7 @@
 import { requireAdmin }     from '../../core/router.js';
 import { apiFetch }         from '../../core/api.js';
 import { statusBadge }      from '../../../components/statusBadge.js';
-import { toast }            from '../../core/toast.js';
+import { toast }            from '../../utils/toast.js';
 import { initAdminSidebar } from '../../../components/admin_sidebar.js';
 
 requireAdmin();

@@ -1,7 +1,8 @@
 // Route: PATCH /api/admin/users/:studentId/link-teacher    body: { teacherId }
 // Route: PATCH /api/admin/users/:studentId/unlink-teacher
 
-import { findUserById, updateUser, sanitizeUser } from '../../infrastructure/repositories/user_repo.js';
+import { findUserById, updateUser } from '../../infrastructure/repositories/user_repo.js';
+import { sanitizeUser } from '../../infrastructure/mapper/user.mapper.js';
 import { NotificationService }                    from '../../core/services/notification.service.js';
 import { redisDel, CacheKeys }                    from '../../core/services/redis.service.js';
 import { UserRole }                               from '../../domain/base/user_enums.js';

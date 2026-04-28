@@ -1,6 +1,6 @@
 // infrastructure/repositories/password_reset_token_repo.js
 
-import { PasswordResetTokenModel } from '../../domain/models/password_reset_token_model.js';
+import { PasswordResetTokenModel } from '../../infrastructure/models/password_reset_token_model.js';
 import { PasswordResetToken }      from '../../domain/entities/password_reset_token_entity.js';
 
 const toEntity = (doc) => doc

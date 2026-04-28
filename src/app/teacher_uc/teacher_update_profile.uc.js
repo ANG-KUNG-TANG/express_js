@@ -1,6 +1,6 @@
 // app/teacher_uc/teacher_update_profile.uc.js
 
-import { updateProfileInfo }   from '../../infra/repositories/user_repo.js';
+import { updateProfileInfo }   from '../../infrastructure/repositories/user_repo.js';
 import { UserValidationError } from '../../core/errors/user.errors.js';
 
 /**

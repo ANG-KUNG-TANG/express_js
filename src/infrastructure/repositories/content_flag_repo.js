@@ -1,6 +1,6 @@
 // src/infrastructure/repositories/content_flag_repo.js
 import mongoose from 'mongoose';
-import ContentFlagModel from '../../domain/models/content_flag_model.js';
+import ContentFlagModel from '../../infrastructure/models/content_flag_model.js';
 import { ContentFlag, FlagSeverity, FlagStatus } from '../../domain/entities/content_flag_entity.js';
 import {
     ContentFlagNotFoundError,

@@ -4,6 +4,7 @@ services:
     container_name: ielts_js_prod
     ports:
       - "3000:3000"
+      - "0:3000"
     env_file:
       - .env                    # friend fills this from .env.example
     depends_on:

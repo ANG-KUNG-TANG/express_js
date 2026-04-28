@@ -40,7 +40,7 @@ export const initAdminSidebar = async () => {
             items: [
                 { icon: '✎',  label: 'Tasks',        href: '/pages/admin/tasks.html',       match: '/admin/tasks' },
                 { icon: '⚑',  label: 'Moderation',   href: '/pages/admin/moderation.html',  match: '/admin/moderation', badge: 'mod' },
-                { icon: '◈',  label: 'Review Queue', href: '/pages/admin/review.html',      match: '/admin/review' },
+                { icon: '◈',  label: 'Review Queue', href: '/pages/admin/review.html',      match: '/admin/review', extraMatches: ['/admin/review_detail'] },
                 { icon: '≡',  label: 'Audit Logs',   href: '/pages/admin/audit_logs.html',  match: '/admin/audit_logs' },
             ]
         },
@@ -52,10 +52,16 @@ export const initAdminSidebar = async () => {
         },
     ];
 
+    // Active if path matches item.match OR any of item.extraMatches
+    // (used for drill-down pages, e.g. review_detail stays under Review Queue)
+    const isNavActive = (currentPath, item) =>
+        currentPath.includes(item.match) ||
+        (item.extraMatches ?? []).some(m => currentPath.includes(m));
+
     const renderNav = () => navItems.map(group => `
         <div class="asb-section-label">${group.section}</div>
         ${group.items.map(item => `
-            <a class="asb-nav-item ${path.includes(item.match) ? 'is-active' : ''}"
+            <a class="asb-nav-item ${isNavActive(path, item) ? 'is-active' : ''}"
                href="${item.href}">
                 <span class="asb-nav-icon">${item.icon}</span>
                 <span class="asb-nav-label">${item.label}</span>

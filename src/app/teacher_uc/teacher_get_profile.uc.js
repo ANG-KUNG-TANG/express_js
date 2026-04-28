@@ -1,6 +1,6 @@
 // app/teacher_uc/teacher_get_profile.uc.js
 
-import { findUserById }        from '../../infra/repositories/user_repo.js';
+import { findUserById }        from '../../infrastructure/repositories/user_repo.js';
 import { UserValidationError } from '../../core/errors/user.errors.js';
 
 /**

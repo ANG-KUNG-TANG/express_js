@@ -1,6 +1,6 @@
 // app/teacher_uc/teacher_get_dashboard_stats.uc.js
 
-import { getTeacherDashboardStats } from '../../infra/repositories/user_repo.js';
+import { getTeacherDashboardStats } from '../../infrastructure/repositories/user_repo.js';
 import { UserValidationError }      from '../../core/errors/user.errors.js';
 
 /**

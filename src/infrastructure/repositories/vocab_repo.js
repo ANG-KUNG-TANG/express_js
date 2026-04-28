@@ -6,7 +6,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-import VocabularyModel from "../../domain/models/vocab_model.js";
+import VocabularyModel from "../../infrastructure/models/vocab_model.js";
 import {
   DuplicateVocabularyError,
 } from "../../core/errors/vocab.errors.js";

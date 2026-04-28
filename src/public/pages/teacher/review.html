@@ -6,30 +6,10 @@
     <title>Review Task — WriteSystem</title>
     <script src="/js/core/theme.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/pages/admin.css" />
-    <style>
-        /* ── Teacher accent ───────────────────────────────────────────────── */
-        .btn--primary {
-            background: var(--sage, #3a7d5a)   !important;
-            border-color: var(--sage, #3a7d5a) !important;
-        }
-        .btn--primary:hover:not(:disabled) {
-            background: #4a9d6a   !important;
-            border-color: #4a9d6a !important;
-        }
-        .input:focus, textarea.input:focus {
-            border-color: var(--sage, #3a7d5a);
-            box-shadow: 0 0 0 3px rgba(58,125,90,.15);
-        }
-        /* Band score display */
-        .band-display {
-            font-size: 22px; font-weight: 800;
-            font-family: var(--font-mono, monospace);
-            color: var(--gold2, #e6c96e);
-        }
-    </style>
+    <link rel="stylesheet" href="/css/pages/teacher.css" />
+    
 </head>
-<body>
+<body data-role="teacher">
 <!--
   Teacher sidebar injected here by initTeacherSidebar().
   Do NOT add a hardcoded <aside>.

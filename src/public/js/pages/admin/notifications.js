@@ -10,10 +10,10 @@
  */
 
 import { apiFetch } from '../../core/api.js';
-import { initAdminSidebar} from '../../../components/admin_sidebar.js'
+import { initAdminSidebar}  from '../../../components/admin_sidebar.js';
 
 
-initAdminSidebar()
+initAdminSidebar();
 
 // ── Auth guard (belt-and-suspenders; admin_nav.js already guards) ─────────────
 const _user = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();

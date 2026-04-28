@@ -1,6 +1,6 @@
 // src/infrastructure/repositories/audit_log_repo.js
 import mongoose from 'mongoose';
-import AuditLogModel from '../../domain/models/audit_log_model.js';
+import AuditLogModel from '../../infrastructure/models/audit_log_model.js';
 import { AuditLog } from '../../domain/entities/audit_log_entity.js';
 import logger from '../../core/logger/logger.js';
 

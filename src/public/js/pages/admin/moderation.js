@@ -4,13 +4,14 @@
 
 import { getUser } from '../../core/auth.js';
 import { apiFetch } from '../../core/api.js';
-import { initAdminSidebar } from '../../../components/admin_sidebar.js';
-
-// ── Auth guard ────────────────────────────────────────────────────────────────
-const _user = getUser();
-if (!_user || _user.role !== 'admin') window.location.replace('/pages/auth/login.html');
+import { initAdminSidebar}  from '../../../components/admin_sidebar.js';
 
 initAdminSidebar();
+
+// ── Auth guard ────────────────────────────────────────────────────────────────
+// Sidebar is injected by admin_nav.js (loaded via <script type="module"> in HTML).
+const _user = getUser();
+if (!_user || _user.role !== 'admin') window.location.replace('/pages/auth/login.html');
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 const toast = (msg, type = 'success') => {

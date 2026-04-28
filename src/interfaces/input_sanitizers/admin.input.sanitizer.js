@@ -1,4 +1,3 @@
-
 // PATCH /api/admin/writing-tasks/:id/review
 export const sanitizeReviewTask = (req, res, next) => {
     const { feedback } = req.body ?? {};
@@ -88,6 +87,7 @@ export const sanitizeListAuditLogs = (req, res, next) => {
     next();
 };
 
+
 // POST /api/admin/notifications
 export const sanitizeSendNotification = (req, res, next) => {
     const { audience, targetUserId, type, title, message } = req.body ?? {};
@@ -126,6 +126,85 @@ export const sanitizeSendNotification = (req, res, next) => {
         message: message.trim(),
         ctaText: req.body.ctaText?.trim() ?? null,
         ctaUrl:  req.body.ctaUrl?.trim()  ?? null,
+    };
+    next();
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── New sanitizers for user management features ───────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/admin/users/search?q=&role=&status=&from=&to=&page=&limit=
+export const sanitizeSearchUsers = (req, res, next) => {
+    const { role, status, from, to, page, limit } = req.query;
+
+    const VALID_ROLES    = ['student', 'teacher', 'admin'];
+    const VALID_STATUSES = ['active', 'suspended'];
+
+    if (role && !VALID_ROLES.includes(role)) {
+        return next(new Error(`role must be one of: ${VALID_ROLES.join(', ')}`));
+    }
+    if (status && !VALID_STATUSES.includes(status)) {
+        return next(new Error(`status must be one of: ${VALID_STATUSES.join(', ')}`));
+    }
+    if (from && isNaN(Date.parse(from))) {
+        return next(new Error('from must be a valid ISO date'));
+    }
+    if (to && isNaN(Date.parse(to))) {
+        return next(new Error('to must be a valid ISO date'));
+    }
+    if (from && to && new Date(from) > new Date(to)) {
+        return next(new Error('"from" must be before "to"'));
+    }
+    if (page && (isNaN(Number(page)) || Number(page) < 1)) {
+        return next(new Error('page must be a positive integer'));
+    }
+    if (limit && (isNaN(Number(limit)) || Number(limit) < 1 || Number(limit) > 100)) {
+        return next(new Error('limit must be between 1 and 100'));
+    }
+
+    next();
+};
+
+// DELETE /api/admin/users/bulk          body: { ids: [] }
+// PATCH  /api/admin/users/bulk/suspend  body: { ids: [] }
+export const sanitizeBulkIds = (req, res, next) => {
+    const { ids } = req.body ?? {};
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return next(new Error('ids must be a non-empty array'));
+    }
+    if (ids.length > 100) {
+        return next(new Error('cannot target more than 100 users at once'));
+    }
+    if (!ids.every(id => typeof id === 'string' && id.trim())) {
+        return next(new Error('every id must be a non-empty string'));
+    }
+
+    req.body = { ids: ids.map(id => id.trim()) };
+    next();
+};
+
+// PATCH /api/admin/users/bulk/assign-teacher   body: { studentIds: [], teacherId }
+export const sanitizeBulkAssignTeacher = (req, res, next) => {
+    const { studentIds, teacherId } = req.body ?? {};
+
+    if (!teacherId || typeof teacherId !== 'string' || !teacherId.trim()) {
+        return next(new Error('teacherId is required'));
+    }
+    if (!Array.isArray(studentIds) || studentIds.length === 0) {
+        return next(new Error('studentIds must be a non-empty array'));
+    }
+    if (studentIds.length > 200) {
+        return next(new Error('cannot reassign more than 200 students at once'));
+    }
+    if (!studentIds.every(id => typeof id === 'string' && id.trim())) {
+        return next(new Error('every studentId must be a non-empty string'));
+    }
+
+    req.body = {
+        teacherId:  teacherId.trim(),
+        studentIds: studentIds.map(id => id.trim()),
     };
     next();
 };

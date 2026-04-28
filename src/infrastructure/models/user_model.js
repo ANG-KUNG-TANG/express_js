@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
-import { UserRole } from "../../domain/base/user_enums.js"
-import { NewsCategory } from "../base/new_enums.js";
+import { UserRole } from "../../domain/base/user_enums.js";
+import { NewsCategory} from '../../domain/base/new_enums.js'
 
 const attachmentSchema = new mongoose.Schema(
     {

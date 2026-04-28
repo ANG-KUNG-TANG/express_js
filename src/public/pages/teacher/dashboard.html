@@ -6,83 +6,9 @@
     <title>Teacher Dashboard — WriteSystem</title>
     <script src="/js/core/theme.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/pages/admin.css" />
-    <style>
-        /* ── Teacher accent overrides ──────────────────────────────────────── */
-        .btn--primary {
-            background: var(--sage, #3a7d5a)      !important;
-            border-color: var(--sage, #3a7d5a)    !important;
-        }
-        .btn--primary:hover:not(:disabled) {
-            background: #4a9d6a                   !important;
-            border-color: #4a9d6a                 !important;
-        }
-        .input:focus, .select:focus {
-            border-color: var(--sage, #3a7d5a);
-            box-shadow: 0 0 0 3px rgba(58,125,90,.15);
-        }
-
-        /* ── Queue rows ──────────────────────────────────────────────────── */
-        .queue-row {
-            display: flex; align-items: center; gap: 14px;
-            padding: 14px 20px;
-            border-bottom: 1px solid var(--border);
-        }
-        .queue-row:last-child { border-bottom: none; }
-        .queue-row__info      { flex: 1; min-width: 0; }
-        .queue-row__title {
-            display: block; font-size: 14px; font-weight: 600;
-            color: var(--text1); white-space: nowrap;
-            overflow: hidden; text-overflow: ellipsis;
-        }
-        .queue-row__meta {
-            display: block; font-size: 12px; color: var(--text3); margin-top: 3px;
-        }
-
-        /* ── Student cards ───────────────────────────────────────────────── */
-        .student-card {
-            display: flex; align-items: center; gap: 14px;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-        }
-        .student-card:last-child { border-bottom: none; }
-        .student-card__avatar {
-            width: 40px; height: 40px; border-radius: 50%;
-            background: linear-gradient(135deg, #3a7d5a, #c8a84b);
-            color: #fff; font-weight: 700; font-size: 16px;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
-        .student-card__info  { flex: 1; min-width: 0; }
-        .student-card__name  { display: block; font-size: 14px; font-weight: 600; color: var(--text1); }
-        .student-card__email { display: block; font-size: 12px; color: var(--text3); }
-        .student-card__stats { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-
-        /* ── Stat pills ──────────────────────────────────────────────────── */
-        .stat-pill {
-            font-size: 11px; padding: 2px 9px; border-radius: 20px;
-            background: rgba(255,255,255,.06); color: var(--text2);
-            border: 1px solid var(--border); font-family: var(--font-mono, monospace);
-        }
-        .stat-pill--warning { background: var(--amber-dim); color: var(--amber); border-color: rgba(212,149,74,.25); }
-        .stat-pill--info    { background: rgba(56,189,248,.08); color: #38bdf8; border-color: rgba(56,189,248,.2); }
-        .stat-pill--success { background: var(--green-dim);  color: var(--green); border-color: rgba(93,184,122,.2); }
-
-        /* ── Empty / error ───────────────────────────────────────────────── */
-        .empty-state { padding: 40px 20px; text-align: center; color: var(--text3); font-size: 14px; }
-        .error-state { padding: 16px 20px; color: var(--red); font-size: 13px; }
-        .loading     { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
-
-        /* ── Spinner ─────────────────────────────────────────────────────── */
-        .spinner {
-            display: inline-block; width: 12px; height: 12px;
-            border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
-            border-radius: 50%; animation: spin .6s linear infinite; vertical-align: middle;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
+    <link rel="stylesheet" href="/css/pages/teacher.css" />
 </head>
-<body>
+<body data-role="teacher">
 <!--
   Teacher sidebar injected here by initTeacherSidebar().
   Do NOT add a hardcoded <aside>.
@@ -90,6 +16,7 @@
 
 <div class="admin-main">
 
+    <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
     <header class="adm-topbar">
         <div>
             <div class="adm-topbar-title">Teacher Dashboard</div>
@@ -108,29 +35,40 @@
 
     <div class="adm-content">
 
-        <!-- Stats -->
-        <div class="adm-stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
-            <div class="adm-stat adm-stat--amber" id="stat-submitted">
-                <div class="adm-stat__icon">⏳</div>
-                <div class="adm-stat__label">Awaiting Review</div>
-                <div class="adm-stat__value stat-card__value">—</div>
-            </div>
-            <div class="adm-stat adm-stat--blue" id="stat-reviewed">
-                <div class="adm-stat__icon">◈</div>
-                <div class="adm-stat__label">Reviewed</div>
-                <div class="adm-stat__value stat-card__value">—</div>
-            </div>
-            <div class="adm-stat adm-stat--teal" id="stat-scored">
-                <div class="adm-stat__icon">✦</div>
-                <div class="adm-stat__label">Scored</div>
-                <div class="adm-stat__value stat-card__value">—</div>
-            </div>
-        </div>
+        <!-- ── NEW: Animated 5-card stat grid ─────────────────────────────── -->
+        <!--
+            JS writes into #teacher-stats-grid via _renderStatCards() /
+            _renderStatsSkeleton(). The grid renders shimmer placeholders
+            immediately, then swaps in animated count-up cards once data loads.
 
-        <!-- Students -->
+            Original 3 inline stat divs (#stat-submitted / #stat-reviewed /
+            #stat-scored) are REMOVED — the JS now targets element IDs that
+            live inside the dynamically-rendered cards inside this grid.
+        -->
+        <div id="teacher-stats-grid" class="tr-stats-grid"></div>
+
+        <!-- ── Students ────────────────────────────────────────────────────── -->
+        <!--
+            NEW additions to each student card (rendered by JS _studentCard()):
+              • "avg band X.X" stat pill — from scored tasks
+              • "Profile" button  → /pages/teacher/teacher_student_profile.html
+              • "Tasks" button    → /pages/teacher/student_tasks.html  (was "View tasks")
+              • "+ Assign" button → /pages/teacher/assign.html         (was "+ Assign task")
+
+            stat-pill--neutral is a new modifier — add it to teacher.css.
+            stat-pill--info    was already in base.css via .badge--info.
+        -->
         <div class="adm-card" style="margin-bottom:20px">
             <div class="adm-card-hd">
-                <span class="adm-card-title">👩‍🎓 Your Students</span>
+                <span class="adm-card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.8" style="vertical-align:-2px;margin-right:5px">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Your Students
+                </span>
                 <a class="adm-card-action" href="/pages/teacher/assign.html">+ Assign task →</a>
             </div>
             <div id="students-list">
@@ -138,28 +76,40 @@
             </div>
         </div>
 
-        <!-- Review queue -->
+        <!-- ── Review queue ─────────────────────────────────────────────────── -->
+        <!--
+            NEW: timestamps now rendered by _fmtDateTime() (day + time),
+            previously only showed date.
+            No HTML changes needed here — JS writes the rows.
+        -->
         <div class="adm-card" style="margin-bottom:20px">
             <div class="adm-card-hd">
-                <span class="adm-card-title">⚠ Review Queue</span>
-                <span style="font-size:11px;color:var(--text3);font-family:var(--font-mono,monospace)">
-                    Submitted tasks waiting for your feedback
+                <span class="adm-card-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" style="vertical-align:-1px;margin-right:5px;color:var(--amber)">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                    Review Queue
                 </span>
+                <span class="adm-card-meta">Submitted tasks · oldest first · shows time of submission</span>
             </div>
             <div id="pending-list">
                 <p class="loading">Loading…</p>
             </div>
         </div>
 
-        <!-- All tasks -->
+        <!-- ── All tasks ─────────────────────────────────────────────────────── -->
         <div class="adm-card">
             <div class="adm-card-hd">
                 <span class="adm-card-title">All Tasks</span>
-                <div style="display:flex;gap:8px;align-items:center">
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                     <input id="task-search" type="text" class="input input--sm"
                            placeholder="Search by title…" style="width:200px" />
-                    <select id="task-status-filter" class="input input--sm" style="width:160px">
+                    <select id="task-status-filter" class="select select--sm" style="width:160px">
                         <option value="">All statuses</option>
+                        <option value="ASSIGNED">Assigned</option>
                         <option value="SUBMITTED">Submitted</option>
                         <option value="REVIEWED">Reviewed</option>
                         <option value="SCORED">Scored</option>
