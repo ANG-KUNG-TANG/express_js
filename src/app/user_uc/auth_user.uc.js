@@ -2,7 +2,7 @@ import { InvalidCredentialsError }                        from '../../core/error
 import { verifyPassword }                                  from '../validators/password_hash.js';
 import { validateRequired, validateEmail }                 from '../validators/user_validator.js';
 import { findUserByEmailWithPassword}                      from '../../infrastructure/repositories/user_repo.js'
-import { sanitizeUser, toDomain, toPersistence } from '../../infrastructure/mapper/user.mapper.js';
+import { sanitizeUser } from '../../infrastructure/mapper/user.mapper.js';
 import { recordAudit, recordFailure }                      from '../../core/services/audit.service.js';
 import { AuditAction }                                     from '../../domain/base/audit_enums.js';
 

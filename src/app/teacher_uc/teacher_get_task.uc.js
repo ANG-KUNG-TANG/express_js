@@ -20,13 +20,17 @@ export const teacherGetTaskUC = async (taskId) => {
     logger.debug('teacherGetTaskUC', { taskId });
     const task = await findTaskByID(taskId); // throws TaskNotFoundError if missing
 
-    const isAssigned = task._source !== TaskSource.SELF && task._assignedBy;
+    // Check both underscore-prefixed (domain entity) and plain (raw object) field names
+    const taskSource   = task._source    ?? task.source;
+    const taskAssignedBy = task._assignedBy ?? task.assignedBy;
+    const isAssigned   = taskSource !== TaskSource.SELF && taskAssignedBy;
     const allowed    = isAssigned ? ASSIGNED_ALLOWED_STATUSES : POOL_ALLOWED_STATUSES;
 
-    if (!allowed.includes(task._status)) {
+    const taskStatus = task._status ?? task.status;
+    if (!allowed.includes(taskStatus)) {
         throw new TaskOwnershipError(
             taskId,
-            `Task status '${task._status}' is not accessible to teachers`
+            `Task status '${taskStatus}' is not accessible to teachers`
         );
     }
 

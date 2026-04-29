@@ -3,7 +3,7 @@
 import { requireAuth, getParam } from '../../core/router.js';
 import { apiFetch }              from '../../core/api.js';
 import { initNavbar }            from '../../../components/navbar.js';
-import { toast }                 from '../../core/toast.js';
+import { toast }                 from '../../utils/toast.js';
 import { vocabCard }             from '../../../components/vocabCard.js';
 
 requireAuth();

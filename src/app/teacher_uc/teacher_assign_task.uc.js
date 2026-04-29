@@ -35,7 +35,7 @@ const buildPayload = ({
     assignedTo:       studentId,
     source,
     assignmentStatus: AssignmentStatus.PENDING_ACCEPTANCE,
-    title:            title.trim(),
+    title:            title?.trim() ?? '',
     description:      description?.trim() ?? '',
     questionPrompt:   questionPrompt?.trim() ?? '',
     taskType,
@@ -126,10 +126,10 @@ export const teacherAssignTaskUC = async (teacher, body, req = null) => {
 
         const linkedTeacher = String(student._assignedTeacher ?? student.assignedTeacher ?? '');
         if (linkedTeacher !== teacherId) {
-            recordFailure(AuditAction.TEACHER_TASK_ASSIGNED, teacherId, {
-                reason:    'student not linked to this teacher',
-                studentId,
-            }, req);
+            recordFailure(AuditAction.TEACHER_TASK_ASSIGNED, teacherId,
+                { reason: 'student not linked to this teacher', studentId },
+                req
+            );
             fail('This student is not assigned to you.', HTTP_STATUS.FORBIDDEN);
         }
 

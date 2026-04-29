@@ -10,7 +10,7 @@ import { requireAuth }              from '../../core/router.js';
 import { taskAPI }                  from '../../core/api.js';
 import { initNavbar }               from '../../../components/navbar.js';
 import { taskCard }                 from '../../../components/taskCard.js';
-import { toast }                    from '../../core/toast.js';
+import { toast }                    from '../../utils/toast.js';
 import { showModal, showInputModal } from '../../../components/modal.js';
 
 requireAuth();

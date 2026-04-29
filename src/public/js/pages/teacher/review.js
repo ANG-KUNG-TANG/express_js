@@ -2,7 +2,7 @@
 import { requireRole, getParam } from '../../core/router.js';
 import { apiFetch }              from '../../core/api.js';
 import { statusBadge }           from '../../../components/statusBadge.js';
-import { toast }                 from '../../core/toast.js';
+import { toast }                 from '../../utils/toast.js';
 import { initSocket }            from '../../core/socket.js';
 import { initTeacherSidebar } from '../../../components/teacher_sidebar.js';
 
@@ -139,8 +139,9 @@ reviewBtn?.addEventListener('click', async () => {
     try {
         // field name its sanitizer expects — safe to send both.
         await apiFetch(`/api/teacher/writing-tasks/${id}/review`, {
-            method: 'PATCH',
-            body:   JSON.stringify({ feedback, bandScore: score, score }),
+            method:  'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ feedback, bandScore: score, score }),
         });
         toast('Review saved and task scored!', 'success');
         loadTask();

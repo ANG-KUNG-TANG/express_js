@@ -17,7 +17,7 @@ jest.unstable_mockModule('../../../infrastructure/repositories/user_repo.js', ()
     findAll: jest.fn(),
 }));
 
-jest.unstable_mockModule('../../../domain/models/user_model.js', () => ({
+jest.unstable_mockModule('../../../infrastructure/models/user_model.js', () => ({
     default: {
         aggregate: jest.fn(),
     },
@@ -45,7 +45,7 @@ const auditRepo                   = await import('../../../infrastructure/reposi
 const { sendNotificationUseCase } = await import('../../../app/notification/send_noti.uc.js');
 const userRepo                    = await import('../../../infrastructure/repositories/user_repo.js');
 const taskRepo                    = await import('../../../infrastructure/repositories/task_repo.js');
-const UserModelModule             = await import('../../../domain/models/user_model.js');
+const UserModelModule             = await import('../../../infrastructure/models/user_model.js');
 const UserModel                   = UserModelModule.default;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

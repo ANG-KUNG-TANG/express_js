@@ -1,6 +1,7 @@
 // src/app/teacher_uc/teacher_list_students.uc.js
 
 import * as userRepo            from '../../infrastructure/repositories/user_repo.js';
+import { sanitizeUser }         from '../../infrastructure/mapper/user.mapper.js';
 import { findByAssignedBy }     from '../../infrastructure/repositories/task_repo.js';
 import { WritingStatus, AssignmentStatus } from '../../domain/base/task_enums.js';
 import { redisGet, redisSet, CacheKeys, TTL } from '../../core/services/redis.service.js';
@@ -38,7 +39,7 @@ export const teacherListStudentsUC = async (teacher, { includeTaskStats = false 
 
     // ── No stats path — cache and return ─────────────────────────────────────
     if (!includeTaskStats) {
-        const plain = students.map(s => userRepo.sanitizeUser(s));
+        const plain = students.map(s => sanitizeUser(s));
         await redisSet(cacheKey, plain, TTL.TASK_LIST ?? 60);
         logger.debug('teacherListStudentsUC: cache miss, stored', { count: plain.length });
         return plain;
@@ -63,7 +64,7 @@ export const teacherListStudentsUC = async (teacher, { includeTaskStats = false 
                 pending:   tasks.filter(t => t._assignmentStatus === AssignmentStatus.PENDING_ACCEPTANCE).length,
             };
 
-            const plain = userRepo.sanitizeUser(student);
+            const plain = sanitizeUser(student);
             return { ...plain, taskStats: stats };
         })
     );

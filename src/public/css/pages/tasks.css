@@ -140,7 +140,7 @@
 
 /* Hero band */
 .tasks-hero {
-  background: var(--text);
+  background: #131929;
   border-radius: 20px;
   margin: 28px 0 0;
   padding: 40px 52px;
@@ -453,7 +453,7 @@
 
 /* Task header hero */
 .task-header {
-  background: var(--text);
+  background: #131929;
   border-radius: 18px; padding: 36px 44px; margin-bottom: 24px;
   position: relative; overflow: hidden;
   display: flex; align-items: flex-start; justify-content: space-between; gap: 24px;

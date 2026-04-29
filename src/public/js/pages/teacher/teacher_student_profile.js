@@ -3,13 +3,13 @@
 // URL: /pages/teacher/teacher_student_profile.html?studentId=<id>
 
 import { teacherAPI }  from '../../core/api.js';
-import { initNavbar }  from '../../components/navbar.js';
-import { initTeacherNav } from '../../components/teacher_nav.js';
-import { toast }       from '../../components/toast.js';
+import { requireRole }        from '../../core/router.js';
+import { initTeacherSidebar } from '../../../components/teacher_sidebar.js';
+import { toast }              from '../../utils/toast.js';
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
-initNavbar();
-initTeacherNav();
+requireRole('teacher', 'admin');
+initTeacherSidebar();
 
 const params    = new URLSearchParams(window.location.search);
 const studentId = params.get('studentId');
@@ -103,7 +103,7 @@ function renderProfile(s) {
         <!-- Quick actions -->
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
             <a
-                href="teacher_student_tasks.html?studentId=${s.id ?? s._id}"
+                href="/pages/teacher/student_tasks.html?studentId=${s.id ?? s._id}"
                 class="adm-btn adm-btn--primary"
             >
                 View Tasks

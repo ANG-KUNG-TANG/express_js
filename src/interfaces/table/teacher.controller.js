@@ -31,9 +31,9 @@ const asTeacher = (user) => ({
 // ── Existing handlers ─────────────────────────────────────────────────────────
 
 export const listTasks = async (req, res) => {
-    const { status } = req.query;
+    const { status, page, limit } = req.query;
     const teacherId  = req.user?.id ?? req.user?._id;
-    const tasks      = await teacherListTasksUC({ teacherId, status });
+    const tasks      = await teacherListTasksUC({ teacherId, status, page, limit });
     return sendSuccess(res, tasks, HTTP_STATUS.OK);
 };
 
@@ -62,7 +62,7 @@ export const reviewTask = async (req, res) => {
         feedback,
     });
 
-    recordAudit(AuditAction.TEACHER_TASK_REVIEWED, teacher.id, { taskId: id, bandScore }, req);
+    // Note: recordAudit is called inside teacherReviewTaskUC — do not duplicate here
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
@@ -71,11 +71,8 @@ export const reviewTask = async (req, res) => {
 // POST /api/teacher/assign
 export const assignTask = async (req, res) => {
     const teacher = asTeacher(req.user);
-    const task    = await teacherAssignTaskUC(teacher, req.body);
-    recordAudit(AuditAction.TEACHER_TASK_ASSIGNED, teacher.id, {
-        taskId:    task.id ?? task._id,
-        studentId: req.body.studentId,
-    }, req);
+    const task    = await teacherAssignTaskUC(teacher, req.body, req);
+    // Note: recordAudit is called inside teacherAssignTaskUC — do not duplicate here
     return sendSuccess(res, task, HTTP_STATUS.CREATED);
 };
 

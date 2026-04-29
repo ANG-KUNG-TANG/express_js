@@ -1,36 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Profile — WriteSystem</title>
     <script src="/js/core/theme.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
     <link rel="stylesheet" href="/css/pages/teacher.css" />
 </head>
-<body>
-    <div class="admin-main">
-        <!-- Sidebar injected by teacher_nav.js -->
-        <div id="teacher-nav-placeholder"></div>
+<body data-role="teacher">
+<!--
+  Teacher sidebar injected here by initTeacherSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
 
-        <div class="adm-content">
-            <!-- Top bar -->
-            <div class="adm-topbar" id="navbar-placeholder"></div>
+<div class="admin-main">
 
-            <!-- Page content -->
-            <div class="adm-inner" id="sp-root">
-                <!-- Rendered by teacher_student_profile.js -->
-                <div class="sp-skeleton" style="height:28px;width:200px;margin-bottom:2rem;"></div>
-                <div class="sp-skeleton" style="height:180px;border-radius:14px;margin-bottom:1.5rem;"></div>
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
-                    <div class="sp-skeleton" style="height:80px;border-radius:10px;"></div>
-                    <div class="sp-skeleton" style="height:80px;border-radius:10px;"></div>
-                    <div class="sp-skeleton" style="height:80px;border-radius:10px;"></div>
-                </div>
+    <header class="adm-topbar">
+        <div style="display:flex;align-items:center;gap:14px">
+            <a href="/pages/teacher/dashboard.html"
+               style="font-size:12px;color:var(--text3);text-decoration:none;transition:color .15s"
+               onmouseover="this.style.color='var(--text)'"
+               onmouseout="this.style.color='var(--text3)'">← Dashboard</a>
+            <span style="color:var(--border-hi);font-size:14px">/</span>
+            <div>
+                <div class="adm-topbar-title" id="page-title">Student Profile</div>
+                <div class="adm-topbar-crumb">Teacher <span>›</span> <span>Students</span></div>
             </div>
         </div>
-    </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search tasks, students…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
 
-    <script type="module" src="../../js/teacher/teacher_student_profile.js"></script>
+    <div class="adm-content">
+
+        <!-- Rendered by teacher_student_profile.js into #sp-root -->
+        <div id="sp-root">
+            <!-- Initial skeleton -->
+            <div class="sp-skeleton" style="height:28px;width:200px;margin-bottom:2rem;"></div>
+            <div class="sp-skeleton" style="height:180px;border-radius:14px;margin-bottom:1.5rem;"></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;">
+                <div class="sp-skeleton" style="height:80px;border-radius:10px;"></div>
+                <div class="sp-skeleton" style="height:80px;border-radius:10px;"></div>
+                <div class="sp-skeleton" style="height:80px;border-radius:10px;"></div>
+            </div>
+        </div>
+
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast-container"></div>
+<script type="module" src="/js/pages/teacher/teacher_student_profile.js"></script>
 </body>
 </html>

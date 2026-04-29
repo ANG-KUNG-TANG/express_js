@@ -271,7 +271,7 @@ export const getTeacherDashboardStats = async (teacherId) => {
                 pipeline: [
                     {
                         $match: {
-                            $expr: { $eq: ['$_assignedBy', '$$tid'] },
+                            $expr: { $or: [ { $eq: ['$assignedBy', '$$tid'] }, { $eq: ['$_assignedBy', '$$tid'] } ] },
                         },
                     },
                 ],
@@ -287,7 +287,7 @@ export const getTeacherDashboardStats = async (teacherId) => {
                     $size: {
                         $filter: {
                             input: '$tasks',
-                            cond:  { $eq: ['$$this.status', 'submitted'] },
+                            cond:  { $in: ['$$this.status', ['SUBMITTED', 'submitted']] },
                         },
                     },
                 },
@@ -298,7 +298,7 @@ export const getTeacherDashboardStats = async (teacherId) => {
                             cond: {
                                 $in: [
                                     '$$this.status',
-                                    ['assigned', 'accepted', 'in_progress'],
+                                    ['ASSIGNED', 'WRITING', 'assigned', 'writing'],
                                 ],
                             },
                         },
@@ -310,7 +310,7 @@ export const getTeacherDashboardStats = async (teacherId) => {
                             input: '$tasks',
                             cond: {
                                 $and: [
-                                    { $eq:  ['$$this.status', 'reviewed'] },
+                                    { $in:  ['$$this.status', ['REVIEWED', 'SCORED', 'reviewed', 'scored']] },
                                     { $gte: ['$$this.updatedAt', startOfMonth] },
                                 ],
                             },
@@ -702,4 +702,3 @@ export const updateLastLogin = async (id) => {
         $set: { lastLoginAt: new Date() },
     });
 };
-

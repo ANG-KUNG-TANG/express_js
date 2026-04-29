@@ -12,7 +12,7 @@
 import { requireRole, getParam } from '../../core/router.js';
 import { teacherAPI }            from '../../core/api.js';
 import { statusBadge }           from '../../../components/statusBadge.js';
-import { toast }                 from '../../core/toast.js';
+import { toast }                 from '../../utils/toast.js';
 import { initTeacherSidebar } from '../../../components/teacher_sidebar.js';
 
 // Sidebar + notifications are handled by teacherNav.js loaded in the HTML.

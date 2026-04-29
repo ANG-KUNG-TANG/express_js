@@ -3,13 +3,13 @@
 //         PATCH /api/teacher/profile (inline edit form).
 
 import { teacherAPI }     from '../../core/api.js';
-import { initNavbar }     from '../../components/navbar.js';
-import { initTeacherNav } from '../../components/teacher_nav.js';
-import { toast }          from '../../components/toast.js';
+import { requireRole }        from '../../core/router.js';
+import { initTeacherSidebar } from '../../../components/teacher_sidebar.js';
+import { toast }              from '../../utils/toast.js';
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
-initNavbar();
-initTeacherNav();
+requireRole('teacher', 'admin');
+initTeacherSidebar();
 loadProfile();
 
 // ── State ─────────────────────────────────────────────────────────────────────

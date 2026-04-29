@@ -1,14 +1,14 @@
 /**
- * notification_ui.js — bell icon + panel embedded inside the admin sidebar.
+ * notification_ui.js — bell icon + dropdown panel.
  *
- * Layout: injected as a collapsible section between .asb-nav and .asb-footer.
- * No floating dropdown — the panel slides open inside the sidebar itself.
+ * Self-contained: all panel/card styles are inlined so it works regardless
+ * of whether the host page loads a navbar or sidebar stylesheet.
  *
- * Required: admin_sidebar.js must have already run (so .admin-sidebar-root exists).
+ * Required DOM (already injected by teacher_sidebar.js):
+ *   <button id="noti-btn">…<span id="noti-badge">0</span></button>
+ *   <div    id="noti-panel"></div>
  *
- * Usage — called by admin_sidebar.js → initNotificationTopbar():
- *   import { initNotifications } from './notification_ui.js';
- *   await initNotifications();
+ * Usage — called internally by teacher_sidebar.js, no need to call manually.
  */
 
 import { notificationAPI }       from '../../js/core/api.js';
@@ -20,7 +20,10 @@ let _totalPages  = 1;
 let _unreadCount = 0;
 let _open        = false;
 
-// ── Inject styles ─────────────────────────────────────────────────────────────
+// ── Inline styles injected once ───────────────────────────────────────────────
+// These make the panel fully visible even if the page stylesheet doesn't have
+// .noti-panel, .noti-card, etc. rules — critical when moving from top-nav to sidebar.
+
 const _injectStyles = () => {
     if (document.getElementById('noti-ui-styles')) return;
     const s = document.createElement('style');
@@ -322,161 +325,149 @@ const _injectStyles = () => {
 };
 
 // ── Safe type config ──────────────────────────────────────────────────────────
+// If getTypeConfig() throws or returns nothing, fall back gracefully.
+
 const _safeTypeConfig = (type) => {
     try {
         const cfg = getTypeConfig(type);
         if (cfg && cfg.icon) return cfg;
-    } catch { /* fall through */ }
+    } catch {
+        // getTypeConfig failed — use fallback below
+    }
+    // Fallback defaults by type prefix
     const defaults = {
-        task:     { icon: '📋', color: '#c8a84b' },
-        review:   { icon: '✏️',  color: '#c8a84b' },
-        score:    { icon: '⭐',  color: '#5db87a' },
+        task:     { icon: '📋', color: '#3b82f6' },
+        review:   { icon: '✏️',  color: '#f59e0b' },
+        score:    { icon: '⭐',  color: '#10b981' },
         reminder: { icon: '⏰',  color: '#8b5cf6' },
     };
     const key = Object.keys(defaults).find(k => String(type ?? '').toLowerCase().includes(k));
-    return defaults[key] ?? { icon: '🔔', color: '#c8a84b' };
-};
-
-// ── Inject the section into the sidebar ──────────────────────────────────────
-const _injectSidebarSection = () => {
-    if (document.getElementById('asb-noti-section')) return;
-
-    const sidebar = document.querySelector('.admin-sidebar-root');
-    if (!sidebar) {
-        console.warn('[notification_ui] .admin-sidebar-root not found — sidebar not yet rendered?');
-        return false;
-    }
-
-    const footer = sidebar.querySelector('.asb-footer');
-
-    const section = document.createElement('div');
-    section.className = 'asb-noti-section';
-    section.id = 'asb-noti-section';
-    section.innerHTML = `
-        <div class="asb-noti-trigger" id="noti-btn" role="button"
-             aria-expanded="false" aria-controls="asb-noti-panel" tabindex="0">
-            <div class="asb-noti-trigger-left">
-                <span class="asb-noti-icon">🔔</span>
-                <span class="asb-noti-label">Notifications</span>
-            </div>
-            <div class="asb-noti-trigger-right">
-                <span id="noti-badge" class="hidden">0</span>
-                <span class="asb-noti-chevron">▾</span>
-            </div>
-        </div>
-        <div class="asb-noti-panel" id="noti-panel" role="region" aria-label="Notifications">
-            <div class="noti-inner">
-                <div class="noti-header">
-                    <span class="noti-title">Notifications</span>
-                    <button class="noti-mark-all" id="noti-mark-all" disabled>Mark all read</button>
-                </div>
-                <div id="noti-list" class="noti-list">
-                    <p class="noti-empty">Loading…</p>
-                </div>
-                <div id="noti-footer" class="noti-footer"></div>
-            </div>
-        </div>`;
-
-    // Insert before footer, or append if footer not found
-    if (footer) {
-        sidebar.insertBefore(section, footer);
-    } else {
-        sidebar.appendChild(section);
-    }
-
-    return true;
+    return defaults[key] ?? { icon: '🔔', color: '#6b7280' };
 };
 
 // ── Public init ───────────────────────────────────────────────────────────────
+
 export const initNotifications = async () => {
     _injectStyles();
 
-    const injected = _injectSidebarSection();
-    if (!injected) return;
+    const btn   = document.getElementById('noti-btn');
+    const panel = document.getElementById('noti-panel');
 
-    const btn     = document.getElementById('noti-btn');
-    const section = document.getElementById('asb-noti-section');
+    if (!btn || !panel) {
+        console.warn('[notification_ui] #noti-btn or #noti-panel not found in DOM');
+        return;
+    }
+
+    // ── Make sure the panel's parent doesn't clip it ──────────────────────────
+    // The sidebar footer uses overflow:hidden in some themes — walk up and fix it.
+    let el = panel.parentElement;
+    while (el && el !== document.body) {
+        const style = getComputedStyle(el);
+        if (style.overflow === 'hidden' || style.overflowY === 'hidden') {
+            el.style.overflow = 'visible';
+        }
+        el = el.parentElement;
+    }
 
     await _loadPage(1);
 
-    // ── Toggle open/close ─────────────────────────────────────────────────────
-    btn?.addEventListener('click', () => {
+    // ── Bell toggle ───────────────────────────────────────────────────────────
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         _open = !_open;
-        section.classList.toggle('is-open', _open);
+        panel.classList.toggle('hidden', !_open);
         btn.setAttribute('aria-expanded', String(_open));
     });
 
-    btn?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            btn.click();
+    // ── Close on outside click / Escape ───────────────────────────────────────
+    document.addEventListener('click', (e) => {
+        if (_open && !panel.contains(e.target) && e.target !== btn) {
+            _closePanel();
         }
     });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') _closePanel();
+    });
 
-    // ── Mark all read ─────────────────────────────────────────────────────────
-    document.getElementById('noti-mark-all')
-        ?.addEventListener('click', _markAllRead);
-
-    // ── Real-time: new notification ───────────────────────────────────────────
+    // ── Real-time: new notification pushed via socket ─────────────────────────
     window.addEventListener('noti:new', (e) => {
         const noti = e.detail;
         if (!noti) return;
         _unreadCount++;
         _updateBadge();
         _prependCard(noti);
-        _showToast(noti);
+        try { showNotificationToast(noti); } catch { /* toast unavailable — silently skip */ }
     });
 
-    // ── Real-time: marked read in another tab ─────────────────────────────────
+    // ── Real-time: another tab marked one read ────────────────────────────────
     window.addEventListener('noti:markedRead', () => {
         if (_unreadCount > 0) { _unreadCount--; _updateBadge(); }
     });
 };
 
-// ── Load a page of notifications ──────────────────────────────────────────────
+const _closePanel = () => {
+    if (!_open) return;
+    _open = false;
+    document.getElementById('noti-panel')?.classList.add('hidden');
+    document.getElementById('noti-btn')?.setAttribute('aria-expanded', 'false');
+};
+
+// ── Load a page of notifications from the API ─────────────────────────────────
+
 const _loadPage = async (page) => {
     try {
-        const res        = await notificationAPI.getAll(page);
+        const res  = await notificationAPI.getAll(page);
         if (!res) return;
-        const data       = res.data ?? res;
-        _page            = data.page        ?? 1;
-        _totalPages      = data.totalPages  ?? 1;
-        _unreadCount     = data.unreadCount ?? 0;
+        const data   = res.data ?? res;
+        _page        = data.page        ?? 1;
+        _totalPages  = data.totalPages  ?? 1;
+        _unreadCount = data.unreadCount ?? 0;
         _updateBadge();
-        _renderList(data.notifications ?? [], page === 1);
+        _renderPanel(data.notifications ?? [], page === 1);
     } catch (err) {
         console.error('[notification_ui] _loadPage failed:', err.message);
-        const list = document.getElementById('noti-list');
-        if (list) list.innerHTML = '<p class="noti-empty">Failed to load.</p>';
     }
 };
 
-// ── Render the list ───────────────────────────────────────────────────────────
-const _renderList = (notifications, replace = true) => {
+// ── Render panel contents ─────────────────────────────────────────────────────
+
+const _renderPanel = (notifications, replace = true) => {
+    const panel = document.getElementById('noti-panel');
+    if (!panel) return;
+
+    if (replace) {
+        panel.innerHTML = `
+            <div class="noti-header">
+                <span class="noti-title">Notifications</span>
+                <button class="noti-mark-all" id="noti-mark-all"
+                        ${_unreadCount === 0 ? 'disabled' : ''}>
+                    Mark all read
+                </button>
+            </div>
+            <div id="noti-list" class="noti-list"></div>
+            <div id="noti-footer" class="noti-footer"></div>`;
+        document.getElementById('noti-mark-all')
+            ?.addEventListener('click', _markAllRead);
+    }
+
     const list = document.getElementById('noti-list');
     if (!list) return;
 
-    if (replace) {
-        if (notifications.length === 0) {
-            list.innerHTML = '<p class="noti-empty">You\'re all caught up! 🎉</p>';
-        } else {
-            list.innerHTML = '';
-        }
+    if (replace && notifications.length === 0) {
+        list.innerHTML = '<p class="noti-empty">You\'re all caught up!</p>';
+        return;
     }
 
     notifications.forEach((n) => {
-        if (!list.querySelector(`[data-noti-id="${n._id}"]`)) {
+        if (!document.querySelector(`[data-noti-id="${n._id}"]`)) {
             list.insertAdjacentHTML('beforeend', _cardHTML(n));
         }
     });
 
+    // Bind events on any newly added cards
     list.querySelectorAll('.noti-card:not([data-bound])').forEach(_bindCard);
 
-    // Update mark-all button state
-    const markAllBtn = document.getElementById('noti-mark-all');
-    if (markAllBtn) markAllBtn.disabled = _unreadCount === 0;
-
-    // Footer — load more
+    // Footer — "load more" button
     const footer = document.getElementById('noti-footer');
     if (footer) {
         footer.innerHTML = _page < _totalPages
@@ -488,8 +479,9 @@ const _renderList = (notifications, replace = true) => {
 };
 
 // ── Card HTML ─────────────────────────────────────────────────────────────────
+
 const _cardHTML = (n) => {
-    const cfg    = _safeTypeConfig(n.type);
+    const cfg    = _safeTypeConfig(n.type);          // never throws
     const unread = !n.isRead ? 'noti-card--unread' : '';
     const time   = _relativeTime(n.createdAt);
     const cta    = n.ctaUrl ? `data-cta-url="${_esc(n.ctaUrl)}"` : '';
@@ -505,7 +497,8 @@ const _cardHTML = (n) => {
         </div>`;
 };
 
-// ── Prepend real-time card ────────────────────────────────────────────────────
+// ── Prepend a real-time card to the top of the list ──────────────────────────
+
 const _prependCard = (noti) => {
     const list = document.getElementById('noti-list');
     if (!list) return;
@@ -515,7 +508,8 @@ const _prependCard = (noti) => {
     if (card) _bindCard(card);
 };
 
-// ── Bind card events ──────────────────────────────────────────────────────────
+// ── Bind click + delete to a card element ────────────────────────────────────
+
 const _bindCard = (card) => {
     card.dataset.bound = '1';
     card.addEventListener('click', () => _handleCardClick(card));
@@ -525,27 +519,27 @@ const _bindCard = (card) => {
     });
 };
 
-// ── Card click → mark read + navigate ────────────────────────────────────────
+// ── Actions ───────────────────────────────────────────────────────────────────
+
 const _handleCardClick = async (card) => {
     const id     = card.dataset.notiId;
     const isRead = card.dataset.read === 'true';
+
     if (!isRead) {
         try {
             await notificationAPI.markOneRead(id);
             card.classList.remove('noti-card--unread');
             card.dataset.read = 'true';
             if (_unreadCount > 0) { _unreadCount--; _updateBadge(); }
-            const markAllBtn = document.getElementById('noti-mark-all');
-            if (markAllBtn) markAllBtn.disabled = _unreadCount === 0;
         } catch (err) {
             console.error('[notification_ui] markOneRead failed:', err.message);
         }
     }
+
     const ctaUrl = card.dataset.ctaUrl;
     if (ctaUrl) window.location.href = ctaUrl;
 };
 
-// ── Delete card ───────────────────────────────────────────────────────────────
 const _handleDelete = async (card) => {
     const id = card.dataset.notiId;
     try {
@@ -553,18 +547,17 @@ const _handleDelete = async (card) => {
         const wasUnread = card.dataset.read !== 'true';
         card.remove();
         if (wasUnread && _unreadCount > 0) { _unreadCount--; _updateBadge(); }
+
+        // Show empty state if list is now empty
         const list = document.getElementById('noti-list');
         if (list && !list.querySelector('.noti-card')) {
-            list.innerHTML = '<p class="noti-empty">You\'re all caught up! 🎉</p>';
+            list.innerHTML = '<p class="noti-empty">You\'re all caught up!</p>';
         }
-        const markAllBtn = document.getElementById('noti-mark-all');
-        if (markAllBtn) markAllBtn.disabled = _unreadCount === 0;
     } catch (err) {
         console.error('[notification_ui] delete failed:', err.message);
     }
 };
 
-// ── Mark all read ─────────────────────────────────────────────────────────────
 const _markAllRead = async () => {
     try {
         await notificationAPI.markAllRead();
@@ -574,14 +567,14 @@ const _markAllRead = async () => {
         });
         _unreadCount = 0;
         _updateBadge();
-        const markAllBtn = document.getElementById('noti-mark-all');
-        if (markAllBtn) markAllBtn.disabled = true;
+        document.getElementById('noti-mark-all')?.setAttribute('disabled', '');
     } catch (err) {
         console.error('[notification_ui] markAllRead failed:', err.message);
     }
 };
 
 // ── Badge ─────────────────────────────────────────────────────────────────────
+
 const _updateBadge = () => {
     const badge = document.getElementById('noti-badge');
     if (!badge) return;
@@ -593,37 +586,8 @@ const _updateBadge = () => {
     }
 };
 
-// ── In-app toast (bottom-right popup for real-time notifications) ─────────────
-const _showToast = (noti) => {
-    try {
-        // Try the dedicated toast module first
-        showNotificationToast(noti);
-        return;
-    } catch { /* fall through to built-in */ }
-
-    const cfg = _safeTypeConfig(noti.type);
-    const el  = document.createElement('div');
-    el.className = 'noti-toast-popup';
-    el.innerHTML = `
-        <span class="noti-toast-popup__icon" style="color:${cfg.color}">${cfg.icon}</span>
-        <div class="noti-toast-popup__body">
-            <p class="noti-toast-popup__title">${_esc(noti.title ?? 'New notification')}</p>
-            <p class="noti-toast-popup__msg">${_esc(noti.message ?? '')}</p>
-        </div>
-        <button class="noti-toast-popup__close" aria-label="Dismiss">✕</button>`;
-
-    el.addEventListener('click', (e) => {
-        if (!e.target.closest('.noti-toast-popup__close') && noti.ctaUrl) {
-            window.location.href = noti.ctaUrl;
-        }
-        el.remove();
-    });
-
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 5000);
-};
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
 const _relativeTime = (dateStr) => {
     if (!dateStr) return '';
     const diff = (Date.now() - new Date(dateStr)) / 1000;

@@ -39,7 +39,7 @@ export const initTeacherSidebar = async () => {
         {
             section: 'Review',
             items: [
-                { icon: '◈',  label: 'Review Queue', href: '/pages/teacher/review.html',             match: '/teacher/review', badge: 'queue' },
+                { icon: '◈',  label: 'Review Queue', href: '/pages/teacher/dashboard.html#pending',  match: '/teacher/review', badge: 'queue' },
             ]
         },
     ];

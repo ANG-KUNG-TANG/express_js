@@ -36,11 +36,7 @@ jest.unstable_mockModule('../../../core/errors/base.errors.js', () => ({
     ForbiddenError:   class ForbiddenError  extends Error { constructor(m) { super(m); this.name = 'ForbiddenError'; } },
 }));
 
-jest.unstable_mockModule('../../../core/errors/user.errors.js', () => ({
-    UserAlreadyAdminError: class UserAlreadyAdminError extends Error {
-        constructor(m) { super(m); this.name = 'UserAlreadyAdminError'; }
-    },
-}));
+
 
 jest.unstable_mockModule('../../../domain/base/user_enums.js', () => ({
     UserRole: { ADMIN: 'admin', TEACHER: 'teacher', USER: 'user' },

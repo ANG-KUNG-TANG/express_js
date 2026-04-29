@@ -14,7 +14,7 @@ import { isAdmin }               from '../../core/auth.js';
 import { apiFetch }              from '../../core/api.js';
 import { initNavbar }            from '../../../components/navbar.js';
 import { statusBadge }           from '../../../components/statusBadge.js';
-import { toast }                 from '../../core/toast.js';
+import { toast }                 from '../../utils/toast.js';
 
 requireAuth();
 initNavbar();

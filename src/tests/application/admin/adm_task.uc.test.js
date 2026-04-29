@@ -19,7 +19,7 @@ jest.unstable_mockModule('../../../infrastructure/repositories/user_repo.js', ()
     findUserById: jest.fn(),
 }));
 
-jest.unstable_mockModule('../../../domain/models/task_model.js', () => ({
+jest.unstable_mockModule('../../../infrastructure/models/task_model.js', () => ({
     default: {
         find: jest.fn(() => ({
             sort:  function () { return this; },
@@ -45,7 +45,7 @@ const { adminTransferTasksUC }  = await import('../../../app/admin/adm_transfer_
 
 const taskRepo        = await import('../../../infrastructure/repositories/task_repo.js');
 const userRepo        = await import('../../../infrastructure/repositories/user_repo.js');
-const TaskModelModule = await import('../../../domain/models/task_model.js');
+const TaskModelModule = await import('../../../infrastructure/models/task_model.js');
 const TaskModel       = TaskModelModule.default;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

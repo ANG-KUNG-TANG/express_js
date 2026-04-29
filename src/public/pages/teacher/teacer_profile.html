@@ -1,51 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Profile — WriteSystem</title>
     <script src="/js/core/theme.js"></script>
     <link rel="stylesheet" href="/css/base.css" />
+    <link rel="stylesheet" href="/css/pages/admin.css" />
     <link rel="stylesheet" href="/css/pages/teacher.css" />
-    
 </head>
-<body>
-    <div class="admin-main">
-        <div id="teacher-nav-placeholder"></div>
+<body data-role="teacher">
+<!--
+  Teacher sidebar injected here by initTeacherSidebar().
+  Do NOT add a hardcoded <aside>.
+-->
 
-        <div class="adm-content">
-            <div class="adm-topbar" id="navbar-placeholder"></div>
+<div class="admin-main">
 
-            <div class="adm-inner">
-                <div class="adm-page-header" style="margin-bottom:1.75rem;">
-                    <h1 class="adm-page-title">My Profile</h1>
-                    <p class="adm-page-sub">Manage your display name, email, and bio.</p>
-                </div>
+    <header class="adm-topbar">
+        <div style="display:flex;align-items:center;gap:14px">
+            <a href="/pages/teacher/dashboard.html"
+               style="font-size:12px;color:var(--text3);text-decoration:none;transition:color .15s"
+               onmouseover="this.style.color='var(--text)'"
+               onmouseout="this.style.color='var(--text3)'">← Dashboard</a>
+            <span style="color:var(--border-hi);font-size:14px">/</span>
+            <div>
+                <div class="adm-topbar-title">My Profile</div>
+                <div class="adm-topbar-crumb">Teacher <span>›</span> <span>Profile</span></div>
+            </div>
+        </div>
+        <div class="adm-search">
+            <span class="adm-search-icon">⌕</span>
+            <input type="text" placeholder="Search tasks, students…" autocomplete="off" />
+        </div>
+        <div class="adm-topbar-actions">
+            <button class="adm-icon-btn" title="Alerts">◉<span class="dot"></span></button>
+        </div>
+    </header>
 
-                <!-- Rendered by teacher_profile.js -->
-                <div id="tp-root">
-                    <!-- Initial skeleton -->
-                    <div class="tp-grid">
-                        <div class="tp-profile-card">
-                            <div class="tp-cover"></div>
-                            <div style="padding:1.5rem;display:flex;flex-direction:column;align-items:center;gap:0.75rem;">
-                                <div class="tp-skeleton" style="width:72px;height:72px;border-radius:50%;margin-top:-36px;"></div>
-                                <div class="tp-skeleton" style="width:120px;height:16px;"></div>
-                                <div class="tp-skeleton" style="width:160px;height:12px;"></div>
-                            </div>
-                        </div>
-                        <div class="tp-form-card">
-                            <div class="tp-skeleton" style="height:18px;width:140px;margin-bottom:1.5rem;"></div>
-                            <div class="tp-skeleton" style="height:40px;margin-bottom:1.25rem;"></div>
-                            <div class="tp-skeleton" style="height:40px;margin-bottom:1.25rem;"></div>
-                            <div class="tp-skeleton" style="height:90px;"></div>
-                        </div>
+    <div class="adm-content">
+
+        <!-- Rendered by teacher_profile.js into #tp-root -->
+        <div id="tp-root">
+            <!-- Initial skeleton -->
+            <div class="tp-grid">
+                <div class="tp-profile-card">
+                    <div class="tp-cover"></div>
+                    <div style="padding:1.5rem;display:flex;flex-direction:column;align-items:center;gap:0.75rem;">
+                        <div class="tp-skeleton" style="width:72px;height:72px;border-radius:50%;margin-top:-36px;"></div>
+                        <div class="tp-skeleton" style="width:120px;height:16px;"></div>
+                        <div class="tp-skeleton" style="width:160px;height:12px;"></div>
                     </div>
+                </div>
+                <div class="tp-form-card">
+                    <div class="tp-skeleton" style="height:18px;width:140px;margin-bottom:1.5rem;"></div>
+                    <div class="tp-skeleton" style="height:40px;margin-bottom:1.25rem;"></div>
+                    <div class="tp-skeleton" style="height:40px;margin-bottom:1.25rem;"></div>
+                    <div class="tp-skeleton" style="height:90px;"></div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script type="module" src="../../js/teacher/teacher_profile.js"></script>
+    </div><!-- /adm-content -->
+</div><!-- /admin-main -->
+
+<div id="toast-container"></div>
+<script type="module" src="/js/pages/teacher/teacher_profile.js"></script>
 </body>
 </html>
