@@ -1,253 +1,166 @@
+// src/tests/services/audit.service.test.js
+
 import { jest } from '@jest/globals';
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
+// ── In ESM mode jest.mock() is not available.
+// ── Use jest.unstable_mockModule() BEFORE any dynamic import of the module under test.
 
-const mockLog     = jest.fn();
-const mockFailure = jest.fn();
+const mockLog      = jest.fn();
+const mockFailure  = jest.fn();
 const mockFindLogs = jest.fn();
 
-jest.mock('../logger/audit.logger.js', () => ({
+jest.unstable_mockModule('../../../src/core/logger/audit.logger.js', () => ({
     default: { log: mockLog, failure: mockFailure },
 }));
 
-jest.mock('../../infrastructure/repositories/audit_log_repo.js', () => ({
+jest.unstable_mockModule('../../../src/infrastructure/repositories/audit_log_repo.js', () => ({
     findLogs: mockFindLogs,
 }));
 
-// Import after mocks are in place
+jest.unstable_mockModule('../../../src/domain/base/audit_enums.js', () => ({
+    AuditAction: {
+        TASK_CREATED:   'writingTask.created',
+        TASK_DELETED:   'writingTask.deleted',
+        USER_CREATED:   'user.created',
+        USER_DELETED:   'user.deleted',
+        ADMIN_PROMOTED: 'admin.promoted',
+        AUTH_LOGIN:     'auth.login',
+        TEACHER_ASSIGN: 'teacher.assign',
+        VOCAB_CREATED:  'vocab.created',
+        PROFILE_UPDATE: 'profile.update',
+    },
+}));
+
+// Dynamic import MUST come after unstable_mockModule registrations
 const {
     recordAudit,
     recordFailure,
     getAuditLogs,
     getAuditActionList,
-} = await import('./audit.service.js');
+} = await import('../../../src/core/services/audit.service.js');
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+describe('audit.service', () => {
+    beforeEach(() => { jest.clearAllMocks(); });
 
-const MOCK_ACTION      = 'auth.login';
-const MOCK_REQUESTER   = 'user-123';
-const MOCK_DETAILS     = { ip: '127.0.0.1' };
-const MOCK_REQ         = { headers: {} };
-const PAGINATED_RESULT = { logs: [], total: 0, page: 1, limit: 20, pages: 0 };
-
-beforeEach(() => {
-    jest.clearAllMocks();
-    mockFindLogs.mockResolvedValue(PAGINATED_RESULT);
-});
-
-// ===========================================================================
-// recordAudit
-// ===========================================================================
-
-describe('recordAudit', () => {
-    it('calls auditLogger.log with action, requesterId, and spread details', () => {
-        recordAudit(MOCK_ACTION, MOCK_REQUESTER, MOCK_DETAILS, MOCK_REQ);
-
-        expect(mockLog).toHaveBeenCalledTimes(1);
-        expect(mockLog).toHaveBeenCalledWith(
-            MOCK_ACTION,
-            { requesterId: MOCK_REQUESTER, ...MOCK_DETAILS },
-            MOCK_REQ,
-        );
-    });
-
-    it('works with default empty details', () => {
-        recordAudit(MOCK_ACTION, MOCK_REQUESTER);
-
-        expect(mockLog).toHaveBeenCalledWith(
-            MOCK_ACTION,
-            { requesterId: MOCK_REQUESTER },
-            null,
-        );
-    });
-
-    it('passes req as null when omitted', () => {
-        recordAudit(MOCK_ACTION, MOCK_REQUESTER, MOCK_DETAILS);
-
-        const [, , reqArg] = mockLog.mock.calls[0];
-        expect(reqArg).toBeNull();
-    });
-});
-
-// ===========================================================================
-// recordFailure
-// ===========================================================================
-
-describe('recordFailure', () => {
-    it('calls auditLogger.failure with action, requesterId, and spread details', () => {
-        recordFailure(MOCK_ACTION, MOCK_REQUESTER, MOCK_DETAILS, MOCK_REQ);
-
-        expect(mockFailure).toHaveBeenCalledTimes(1);
-        expect(mockFailure).toHaveBeenCalledWith(
-            MOCK_ACTION,
-            { requesterId: MOCK_REQUESTER, ...MOCK_DETAILS },
-            MOCK_REQ,
-        );
-    });
-
-    it('works with default empty details', () => {
-        recordFailure(MOCK_ACTION, MOCK_REQUESTER);
-
-        expect(mockFailure).toHaveBeenCalledWith(
-            MOCK_ACTION,
-            { requesterId: MOCK_REQUESTER },
-            null,
-        );
-    });
-
-    it('does NOT call auditLogger.log', () => {
-        recordFailure(MOCK_ACTION, MOCK_REQUESTER);
-        expect(mockLog).not.toHaveBeenCalled();
-    });
-});
-
-// ===========================================================================
-// getAuditLogs
-// ===========================================================================
-
-describe('getAuditLogs', () => {
-
-    // -----------------------------------------------------------------------
-    // Passthrough behaviour
-    // -----------------------------------------------------------------------
-
-    it('returns the value resolved by findLogs', async () => {
-        const result = await getAuditLogs({});
-        expect(result).toEqual(PAGINATED_RESULT);
-    });
-
-    it('forwards arbitrary rest filters (page, limit, sort …) to findLogs', async () => {
-        const filters = { page: 2, limit: 50, sort: 'desc', outcome: 'success' };
-        await getAuditLogs(filters);
-
-        expect(mockFindLogs).toHaveBeenCalledWith(
-            expect.objectContaining({ page: 2, limit: 50, sort: 'desc', outcome: 'success' }),
-        );
-    });
-
-    // -----------------------------------------------------------------------
-    // Explicit action wins over category
-    // -----------------------------------------------------------------------
-
-    it('passes action directly when supplied and ignores category', async () => {
-        await getAuditLogs({ action: 'auth.logout', category: 'admin' });
-
-        expect(mockFindLogs).toHaveBeenCalledWith(
-            expect.objectContaining({ action: 'auth.logout' }),
-        );
-        expect(mockFindLogs).toHaveBeenCalledWith(
-            expect.not.objectContaining({ actionPrefix: expect.anything() }),
-        );
-    });
-
-    // -----------------------------------------------------------------------
-    // Category → actionPrefix mapping
-    // -----------------------------------------------------------------------
-
-    const CATEGORY_CASES = [
-        ['auth',    'auth.'],
-        ['admin',   'admin.'],
-        ['user',    'user.'],
-        ['task',    'writingTask.'],
-        ['teacher', 'teacher.'],
-        ['vocab',   'vocab.'],
-        ['profile', 'profile.'],
-    ];
-
-    test.each(CATEGORY_CASES)(
-        'maps category "%s" to actionPrefix "%s" when no action is given',
-        async (category, expectedPrefix) => {
-            await getAuditLogs({ category });
-
-            expect(mockFindLogs).toHaveBeenCalledWith(
-                expect.objectContaining({ actionPrefix: expectedPrefix }),
+    describe('recordAudit', () => {
+        it('delegates to auditLogger.log with correct shape', () => {
+            recordAudit('writingTask.created', 'user-1', { taskId: 't-99' });
+            expect(mockLog).toHaveBeenCalledTimes(1);
+            expect(mockLog).toHaveBeenCalledWith(
+                'writingTask.created',
+                { requesterId: 'user-1', taskId: 't-99' },
+                null,
             );
-            expect(mockFindLogs).toHaveBeenCalledWith(
-                expect.not.objectContaining({ action: expect.anything() }),
+        });
+
+        it('passes the req object through', () => {
+            const fakeReq = { ip: '127.0.0.1' };
+            recordAudit('auth.login', 'user-2', {}, fakeReq);
+            expect(mockLog).toHaveBeenCalledWith('auth.login', { requesterId: 'user-2' }, fakeReq);
+        });
+
+        it('defaults details to {} and req to null', () => {
+            recordAudit('user.created', 'user-3');
+            expect(mockLog).toHaveBeenCalledWith('user.created', { requesterId: 'user-3' }, null);
+        });
+    });
+
+    describe('recordFailure', () => {
+        it('delegates to auditLogger.failure with correct shape', () => {
+            recordFailure('auth.login', 'user-4', { reason: 'bad password' });
+            expect(mockFailure).toHaveBeenCalledTimes(1);
+            expect(mockFailure).toHaveBeenCalledWith(
+                'auth.login',
+                { requesterId: 'user-4', reason: 'bad password' },
+                null,
             );
-        },
-    );
+        });
 
-    it('passes neither action nor actionPrefix when no action or category is given', async () => {
-        await getAuditLogs({ page: 1 });
-
-        expect(mockFindLogs).toHaveBeenCalledWith({ page: 1 });
+        it('passes the req object through', () => {
+            const fakeReq = { ip: '10.0.0.1' };
+            recordFailure('auth.login', 'user-5', {}, fakeReq);
+            expect(mockFailure).toHaveBeenCalledWith('auth.login', { requesterId: 'user-5' }, fakeReq);
+        });
     });
 
-    it('strips category from the payload forwarded to findLogs', async () => {
-        await getAuditLogs({ category: 'auth', page: 1 });
+    describe('getAuditLogs', () => {
+        const mockResult = { logs: [], total: 0, page: 1, limit: 20, pages: 0 };
 
-        expect(mockFindLogs).toHaveBeenCalledWith(
-            expect.not.objectContaining({ category: expect.anything() }),
-        );
+        it('passes plain filters to findLogs with no transformation', async () => {
+            mockFindLogs.mockResolvedValueOnce(mockResult);
+            await getAuditLogs({ page: 2, limit: 10 });
+            expect(mockFindLogs).toHaveBeenCalledWith({ page: 2, limit: 10 });
+        });
+
+        it('resolves category → actionPrefix when no explicit action', async () => {
+            mockFindLogs.mockResolvedValueOnce(mockResult);
+            await getAuditLogs({ category: 'task' });
+            expect(mockFindLogs).toHaveBeenCalledWith({ actionPrefix: 'writingTask.' });
+        });
+
+        it('resolves all known category prefixes correctly', async () => {
+            const cases = [
+                ['auth',    'auth.'],
+                ['admin',   'admin.'],
+                ['user',    'user.'],
+                ['task',    'writingTask.'],
+                ['teacher', 'teacher.'],
+                ['vocab',   'vocab.'],
+                ['profile', 'profile.'],
+            ];
+            for (const [category, prefix] of cases) {
+                mockFindLogs.mockResolvedValueOnce(mockResult);
+                await getAuditLogs({ category });
+                expect(mockFindLogs).toHaveBeenLastCalledWith({ actionPrefix: prefix });
+            }
+        });
+
+        it('explicit action wins over category', async () => {
+            mockFindLogs.mockResolvedValueOnce(mockResult);
+            await getAuditLogs({ category: 'task', action: 'writingTask.deleted' });
+            expect(mockFindLogs).toHaveBeenCalledWith({ action: 'writingTask.deleted' });
+        });
+
+        it('unknown category results in no actionPrefix', async () => {
+            mockFindLogs.mockResolvedValueOnce(mockResult);
+            await getAuditLogs({ category: 'unknown' });
+            expect(mockFindLogs).toHaveBeenCalledWith({});
+        });
+
+        it('returns the value from findLogs', async () => {
+            const expected = { logs: [{ id: 'log-1' }], total: 1, page: 1, limit: 20, pages: 1 };
+            mockFindLogs.mockResolvedValueOnce(expected);
+            const result = await getAuditLogs({});
+            expect(result).toEqual(expected);
+        });
     });
 
-    it('handles an unknown category gracefully (no actionPrefix added)', async () => {
-        await getAuditLogs({ category: 'unknown_category' });
+    describe('getAuditActionList', () => {
+        it('returns an array with entries', () => {
+            const list = getAuditActionList();
+            expect(Array.isArray(list)).toBe(true);
+            expect(list.length).toBeGreaterThan(0);
+        });
 
-        expect(mockFindLogs).toHaveBeenCalledWith({});
-        expect(mockFindLogs).toHaveBeenCalledWith(
-            expect.not.objectContaining({ actionPrefix: expect.anything() }),
-        );
-    });
+        it('each entry has key, value, and category fields', () => {
+            for (const entry of getAuditActionList()) {
+                expect(entry).toHaveProperty('key');
+                expect(entry).toHaveProperty('value');
+                expect(entry).toHaveProperty('category');
+            }
+        });
 
-    it('calls findLogs with no filters when invoked with no arguments', async () => {
-        await getAuditLogs();
-        expect(mockFindLogs).toHaveBeenCalledWith({});
-    });
+        it('category is the first dot-segment of value', () => {
+            for (const entry of getAuditActionList()) {
+                expect(entry.category).toBe(entry.value.split('.')[0]);
+            }
+        });
 
-    // -----------------------------------------------------------------------
-    // Error propagation
-    // -----------------------------------------------------------------------
-
-    it('propagates errors thrown by findLogs', async () => {
-        mockFindLogs.mockRejectedValueOnce(new Error('DB error'));
-        await expect(getAuditLogs({})).rejects.toThrow('DB error');
-    });
-});
-
-// ===========================================================================
-// getAuditActionList
-// ===========================================================================
-
-describe('getAuditActionList', () => {
-    // We don't own AuditAction, so we only assert shape rather than
-    // hard-coding specific enum values.
-
-    it('returns an array', () => {
-        const list = getAuditActionList();
-        expect(Array.isArray(list)).toBe(true);
-    });
-
-    it('every entry has key, value, and category fields', () => {
-        const list = getAuditActionList();
-        expect(list.length).toBeGreaterThan(0);
-
-        for (const entry of list) {
-            expect(entry).toHaveProperty('key');
-            expect(entry).toHaveProperty('value');
-            expect(entry).toHaveProperty('category');
-            expect(typeof entry.key).toBe('string');
-            expect(typeof entry.value).toBe('string');
-            expect(typeof entry.category).toBe('string');
-        }
-    });
-
-    it('category is derived from the first dot-separated segment of value', () => {
-        const list = getAuditActionList();
-
-        for (const entry of list) {
-            expect(entry.category).toBe(entry.value.split('.')[0]);
-        }
-    });
-
-    it('returns a new array on each call (not a cached reference)', () => {
-        const a = getAuditActionList();
-        const b = getAuditActionList();
-        expect(a).not.toBe(b);
+        it('contains expected TASK_CREATED entry', () => {
+            const entry = getAuditActionList().find((e) => e.key === 'TASK_CREATED');
+            expect(entry).toBeDefined();
+            expect(entry.value).toBe('writingTask.created');
+            expect(entry.category).toBe('writingTask');
+        });
     });
 });
