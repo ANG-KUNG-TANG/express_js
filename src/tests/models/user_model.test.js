@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server'; // <-- added import
 import { UserRole } from '../../domain/base/user_enums';
-import UserModel from '../../domain/models/user_model';
+import UserModel from '../../infrastructure/models/user_model';
 
 let mongoServer; // <-- added declaration
 
