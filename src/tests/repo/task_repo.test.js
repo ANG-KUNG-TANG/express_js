@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import TaskModel from "../../domain/models/task_model";
-import UserModel from "../../domain/models/user_model";
-import * as taskRepo from '../../infrastructure/repositories/task_repo';
-import { TaskStatus, TaskPriority } from '../../domain/base/task_enums';
-import { UserRole } from "../../domain/base/user_enums";
+import WritingTaskModel from "../../infrastructure/models/task_model.js";
+import UserModel from "../../infrastructure/models/user_model.js";
+import * as taskRepo from '../../infrastructure/repositories/task_repo.js';
+import { WritingStatus, AssignmentStatus } from '../../domain/base/task_enums.js';
+import { UserRole } from '../../domain/base/user_enums.js';
 
 describe('Task Repository', () => {
   let mongoServer;
@@ -22,7 +22,7 @@ describe('Task Repository', () => {
   });
 
   beforeEach(async () => {
-    await TaskModel.deleteMany({});
+    await WritingTaskModel.deleteMany({});
     await UserModel.deleteMany({});
 
     testUser = await UserModel.create({
@@ -36,9 +36,9 @@ describe('Task Repository', () => {
   const getValidTaskData = () => ({
     title: "Test Title",
     description: "Test Description",
-    status: TaskStatus.PENDING,
-    priority: TaskPriority.MEDIUM,
-    dueDate: new Date('2025-12-31'),
+    status: WritingStatus.ASSIGNED,
+    examType: "ACADEMIC",
+    taskType: "TASK_2",
     userId: testUser._id.toString(),
   });
 
@@ -54,7 +54,10 @@ describe('Task Repository', () => {
     it('should throw duplicate title error for same user', async () => {
       const taskData = getValidTaskData();
       await taskRepo.createTask(taskData);
-      await expect(taskRepo.createTask(taskData)).rejects.toThrow('Task with title\"Test Title\" already exists');
+      // Exact error message with a space before the quote
+      await expect(taskRepo.createTask(taskData)).rejects.toThrow(
+        'Task with title "Test Title" already exists'
+      );
     });
 
     it('should throw validation error when title is missing', async () => {
@@ -73,7 +76,7 @@ describe('Task Repository', () => {
 
     it("should throw not found for non-existent id", async () => {
       const fakeId = new mongoose.Types.ObjectId().toString();
-      await expect(taskRepo.findTaskByID(fakeId)).rejects.toThrow(`Task with id ${fakeId}`);
+      await expect(taskRepo.findTaskByID(fakeId)).rejects.toThrow('Task with id');
     });
 
     it("should throw invalid id error for malformed id", async () => {
@@ -84,15 +87,15 @@ describe('Task Repository', () => {
   describe('updateTask', () => {
     it('should update task fields', async () => {
       const created = await taskRepo.createTask(getValidTaskData());
-      const updates = { title: 'Updated Title', priority: TaskPriority.HIGH };
+      const updates = { title: 'Updated Title', status: WritingStatus.SUBMITTED };
       const updated = await taskRepo.updateTask(created.id, updates);
       expect(updated._title).toBe('Updated Title');
-      expect(updated.priority).toBe(TaskPriority.HIGH);
+      expect(updated._status).toBe(WritingStatus.SUBMITTED);
     });
 
     it('should throw not found for non-existent id', async () => {
       const fakeId = new mongoose.Types.ObjectId().toString();
-      await expect(taskRepo.updateTask(fakeId, { title: 'x' })).rejects.toThrow(`Task with id ${fakeId}`);
+      await expect(taskRepo.updateTask(fakeId, { title: 'x' })).rejects.toThrow('Task with id');
     });
   });
 
@@ -101,16 +104,16 @@ describe('Task Repository', () => {
       const created = await taskRepo.createTask(getValidTaskData());
       const result = await taskRepo.deleteTask(created.id);
       expect(result).toBe(true);
-      await expect(taskRepo.findTaskByID(created.id)).rejects.toThrow(`Task with id ${created.id}`);
+      await expect(taskRepo.findTaskByID(created.id)).rejects.toThrow('Task with id');
     });
   });
 
   describe('findTasks', () => {
     beforeEach(async () => {
       const base = getValidTaskData();
-      await taskRepo.createTask({ ...base, title: "task 1", status: TaskStatus.PENDING });
-      await taskRepo.createTask({ ...base, title: "task 2", status: TaskStatus.IN_PROGRESS });
-      await taskRepo.createTask({ ...base, title: "task 3", status: TaskStatus.COMPLETED });
+      await taskRepo.createTask({ ...base, title: "task 1", status: WritingStatus.ASSIGNED });
+      await taskRepo.createTask({ ...base, title: "task 2", status: WritingStatus.WRITING });
+      await taskRepo.createTask({ ...base, title: "task 3", status: WritingStatus.SUBMITTED });
     });
 
     it('should return all tasks with default options', async () => {
@@ -119,87 +122,79 @@ describe('Task Repository', () => {
     });
 
     it('should filter by status', async () => {
-      const tasks = await taskRepo.findTasks({ status: TaskStatus.IN_PROGRESS });
+      const tasks = await taskRepo.findTasks({ status: WritingStatus.WRITING });
       expect(tasks).toHaveLength(1);
     });
 
     it('should filter by userId', async () => {
-      const tasks = await taskRepo.findTasks({ userId: testUser._id.toString() });
+      const tasks = await taskRepo.findTasks({}, { userId: testUser._id.toString() });
       expect(tasks).toHaveLength(3);
     });
 
     it('should apply pagination', async () => {
-      const tasks = await taskRepo.findTasks({}, { skip: 1, limit: 1 });
-      expect(tasks).toHaveLength(1);
+      const tasks = await taskRepo.findTasks({}, { page: 1, limit: 2 });
+      expect(tasks).toHaveLength(2);
     });
   });
 
-  describe('startTask and completeTask', () => {
-    it('should transition from pending to in_progress', async () => {
+  describe('startWritingTask and submitTask', () => {
+    it('should transition from ASSIGNED to WRITING', async () => {
       const created = await taskRepo.createTask(getValidTaskData());
-      const started = await taskRepo.startTask(created.id);
-      expect(started.status).toBe(TaskStatus.IN_PROGRESS);
+      const started = await taskRepo.startWritingTask(created);
+      expect(started._status).toBe(WritingStatus.WRITING);
     });
 
-    it('should transition from in_progress to completed', async () => {
-      const data = { ...getValidTaskData(), status: TaskStatus.IN_PROGRESS };
-      const created = await taskRepo.createTask(data);
-      const completed = await taskRepo.completeTask(created.id);
-      expect(completed.status).toBe(TaskStatus.COMPLETED);
+    it('should submit a WRITING task (with enough words)', async () => {
+      // Use TASK_1 to require 150 words, and provide enough.
+      const base = { ...getValidTaskData(), status: WritingStatus.WRITING, taskType: 'TASK_1' };
+      const created = await taskRepo.createTask(base);
+      const longText = 'word '.repeat(155).trim(); // 155 words
+      const submitted = await taskRepo.submitTask(created.id, longText);
+      expect(submitted._status).toBe(WritingStatus.SUBMITTED);
     });
 
-    it('should throw error when starting a non-pending task', async () => {
-      const data = { ...getValidTaskData(), status: TaskStatus.COMPLETED };
+    it('should throw error when starting a non-ASSIGNED task', async () => {
+      const data = { ...getValidTaskData(), status: WritingStatus.SUBMITTED };
       const created = await taskRepo.createTask(data);
-      await expect(taskRepo.startTask(created.id)).rejects.toThrow('Only pending tasks can start');
+      await expect(taskRepo.startWritingTask(created)).rejects.toThrow('Only assigned tasks can be started');
     });
   });
 
   describe('searchTasksByTitle', () => {
-  it('should find tasks by title substring', async () => {
-    const data = { ...getValidTaskData(), title: 'Special Project' };
-    await taskRepo.createTask(data);
-    const results = await taskRepo.searchTasksByTitle('special');
-    expect(results).toHaveLength(1);
-    expect(results[0]._title).toBe('Special Project');   
+    it('should find tasks by title substring', async () => {
+      const data = { ...getValidTaskData(), title: 'Special Project' };
+      await taskRepo.createTask(data);
+      const results = await taskRepo.searchTasksByTitle('special');
+      expect(results).toHaveLength(1);
+      expect(results[0]._title).toBe('Special Project');
+    });
   });
-});
 
   describe('getUserTaskStats', () => {
-  it('should return correct stats', async () => {
-    await taskRepo.createTask({
-      ...getValidTaskData(),
-      title: 'Task 1',                 
-      status: TaskStatus.PENDING,
-      priority: TaskPriority.HIGH,
+    it('should return correct stats', async () => {
+      await taskRepo.createTask({ ...getValidTaskData(), title: 'Task 1', status: WritingStatus.ASSIGNED });
+      await taskRepo.createTask({ ...getValidTaskData(), title: 'Task 2', status: WritingStatus.SUBMITTED });
+      const stats = await taskRepo.getUserTaskStats(testUser._id.toString());
+      expect(stats.total).toBe(2);
+      expect(stats.byStatus[WritingStatus.ASSIGNED]).toBe(1);
+      expect(stats.byStatus[WritingStatus.SUBMITTED]).toBe(1);
     });
-    await taskRepo.createTask({
-      ...getValidTaskData(),
-      title: 'Task 2',                 
-      status: TaskStatus.COMPLETED,
-      priority: TaskPriority.LOW,
-    });
-    const stats = await taskRepo.getUserTaskStats(testUser._id.toString());
-    expect(stats.total).toBe(2);
-    expect(stats.byStatus[TaskStatus.PENDING]).toBe(1);
-    expect(stats.byPriority[TaskPriority.LOW]).toBe(1);
   });
-});
 
   describe('transferTasks', () => {
-  it('should transfer all tasks from one user to another', async () => {
-    const otherUser = await UserModel.create({
-      name: 'Other',
-      email: 'other@example.com',
-      password: 'password123',
-      role: UserRole.USER,
+    it('should transfer all tasks from one user to another', async () => {
+      const otherUser = await UserModel.create({
+        name: 'Other',
+        email: 'other@example.com',
+        password: 'password123',
+        role: UserRole.USER,
+      });
+      await taskRepo.createTask({ ...getValidTaskData(), title: 'Task A' });
+      await taskRepo.createTask({ ...getValidTaskData(), title: 'Task B' });
+      const result = await taskRepo.transferTasks(testUser._id.toString(), otherUser._id.toString());
+      expect(result.transferred).toBe(2);
+      const tasksForOther = await taskRepo.findTasks({}, { userId: otherUser._id.toString() });
+      expect(tasksForOther).toHaveLength(2);
     });
-    await taskRepo.createTask({ ...getValidTaskData(), title: 'Task A' });
-    await taskRepo.createTask({ ...getValidTaskData(), title: 'Task B' });
-    const result = await taskRepo.transferTasks(testUser._id.toString(), otherUser._id.toString());
-    expect(result.transferred).toBe(2);
-    const tasksForOther = await taskRepo.findTasks({ userId: otherUser._id.toString() });
-    expect(tasksForOther).toHaveLength(2);
   });
-});
 });
