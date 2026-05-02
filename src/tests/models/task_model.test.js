@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+// ❌ removed MongoMemoryServer import
 import {
   WritingStatus,
   TaskType,
@@ -7,17 +7,13 @@ import {
 } from '../../domain/base/task_enums.js';
 import TaskModel from '../../infrastructure/models/task_model.js';
 
-let mongoServer;
-
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri);
-}, 60000);
+  await mongoose.connect(process.env.__MONGO_URI__ + 'task-model-test');
+});
 
 afterAll(async () => {
+  await mongoose.connection.dropDatabase();
   await mongoose.disconnect();
-  await mongoServer.stop();
 });
 
 beforeEach(async () => {
@@ -28,9 +24,9 @@ describe('Task Model', () => {
   const validTask = {
     title: 'Test Task',
     description: 'This is a test task',
-    status: WritingStatus.WRITING,          // matches real schema
-    taskType: TaskType.TASK_2,              // required field
-    examType: ExamType.ACADEMIC,            // required field
+    status: WritingStatus.WRITING,
+    taskType: TaskType.TASK_2,
+    examType: ExamType.ACADEMIC,
     dueDate: new Date('2025-12-31'),
     userId: new mongoose.Types.ObjectId(),
   };

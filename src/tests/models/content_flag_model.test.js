@@ -1,17 +1,14 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+// ❌ removed MongoMemoryServer import
 import ContentFlagModel from '../../infrastructure/models/content_flag_model.js';
 
-let mongoServer;
-
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
-}, 60000);
+  await mongoose.connect(process.env.__MONGO_URI__ + 'content-flag-model-test');
+});
 
 afterAll(async () => {
+  await mongoose.connection.dropDatabase();
   await mongoose.disconnect();
-  await mongoServer.stop();
 });
 
 beforeEach(async () => {

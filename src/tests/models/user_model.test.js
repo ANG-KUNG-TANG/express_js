@@ -1,19 +1,15 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server'; // <-- added import
-import { UserRole } from '../../domain/base/user_enums';
-import UserModel from '../../infrastructure/models/user_model';
-
-let mongoServer; // <-- added declaration
+// ❌ removed MongoMemoryServer import
+import { UserRole } from '../../domain/base/user_enums.js';
+import UserModel from '../../infrastructure/models/user_model.js';
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri);
-}, 60000);
+  await mongoose.connect(process.env.__MONGO_URI__ + 'user-model-test');
+});
 
 afterAll(async () => {
+  await mongoose.connection.dropDatabase();
   await mongoose.disconnect();
-  await mongoServer.stop();
 });
 
 beforeEach(async () => {

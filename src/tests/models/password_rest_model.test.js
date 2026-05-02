@@ -1,17 +1,14 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+// ❌ removed MongoMemoryServer import
 import { PasswordResetTokenModel } from '../../infrastructure/models/password_reset_token_model.js';
 
-let mongoServer;
-
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
-}, 60000);
+  await mongoose.connect(process.env.__MONGO_URI__ + 'password-reset-model-test');
+});
 
 afterAll(async () => {
+  await mongoose.connection.dropDatabase();
   await mongoose.disconnect();
-  await mongoServer.stop();
 });
 
 beforeEach(async () => {
@@ -19,8 +16,6 @@ beforeEach(async () => {
 });
 
 describe('PasswordResetToken Model', () => {
-  // IMPORTANT: schema has `_id: { type: String, default: undefined }`
-  // so _id must be supplied manually.
   const validToken = {
     _id: 'test-token-1',
     userId: 'user-123',
@@ -32,7 +27,7 @@ describe('PasswordResetToken Model', () => {
   test('should create and save a token successfully', async () => {
     const token = new PasswordResetTokenModel(validToken);
     const saved = await token.save();
-    expect(saved._id).toBe('test-token-1');   // explicit string _id
+    expect(saved._id).toBe('test-token-1');
     expect(saved.userId).toBe(validToken.userId);
     expect(saved.tokenHash).toBe(validToken.tokenHash);
     expect(saved.expiresAt).toEqual(validToken.expiresAt);
@@ -59,9 +54,7 @@ describe('PasswordResetToken Model', () => {
   });
 
   test('should enforce unique tokenHash', async () => {
-    // First token with _id 'token-5'
     await new PasswordResetTokenModel(validToken).save();
-    // Second token with a different _id but same tokenHash → duplicate
     const duplicate = new PasswordResetTokenModel({
       ...validToken,
       _id: 'token-6',

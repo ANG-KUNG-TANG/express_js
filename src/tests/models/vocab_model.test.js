@@ -1,18 +1,15 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import VocabModel from '../../infrastructure/models/vocab_model.js';  // Adjust path if needed
+// ❌ removed MongoMemoryServer import
+import VocabModel from '../../infrastructure/models/vocab_model.js';
 import { TopicEnum } from '../../domain/base/topics_enums.js';
 
-let mongoServer;
-
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
-}, 60000);
+  await mongoose.connect(process.env.__MONGO_URI__ + 'vocab-model-test');
+});
 
 afterAll(async () => {
+  await mongoose.connection.dropDatabase();
   await mongoose.disconnect();
-  await mongoServer.stop();
 });
 
 beforeEach(async () => {
@@ -64,7 +61,7 @@ describe('Vocabulary Model', () => {
 
   test('should enforce unique combination of topic + word', async () => {
     await new VocabModel(validVocab).save();
-    const duplicate = new VocabModel(validVocab); // same topic and word
+    const duplicate = new VocabModel(validVocab);
     await expect(duplicate.save()).rejects.toThrow(mongoose.Error.DuplicateKeyError);
   });
 

@@ -1,17 +1,14 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import { Notification } from '../../infrastructure/models/notification_model.js';  // Adjust path if needed
-
-let mongoServer;
+// ❌ removed MongoMemoryServer import
+import { Notification } from '../../infrastructure/models/notification_model.js';  // adjust if path is correct
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
-}, 60000);
+  await mongoose.connect(process.env.__MONGO_URI__ + 'notification-model-test');
+});
 
 afterAll(async () => {
+  await mongoose.connection.dropDatabase();
   await mongoose.disconnect();
-  await mongoServer.stop();
 });
 
 beforeEach(async () => {
