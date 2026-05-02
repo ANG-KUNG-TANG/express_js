@@ -19,7 +19,7 @@ import { toDomain, toDomainList, toPersistence} from '../mapper/tasks.mapper.js'
 // ---------------------------------------------------------------------------
 
 export const findTaskByID = async (id) => {
-    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError('invalid-id');
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError(id);
     logger.debug('writingTaskRepo.findTaskByID', { id });
     const doc = await WritingTaskModel.findById(id).lean();
     if (!doc) throw new TaskNotFoundError(id);
