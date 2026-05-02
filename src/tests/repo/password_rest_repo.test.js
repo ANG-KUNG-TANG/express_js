@@ -1,82 +1,119 @@
-// src/tests/repo/password_reset_token_repo.test.js
+// src/tests/repo/password_rest_repo.test.js
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { PasswordResetTokenModel } from '../../infrastructure/models/password_reset_token_model.js';
-import { PasswordResetToken } from '../../domain/entities/password_reset_token_entity.js';
 import { passwordResetTokenRepo } from '../../infrastructure/repositories/password_reset_token_repo.js';
-import crypto from 'crypto';
+import { PasswordResetToken } from '../../domain/entities/password_reset_token_entity.js';
 
 describe('Password Reset Token Repository', () => {
-  let mongoServer;
-  const userId = new mongoose.Types.ObjectId().toString();
-
   beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    await mongoose.connect(mongoServer.getUri());
+    await mongoose.connect(process.env.__MONGO_URI__ + 'password-reset-repo-test');
   });
 
   afterAll(async () => {
+    await mongoose.connection.dropDatabase();
     await mongoose.disconnect();
-    await mongoServer.stop();
   });
 
   beforeEach(async () => {
     await PasswordResetTokenModel.deleteMany({});
   });
 
-  const createEntity = () =>
-    new PasswordResetToken({
-      id: crypto.randomBytes(32).toString('hex'),
-      userId,
-      tokenHash: 'hashedvalue',
-      expiresAt: new Date(Date.now() + 3600000),
-      used: false,
+  // Unique ids & hashes per call so tests never collide
+  let counter = 0;
+  const makeToken = (overrides = {}) => {
+    counter++;
+    return new PasswordResetToken({
+      id:        `token-${counter}`,
+      userId:    'user-abc',
+      tokenHash: `hash-${counter}`,
+      expiresAt: new Date(Date.now() + 3_600_000),
+      used:      false,
+      ...overrides,
     });
+  };
 
+  // ── create ─────────────────────────────────────────────────────────────────
   describe('create', () => {
-    it('should persist a token', async () => {
-      const token = createEntity();
-      const saved = await passwordResetTokenRepo.create(token);
+    it('should persist a token and return an entity', async () => {
+      const entity = makeToken();
+      const saved = await passwordResetTokenRepo.create(entity);
       expect(saved).toBeDefined();
-      expect(saved.userId).toBe(userId);
+      expect(saved.userId).toBe(entity.userId);
+      expect(saved.tokenHash).toBe(entity.tokenHash);
+      expect(saved.used).toBe(false);
     });
   });
 
+  // ── findByHash ─────────────────────────────────────────────────────────────
   describe('findByHash', () => {
-    it('should find a token by hash', async () => {
-      const token = createEntity();
-      await passwordResetTokenRepo.create(token);
-      const found = await passwordResetTokenRepo.findByHash(token.tokenHash);
+    it('should find a token by its hash', async () => {
+      const entity = makeToken();
+      await passwordResetTokenRepo.create(entity);
+      const found = await passwordResetTokenRepo.findByHash(entity.tokenHash);
       expect(found).toBeDefined();
-      expect(found.tokenHash).toBe(token.tokenHash);
+      expect(found.tokenHash).toBe(entity.tokenHash);
+      expect(found.userId).toBe(entity.userId);
     });
 
-    it('should return null for unknown hash', async () => {
-      const found = await passwordResetTokenRepo.findByHash('nohash');
+    it('should return null for an unknown hash', async () => {
+      const found = await passwordResetTokenRepo.findByHash('no-such-hash');
       expect(found).toBeNull();
     });
   });
 
-  describe('save / invalidateAllForUser', () => {
-    it('should mark token as used', async () => {
-      const token = createEntity();
-      await passwordResetTokenRepo.create(token);
-      token.used = true;
-      await passwordResetTokenRepo.save(token);
-      const updated = await passwordResetTokenRepo.findByHash(token.tokenHash);
-      expect(updated.used).toBe(true);
-    });
+  // ── save (mark used) ───────────────────────────────────────────────────────
+  describe('save', () => {
+    it('should update the used field to true', async () => {
+      const entity = makeToken();
+      await passwordResetTokenRepo.create(entity);
 
-    it('should invalidate all tokens for a user', async () => {
-      const token1 = createEntity();
-      const token2 = createEntity();
-      await passwordResetTokenRepo.create(token1);
-      await passwordResetTokenRepo.create(token2);
+      // FIX: PasswordResetToken exposes `used` as a read-only getter (no setter),
+      // so `entity.used = true` throws a TypeError at runtime.
+      // Instead, construct a new entity with the same identity fields but used: true.
+      // This is consistent with the immutable-entity pattern the domain layer enforces.
+      const markedUsed = new PasswordResetToken({
+        id:        entity.id,
+        userId:    entity.userId,
+        tokenHash: entity.tokenHash,
+        expiresAt: entity.expiresAt,
+        used:      true,
+      });
+      await passwordResetTokenRepo.save(markedUsed);
+
+      const found = await passwordResetTokenRepo.findByHash(entity.tokenHash);
+      expect(found.used).toBe(true);
+    });
+  });
+
+  // ── invalidateAllForUser ───────────────────────────────────────────────────
+  describe('invalidateAllForUser', () => {
+    it('should mark every unused token for a user as used', async () => {
+      const userId = 'user-xyz';
+      const t1 = makeToken({ userId });
+      const t2 = makeToken({ userId });
+      await passwordResetTokenRepo.create(t1);
+      await passwordResetTokenRepo.create(t2);
+
       await passwordResetTokenRepo.invalidateAllForUser(userId);
-      const found1 = await passwordResetTokenRepo.findByHash(token1.tokenHash);
-      const found2 = await passwordResetTokenRepo.findByHash(token2.tokenHash);
+
+      const found1 = await passwordResetTokenRepo.findByHash(t1.tokenHash);
+      const found2 = await passwordResetTokenRepo.findByHash(t2.tokenHash);
       expect(found1.used).toBe(true);
       expect(found2.used).toBe(true);
+    });
+
+    it('should not affect tokens belonging to other users', async () => {
+      const targetUser = 'user-target';
+      const otherUser  = 'user-other';
+      const tokenTarget = makeToken({ userId: targetUser });
+      const tokenOther  = makeToken({ userId: otherUser });
+      await passwordResetTokenRepo.create(tokenTarget);
+      await passwordResetTokenRepo.create(tokenOther);
+
+      await passwordResetTokenRepo.invalidateAllForUser(targetUser);
+
+      const other = await passwordResetTokenRepo.findByHash(tokenOther.tokenHash);
+      expect(other.used).toBe(false);
     });
   });
 });

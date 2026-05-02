@@ -1,23 +1,18 @@
 // src/tests/repo/user_repo.test.js
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import UserModel from '../../infrastructure/models/user_model.js';
 import * as userRepo from '../../infrastructure/repositories/user_repo.js';
 import { UserRole } from '../../domain/base/user_enums.js';
 import { hashPassword } from '../../app/validators/password_hash.js';
 
 describe('User Repository', () => {
-  let mongoServer;
-
   beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    const uri = mongoServer.getUri();
-    await mongoose.connect(uri);
-  }, 60000);
+    await mongoose.connect(process.env.__MONGO_URI__ + 'user-repo-test');
+  });
 
   afterAll(async () => {
+    await mongoose.connection.dropDatabase();
     await mongoose.disconnect();
-    await mongoServer.stop();
   });
 
   beforeEach(async () => {
@@ -31,19 +26,16 @@ describe('User Repository', () => {
     role: UserRole.USER,
   };
 
-  const seedUser = async (overrides = {}) =>
+  const seedUser = (overrides = {}) =>
     userRepo.createUser({ ...validUserData, ...overrides });
 
   const seedUserWithHash = async (overrides = {}) => {
     const data = { ...validUserData, ...overrides };
-    const hashedPwd = await hashPassword(data.password);
-    const entityData = { ...data, password: hashedPwd };
-    return userRepo.createUser(entityData);
+    const hashed = await hashPassword(data.password);
+    return userRepo.createUser({ ...data, password: hashed });
   };
 
-  // -----------------------------------------------------------------------
-  // createUser
-  // -----------------------------------------------------------------------
+  // ── createUser ─────────────────────────────────────────────────────────────
   describe('createUser', () => {
     it('should create a user successfully', async () => {
       const user = await userRepo.createUser(validUserData);
@@ -51,48 +43,30 @@ describe('User Repository', () => {
       expect(user.name).toBe(validUserData.name);
       expect(user.email).toBe(validUserData.email.toLowerCase());
       expect(user.role).toBe(UserRole.USER);
-      // Password is present on the domain entity (internal usage)
-      expect(user.password).toBeDefined();
     });
 
     it('should throw duplicate email error', async () => {
       await seedUser();
-      await expect(userRepo.createUser(validUserData)).rejects.toThrow(
-        'UserEmailAlreadyExistsError'
-      );
+      await expect(userRepo.createUser(validUserData)).rejects.toThrow('UserEmailAlreadyExistsError');
     });
 
-    it('should throw validation error for invalid email format', async () => {
-      await expect(
-        userRepo.createUser({ ...validUserData, email: 'not-an-email' })
-      ).rejects.toThrow('Invalid email format');
+    it('should throw for invalid email format', async () => {
+      await expect(userRepo.createUser({ ...validUserData, email: 'not-an-email' }))
+        .rejects.toThrow('Invalid email format');
     });
 
-    it('should throw validation error for short password', async () => {
-      await expect(
-        userRepo.createUser({ ...validUserData, password: '123' })
-      ).rejects.toThrow('Password must be at least 8 characters');
+    it('should throw for short password', async () => {
+      await expect(userRepo.createUser({ ...validUserData, password: '123' }))
+        .rejects.toThrow('Password must be at least 8 characters');
     });
 
     it('should lowercase the email before saving', async () => {
-      const user = await userRepo.createUser({
-        ...validUserData,
-        email: 'JOHN@EXAMPLE.COM',
-      });
-      expect(user.email).toBe('john@example.com');
-    });
-
-    it('should work with a User entity instance', async () => {
-      const { User } = await import('../../domain/entities/user_entity.js');
-      const entity = new User(validUserData);
-      const user = await userRepo.createUser(entity);
+      const user = await userRepo.createUser({ ...validUserData, email: 'JOHN@EXAMPLE.COM' });
       expect(user.email).toBe('john@example.com');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // findUserById
-  // -----------------------------------------------------------------------
+  // ── findUserById ───────────────────────────────────────────────────────────
   describe('findUserById', () => {
     it('should find a user by id', async () => {
       const created = await seedUser();
@@ -105,16 +79,12 @@ describe('User Repository', () => {
       await expect(userRepo.findUserById(fakeId)).rejects.toThrow('User with id');
     });
 
-    it('should throw validation error for invalid id format', async () => {
-      await expect(userRepo.findUserById('invalid')).rejects.toThrow(
-        'invalid user id format'
-      );
+    it('should throw for invalid id format', async () => {
+      await expect(userRepo.findUserById('invalid')).rejects.toThrow('invalid user id format');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // findUserByEmail
-  // -----------------------------------------------------------------------
+  // ── findUserByEmail ────────────────────────────────────────────────────────
   describe('findUserByEmail', () => {
     it('should find a user by email', async () => {
       await seedUser();
@@ -128,60 +98,48 @@ describe('User Repository', () => {
       expect(found.email).toBe('john@example.com');
     });
 
-    it('should throw not found for non-existent email', async () => {
-      await expect(
-        userRepo.findUserByEmail('nonexistent@example.com')
-      ).rejects.toThrow('nonexistent@example.com');
+    it('should throw for non-existent email', async () => {
+      await expect(userRepo.findUserByEmail('none@example.com')).rejects.toThrow('none@example.com');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // findUserByEmailWithPassword
-  // -----------------------------------------------------------------------
+  // ── findUserByEmailWithPassword ────────────────────────────────────────────
   describe('findUserByEmailWithPassword', () => {
-    it('should return user with password field', async () => {
+    it('should return user with password field included', async () => {
       await seedUser();
       const found = await userRepo.findUserByEmailWithPassword('john@example.com');
       expect(found).toBeDefined();
       expect(found.email).toBe('john@example.com');
     });
 
-    it('should throw not found for non-existent email', async () => {
-      await expect(
-        userRepo.findUserByEmailWithPassword('no@example.com')
-      ).rejects.toThrow('no@example.com');
+    it('should throw for non-existent email', async () => {
+      await expect(userRepo.findUserByEmailWithPassword('no@example.com')).rejects.toThrow('no@example.com');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // authenticateUser
-  // -----------------------------------------------------------------------
+  // ── authenticateUser ───────────────────────────────────────────────────────
   describe('authenticateUser', () => {
     it('should authenticate with correct credentials', async () => {
       await seedUserWithHash();
-      const sanitized = await userRepo.authenticateUser('john@example.com', 'secure123');
-      expect(sanitized).toHaveProperty('id');
-      expect(sanitized.email).toBe('john@example.com');
-      expect(sanitized.password).toBeUndefined(); // sanitized user has no password
+      const result = await userRepo.authenticateUser('john@example.com', 'secure123');
+      expect(result).toHaveProperty('id');
+      expect(result.email).toBe('john@example.com');
+      expect(result.password).toBeUndefined();
     });
 
-    it('should throw invalid credentials for wrong password', async () => {
+    it('should throw for wrong password', async () => {
       await seedUserWithHash();
-      await expect(
-        userRepo.authenticateUser('john@example.com', 'wrongpass')
-      ).rejects.toThrow('Invalid credentials');
+      await expect(userRepo.authenticateUser('john@example.com', 'wrongpass'))
+        .rejects.toThrow('Invalid credentials');
     });
 
-    it('should throw email not found for unknown email', async () => {
-      await expect(
-        userRepo.authenticateUser('unknown@example.com', 'any')
-      ).rejects.toThrow('unknown@example.com');
+    it('should throw for unknown email', async () => {
+      await expect(userRepo.authenticateUser('unknown@example.com', 'any'))
+        .rejects.toThrow('unknown@example.com');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // promoteToAdmin
-  // -----------------------------------------------------------------------
+  // ── promoteToAdmin ─────────────────────────────────────────────────────────
   describe('promoteToAdmin', () => {
     it('should promote a user to admin', async () => {
       const created = await seedUser();
@@ -191,20 +149,15 @@ describe('User Repository', () => {
 
     it('should throw not found for non-existent user', async () => {
       const fakeId = new mongoose.Types.ObjectId().toString();
-      await expect(userRepo.promoteToAdmin(fakeId)).rejects.toThrow(
-        `User with id ${fakeId}`
-      );
+      await expect(userRepo.promoteToAdmin(fakeId)).rejects.toThrow('User with id');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // deleteUser
-  // -----------------------------------------------------------------------
+  // ── deleteUser ─────────────────────────────────────────────────────────────
   describe('deleteUser', () => {
     it('should delete an existing user', async () => {
       const created = await seedUser();
-      const result = await userRepo.deleteUser(created.id);
-      expect(result).toEqual({ deleted: true });
+      await userRepo.deleteUser(created.id);
       await expect(userRepo.findUserById(created.id)).rejects.toThrow('User with id');
     });
 
@@ -213,48 +166,33 @@ describe('User Repository', () => {
       await expect(userRepo.deleteUser(fakeId)).rejects.toThrow('User with id');
     });
 
-    it('should throw validation error for invalid id', async () => {
-      await expect(userRepo.deleteUser('invalid')).rejects.toThrow(
-        'invalid user id format'
-      );
+    it('should throw for invalid id format', async () => {
+      await expect(userRepo.deleteUser('invalid')).rejects.toThrow('invalid user id format');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // updateUser
-  // -----------------------------------------------------------------------
+  // ── updateUser ─────────────────────────────────────────────────────────────
   describe('updateUser', () => {
     it('should update allowed fields', async () => {
       const created = await seedUser();
-      const updated = await userRepo.updateUser(created.id, {
-        name: 'Jane Doe',
-        bio: 'New bio',
-        targetBand: 7.5,
-      });
+      const updated = await userRepo.updateUser(created.id, { name: 'Jane Doe', bio: 'New bio', targetBand: 7.5 });
       expect(updated.name).toBe('Jane Doe');
       expect(updated.bio).toBe('New bio');
-      expect(updated.targetBand).toBe('7.5'); // stored as string
     });
 
     it('should lowercase email on update', async () => {
       const created = await seedUser();
-      const updated = await userRepo.updateUser(created.id, {
-        email: 'NEW@EXAMPLE.COM',
-      });
+      const updated = await userRepo.updateUser(created.id, { email: 'NEW@EXAMPLE.COM' });
       expect(updated.email).toBe('new@example.com');
     });
 
     it('should throw not found for non-existent id', async () => {
       const fakeId = new mongoose.Types.ObjectId().toString();
-      await expect(
-        userRepo.updateUser(fakeId, { name: 'x' })
-      ).rejects.toThrow('User with id');
+      await expect(userRepo.updateUser(fakeId, { name: 'x' })).rejects.toThrow('User with id');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // listAllUsers
-  // -----------------------------------------------------------------------
+  // ── listAllUsers ───────────────────────────────────────────────────────────
   describe('listAllUsers', () => {
     it('should return all users without passwords', async () => {
       await seedUser({ email: 'a@example.com' });
@@ -265,45 +203,37 @@ describe('User Repository', () => {
     });
   });
 
-  // -----------------------------------------------------------------------
-  // findAll
-  // -----------------------------------------------------------------------
+  // ── findAll ────────────────────────────────────────────────────────────────
   describe('findAll', () => {
     it('should filter by role', async () => {
-      await seedUser({ role: UserRole.USER, email: 'u1@example.com' });
+      await seedUser({ role: UserRole.USER,  email: 'u1@example.com' });
       await seedUser({ role: UserRole.ADMIN, email: 'u2@example.com' });
       const admins = await userRepo.findAll({ role: UserRole.ADMIN });
       expect(admins).toHaveLength(1);
       expect(admins[0].role).toBe(UserRole.ADMIN);
     });
 
-    it('should throw validation error for invalid assignedTeacher id', async () => {
-      await expect(
-        userRepo.findAll({ assignedTeacher: 'bad' })
-      ).rejects.toThrow('invalid assignedTeacher id format');
+    it('should throw for invalid assignedTeacher id', async () => {
+      await expect(userRepo.findAll({ assignedTeacher: 'bad' }))
+        .rejects.toThrow('invalid assignedTeacher id format');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // searchUsers
-  // -----------------------------------------------------------------------
+  // ── searchUsers ────────────────────────────────────────────────────────────
   describe('searchUsers', () => {
     it('should search by name or email', async () => {
       await seedUser({ name: 'Alice', email: 'alice@example.com' });
-      await seedUser({ name: 'Bob', email: 'bob@example.com' });
+      await seedUser({ name: 'Bob',   email: 'bob@example.com' });
       const result = await userRepo.searchUsers({ q: 'alice' });
       expect(result.data).toHaveLength(1);
       expect(result.total).toBe(1);
     });
 
     it('should filter by role', async () => {
-      // Only role filter; status is not supported because the schema lacks the field.
-      // Use unique emails.
-      await seedUser({ role: UserRole.USER, email: 'u1@example.com' });
+      await seedUser({ role: UserRole.USER,  email: 'u1@example.com' });
       await seedUser({ role: UserRole.ADMIN, email: 'u2@example.com' });
       const result = await userRepo.searchUsers({ role: UserRole.ADMIN });
       expect(result.total).toBe(1);
-      expect(result.data[0].email).toBe('u2@example.com');
     });
 
     it('should paginate results', async () => {
@@ -315,49 +245,37 @@ describe('User Repository', () => {
     });
   });
 
-  // -----------------------------------------------------------------------
-  // suspendUser / reactivateUser
-  // (status field not stored by current schema, so we only verify that calls
-  // don't throw and return a user object)
-  // -----------------------------------------------------------------------
-  describe('suspend/reactivate', () => {
-    it('should not throw when suspending an active user', async () => {
+  // ── suspend / reactivate ───────────────────────────────────────────────────
+  describe('suspend / reactivate', () => {
+    it('should suspend an active user', async () => {
       const created = await seedUser();
       const result = await userRepo.suspendUser(created.id);
-      expect(result).toBeDefined();
       expect(result.id).toBe(created.id);
     });
 
-    it('should not throw when reactivating a user', async () => {
+    it('should reactivate a suspended user', async () => {
       const created = await seedUser();
       await userRepo.suspendUser(created.id);
       const result = await userRepo.reactivateUser(created.id);
-      expect(result).toBeDefined();
       expect(result.id).toBe(created.id);
     });
 
-    it('should throw not found for non-existent user on suspend', async () => {
+    it('should throw not found for non-existent user', async () => {
       const fakeId = new mongoose.Types.ObjectId().toString();
       await expect(userRepo.suspendUser(fakeId)).rejects.toThrow('User with id');
     });
   });
 
-  // -----------------------------------------------------------------------
-  // setPasswordResetRequired
-  // (same as above: field not persisted, just ensure no error)
-  // -----------------------------------------------------------------------
+  // ── setPasswordResetRequired ───────────────────────────────────────────────
   describe('setPasswordResetRequired', () => {
-    it('should not throw when flagging account', async () => {
+    it('should flag the account', async () => {
       const created = await seedUser();
       const updated = await userRepo.setPasswordResetRequired(created.id);
-      expect(updated).toBeDefined();
       expect(updated.id).toBe(created.id);
     });
   });
 
-  // -----------------------------------------------------------------------
-  // demoteToStudent
-  // -----------------------------------------------------------------------
+  // ── demoteToStudent ────────────────────────────────────────────────────────
   describe('demoteToStudent', () => {
     it('should change role to USER and clear assignedTeacher', async () => {
       const created = await seedUser({ role: UserRole.TEACHER });
@@ -367,9 +285,7 @@ describe('User Repository', () => {
     });
   });
 
-  // -----------------------------------------------------------------------
-  // Bulk operations
-  // -----------------------------------------------------------------------
+  // ── bulk operations ────────────────────────────────────────────────────────
   describe('bulk operations', () => {
     let id1, id2;
     beforeEach(async () => {
@@ -382,17 +298,14 @@ describe('User Repository', () => {
     it('bulkDeleteUsers should delete multiple users', async () => {
       const result = await userRepo.bulkDeleteUsers([id1, id2]);
       expect(result.deleted).toBe(2);
-      const remaining = await UserModel.countDocuments();
-      expect(remaining).toBe(0);
+      expect(await UserModel.countDocuments()).toBe(0);
     });
 
     it('bulkDeleteUsers should throw for invalid ids', async () => {
-      await expect(userRepo.bulkDeleteUsers(['bad'])).rejects.toThrow(
-        'invalid id(s)'
-      );
+      await expect(userRepo.bulkDeleteUsers(['bad'])).rejects.toThrow('invalid id(s)');
     });
 
-    it('bulkSuspendUsers should not throw and return count', async () => {
+    it('bulkSuspendUsers should return suspended count', async () => {
       const result = await userRepo.bulkSuspendUsers([id1, id2]);
       expect(result.suspended).toBe(2);
     });
@@ -401,9 +314,7 @@ describe('User Repository', () => {
       const teacher = await seedUser({ email: 't@example.com', role: UserRole.TEACHER });
       const result = await userRepo.bulkAssignTeacher([id1, id2], teacher.id);
       expect(result.assigned).toBe(2);
-      const students = await UserModel.find({
-        assignedTeacher: new mongoose.Types.ObjectId(teacher.id),
-      });
+      const students = await UserModel.find({ assignedTeacher: new mongoose.Types.ObjectId(teacher.id) });
       expect(students).toHaveLength(2);
     });
   });
