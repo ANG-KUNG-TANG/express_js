@@ -1,0 +1,56 @@
+stages:
+  - test
+  - build
+  - deploy
+
+# ── Shared cache — reused across all jobs ────────────────────────────────────
+.node_cache: &node_cache
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - node_modules/
+      - .mongo-binaries/   # MongoMemoryServer binary — avoids re-download every run
+
+# ── 1. Test ───────────────────────────────────────────────────────────────────
+test:
+  stage: test
+  image: node:20-alpine
+  <<: *node_cache
+  before_script:
+    - npm install -g pnpm
+    - pnpm install --frozen-lockfile
+  script:
+    - pnpm test
+  coverage: '/Lines\s*:\s*(\d+\.?\d*)%/'  # parses Jest coverage output
+
+# ── 2. Build & push Docker image ─────────────────────────────────────────────
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  before_script:
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  script:
+    - docker build -t baw1463i/ielts-js:latest .
+    - docker push baw1463i/ielts-js:latest
+  only:
+    - main
+
+# ── 3. Deploy — trigger Railway redeploy via webhook ─────────────────────────
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - curl -fsSL -X POST "$RAILWAY_DEPLOY_WEBHOOK"
+  only:
+    - main
+  needs:
+    - build   # only deploy if build passed
+
+# ─── Required GitLab CI/CD Variables (Settings → CI/CD → Variables) ──────────
+# DOCKER_USERNAME      → your Docker Hub username
+# DOCKER_PASSWORD      → your Docker Hub password / access token
+# RAILWAY_DEPLOY_WEBHOOK → from Railway dashboard → your service → Settings → Deploy Webhook
