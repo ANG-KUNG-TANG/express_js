@@ -1,5 +1,7 @@
 import UserModel from "../models/user_model.js";
 import mongoose    from 'mongoose';
+import { User} from '../../domain/entities/user_entity.js';
+import {UserRole} from "../../domain/base/user_enums.js";
 import {
     UserValidationError,
     UserEmailNotFoundError,
@@ -126,12 +128,12 @@ export const createUser = async (userData) => {
         throw new UserEmailAlreadyExistsError("UserEmailAlreadyExistsError");
     }
 
-    // FIX: was calling new User(userData) here, double-constructing when
     // userData is already a User entity (as passed from createUserUsecase
     // and findOrCreateOAuthUser). The entity was re-wrapped unnecessarily.
     // toPersistence reads the private _fields directly so it works on any
     // User instance without re-construction.
-    const persistence = toPersistence(userData);
+    const user = userData instanceof User ? userData : new User(userData);
+    const persistence = toPersistence(user);
     const [doc] = await UserModel.create([persistence]);
 
     logger.debug('userRepo.createUser: user saved', { id: doc._id });
@@ -342,8 +344,13 @@ export const authenticateUser = async (email, password) => {
         logger.warn('userRepo.authenticateUser: email not found', { email });
         throw new UserEmailNotFoundError(email);
     }
-    if (!verifyPassword(password, doc.password)) { // FIX: was undefined — verifyPassword now imported from password.service.js
-        logger.warn('userRepo.authenticateUser: invalid credentials', { email });
+    try {
+        if (!verifyPassword(password, doc.password)) {
+            throw new InvalidCredentialsError();
+        }
+    } catch (err) {
+        if (err instanceof InvalidCredentialsError) throw err;
+        logger.warn('userRepo.authenticateUser: password verification error', { email, error: err.message });
         throw new InvalidCredentialsError();
     }
     logger.debug('userRepo.authenticateUser: credentials valid', { email });
@@ -500,7 +507,7 @@ export const demoteToStudent = async (id) => {
     logger.debug('userRepo.demoteToStudent', { id });
     const doc = await UserModel.findByIdAndUpdate(
         id,
-        { role: 'student', assignedTeacher: null, updatedAt: new Date() },
+        { role: UserRole.USER, assignedTeacher: null, updatedAt: new Date() },
         { returnDocument: 'after', runValidators: true }
     ).lean();
     if (!doc) throw new UserNotFoundError(id);
