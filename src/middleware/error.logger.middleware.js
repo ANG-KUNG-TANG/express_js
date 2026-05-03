@@ -1,6 +1,6 @@
 import logger from "../core/logger/logger.js"
 import auditLogger from "../core/logger/audit.logger.js";
-import { HTTP_STATUS } from ".././interfaces/http_status.js ";
+import { HTTP_STATUS } from "../interfaces/http_status.js";
 
 // Map custom error names → HTTP status codes
 const ERROR_STATUS_MAP = {
