@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" width="200" height="80">
+  <!-- Emblem box -->
+  <rect x="0" y="4" width="72" height="72" rx="10" fill="#0f1a2e"/>
+  <rect x="0" y="4" width="72" height="72" rx="10" fill="none" stroke="#c8a84b" stroke-width="1"/>
+
+  <!-- Circle ring -->
+  <circle cx="36" cy="40" r="26" fill="none" stroke="#c8a84b" stroke-width="0.8" opacity="0.6"/>
+
+  <!-- W monogram -->
+  <text x="36" y="52" text-anchor="middle"
+        font-family="Georgia, serif" font-size="30" font-weight="700"
+        fill="#c8a84b">W</text>
+
+  <!-- Divider -->
+  <line x1="82" y1="28" x2="82" y2="52" stroke="#c8a84b" stroke-width="0.6" opacity="0.4"/>
+
+  <!-- Wordmark -->
+  <text x="96" y="36" text-anchor="start"
+        font-family="Georgia, serif" font-size="13" font-weight="400"
+        fill="#e8d5a3" letter-spacing="3">WRITE</text>
+  <text x="96" y="54" text-anchor="start"
+        font-family="Georgia, serif" font-size="13" font-weight="400"
+        fill="#c8a84b" letter-spacing="3">SYSTEM</text>
+</svg>
