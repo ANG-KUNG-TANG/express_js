@@ -75,11 +75,17 @@ export const initAdminSidebar = async () => {
         return name.slice(0, 2).toUpperCase();
     };
 
+    if (!document.querySelector('link[rel="icon"]')) {
+        const link = document.createElement('link');
+        link.rel  = 'icon'; link.type = 'image/svg+xml'; link.href = '/favicon.svg';
+        document.head.appendChild(link);
+    }
+
     const sidebar = document.createElement('aside');
     sidebar.className = 'admin-sidebar-root';
     sidebar.innerHTML = `
         <div class="asb-brand">
-            <div class="asb-brand-icon">W</div>
+            <img src="/favicon.svg" alt="WriteSystem" width="36" height="36" style="border-radius:8px;flex-shrink:0;">
             <div class="asb-brand-text">
                 <div class="asb-brand-name">WriteSystem</div>
                 <div class="asb-brand-badge">Admin Panel</div>

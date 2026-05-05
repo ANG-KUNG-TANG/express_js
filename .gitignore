@@ -9,3 +9,15 @@ coverage
 .pnpm-lock.yaml
 .DS_Store
 Thumbs.db
+# .gitignore  — add these if not present
+.mongo-binaries/
+.env
+.env.*
+!.env.example
+
+# .dockerignore — add these
+.mongo-binaries/
+node_modules/
+src/tests/
+.git/
+*.test.js

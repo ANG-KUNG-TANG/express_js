@@ -6,7 +6,6 @@ services:
     container_name: ielts_js_dev
     ports:
       - "3000:3000"
-      - "0:3000"
     env_file:
       - .env
     depends_on:

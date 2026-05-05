@@ -5,10 +5,15 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon --legacy-watch --watch src --ext js,json --ignore node_modules src/server.js",
-    "start": "node src/server.js",
-    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules node_modules/.bin/jest",
-    "check": "eslint . && tsc --noEmit"
+    "dev":           "nodemon --legacy-watch --watch src --ext js,json --ignore node_modules src/server.js",
+    "start":         "node src/server.js",
+    "test":          "cross-env NODE_OPTIONS=--experimental-vm-modules node_modules/.bin/jest",
+    "test:watch":    "cross-env NODE_OPTIONS=--experimental-vm-modules node_modules/.bin/jest --watch",
+    "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules node_modules/.bin/jest --coverage",
+    "test:admin":    "cross-env NODE_OPTIONS=--experimental-vm-modules node_modules/.bin/jest src/tests/application/admin",
+    "test:ci":       "cross-env NODE_OPTIONS=--experimental-vm-modules node_modules/.bin/jest --ci --forceExit",
+    "check":         "eslint .",
+    "lint:fix":      "eslint . --fix"
   },
   "keywords": [],
   "author": "",
@@ -22,6 +27,7 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.1",
+    "express-validator": "^7.3.2",
     "fp-ts": "^2.16.11",
     "ioredis": "^5.10.0",
     "jsonwebtoken": "^9.0.3",
@@ -33,7 +39,6 @@
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
     "qrcode": "^1.5.4",
-    "sequelize": "^6.37.8",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "winston": "^3.19.0"

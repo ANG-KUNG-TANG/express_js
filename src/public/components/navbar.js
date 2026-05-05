@@ -20,7 +20,18 @@
 import { getUser, isAdmin} from '../js/core/auth.js';
 import { initNotifications }        from './notification/notification.ui.js';
 
+const _setFavicon = () => {
+    if (!document.querySelector('link[rel="icon"]')) {
+        const link = document.createElement('link');
+        link.rel   = 'icon';
+        link.type  = 'image/svg+xml';
+        link.href  = '/favicon.svg';
+        document.head.appendChild(link);
+    }
+};
+
 export const initNavbar = async () => {
+    _setFavicon();
     const user = getUser();
     if (!user) return;
 
@@ -117,8 +128,7 @@ export const initNavbar = async () => {
     navEl.innerHTML = `
         <div class="topnav-left">
             <a href="/pages/dashboard.html" class="topnav-brand">
-                <span class="brand-mark">W</span>
-                WritingSystem
+                <img src="/logo.svg" alt="WriteSystem" height="32" style="display:block;">
             </a>
             <div class="topnav-tabs">${tabs}</div>
         </div>

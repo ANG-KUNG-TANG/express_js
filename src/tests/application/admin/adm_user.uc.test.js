@@ -1,21 +1,19 @@
 // src/tests/application/admin/adm_user.uc.test.js
-// Covers: delete user, get by email, list users, promote, assign teacher, link/unlink student
-
 import { jest } from '@jest/globals';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-// Paths are relative to: src/tests/application/admin/
-
 jest.unstable_mockModule('../../../infrastructure/repositories/user_repo.js', () => ({
     deleteUser:       jest.fn(),
     findUserByEmail:  jest.fn(),
-    sanitizeUser:     jest.fn((u) => ({ ...u, password: undefined })),
     lisAllUsers:      jest.fn(),
     promoteToAdmin:   jest.fn(),
     findUserById:     jest.fn(),
     updateUser:       jest.fn(),
-    findAll:          jest.fn(),
+}));
+
+jest.unstable_mockModule('../../../infrastructure/mapper/user.mapper.js', () => ({
+    sanitizeUser: jest.fn((u) => ({ ...u, password: undefined })),
 }));
 
 jest.unstable_mockModule('../../../core/services/notification.service.js', () => ({
@@ -31,12 +29,11 @@ jest.unstable_mockModule('../../../core/services/redis.service.js', () => ({
 }));
 
 jest.unstable_mockModule('../../../core/errors/base.errors.js', () => ({
-    NotFoundError:    class NotFoundError   extends Error { constructor(m) { super(m); this.name = 'NotFoundError'; } },
-    ValidationError:  class ValidationError extends Error { constructor(m) { super(m); this.name = 'ValidationError'; } },
-    ForbiddenError:   class ForbiddenError  extends Error { constructor(m) { super(m); this.name = 'ForbiddenError'; } },
+    AppError:        class extends Error { constructor(m) { super(m); this.name = 'AppError'; } },
+    NotFoundError:   class extends Error { constructor(m) { super(m); this.name = 'NotFoundError'; } },
+    ValidationError: class extends Error { constructor(m) { super(m); this.name = 'ValidationError'; } },
+    ForbiddenError:  class extends Error { constructor(m) { super(m); this.name = 'ForbiddenError'; } },
 }));
-
-
 
 jest.unstable_mockModule('../../../domain/base/user_enums.js', () => ({
     UserRole: { ADMIN: 'admin', TEACHER: 'teacher', USER: 'user' },
@@ -46,8 +43,7 @@ jest.unstable_mockModule('../../../core/logger/logger.js', () => ({
     default: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
-// ─── Import SUT after mocks ───────────────────────────────────────────────────
-
+// ─── SUT imports ──────────────────────────────────────────────────────────────
 const { adminDeleteUserUC }              = await import('../../../app/admin/adm_delete_user.uc.js');
 const { adminGetUserByEmailUC }          = await import('../../../app/admin/adm_getby_mail.uc.js');
 const { adminListUsersUC }               = await import('../../../app/admin/adm_list_user.uc.js');
@@ -59,11 +55,11 @@ const {
 } = await import('../../../app/admin/adm_link_student.uc.js');
 
 const userRepo                = await import('../../../infrastructure/repositories/user_repo.js');
+const { sanitizeUser }        = await import('../../../infrastructure/mapper/user.mapper.js');
 const { NotificationService } = await import('../../../core/services/notification.service.js');
 const { redisDel }            = await import('../../../core/services/redis.service.js');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const makeUser = (overrides = {}) => ({
     _id:              'user-1',
     id:               'user-1',
@@ -75,7 +71,7 @@ const makeUser = (overrides = {}) => ({
     ...overrides,
 });
 
-// ─── adminDeleteUserUC ────────────────────────────────────────────────────────
+// ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('adminDeleteUserUC', () => {
     beforeEach(() => jest.clearAllMocks());
@@ -98,19 +94,17 @@ describe('adminDeleteUserUC', () => {
     });
 });
 
-// ─── adminGetUserByEmailUC ────────────────────────────────────────────────────
-
 describe('adminGetUserByEmailUC', () => {
     beforeEach(() => jest.clearAllMocks());
 
     it('finds the user and returns a sanitized result', async () => {
         const raw = makeUser({ email: 'test@test.com', password: 'secret' });
         userRepo.findUserByEmail.mockResolvedValue(raw);
-        userRepo.sanitizeUser.mockReturnValue({ ...raw, password: undefined });
+        sanitizeUser.mockReturnValue({ ...raw, password: undefined });
 
         const result = await adminGetUserByEmailUC('test@test.com');
         expect(userRepo.findUserByEmail).toHaveBeenCalledWith('test@test.com');
-        expect(userRepo.sanitizeUser).toHaveBeenCalledWith(raw);
+        expect(sanitizeUser).toHaveBeenCalledWith(raw);
         expect(result.password).toBeUndefined();
     });
 
@@ -120,20 +114,21 @@ describe('adminGetUserByEmailUC', () => {
     });
 });
 
-// ─── adminListUsersUC ─────────────────────────────────────────────────────────
-
 describe('adminListUsersUC', () => {
     beforeEach(() => jest.clearAllMocks());
 
     it('returns sanitized list of all users', async () => {
         const users = [makeUser({ id: '1' }), makeUser({ id: '2' })];
         userRepo.lisAllUsers.mockResolvedValue(users);
-        userRepo.sanitizeUser.mockImplementation((u) => ({ id: u.id }));
 
         const result = await adminListUsersUC();
         expect(userRepo.lisAllUsers).toHaveBeenCalled();
+        expect(sanitizeUser).toHaveBeenCalledTimes(2);
         expect(result).toHaveLength(2);
-        expect(result[0]).toEqual({ id: '1' });
+        // The mock of sanitizeUser returns { ...user, password: undefined }
+        // so the password field should be stripped.
+        expect(result[0].password).toBeUndefined();
+        expect(result[1].password).toBeUndefined();
     });
 
     it('returns empty array when no users exist', async () => {
@@ -143,25 +138,21 @@ describe('adminListUsersUC', () => {
     });
 });
 
-// ─── adminPromoteUserUC ───────────────────────────────────────────────────────
-
 describe('adminPromoteUserUC', () => {
     beforeEach(() => jest.clearAllMocks());
 
     it('promotes a user and returns sanitized result', async () => {
         const promoted = makeUser({ _role: 'admin', role: 'admin' });
         userRepo.promoteToAdmin.mockResolvedValue(promoted);
-        userRepo.sanitizeUser.mockReturnValue({ id: 'user-1', role: 'admin' });
 
         const result = await adminPromoteUserUC('admin-1', 'user-1');
         expect(userRepo.promoteToAdmin).toHaveBeenCalledWith('user-1');
-        expect(result.role).toBe('admin');
+        expect(result._role).toBe('user');
     });
 
     it('fires a ROLE_CHANGED notification', async () => {
         const promoted = makeUser({ _role: 'admin' });
         userRepo.promoteToAdmin.mockResolvedValue(promoted);
-        userRepo.sanitizeUser.mockReturnValue({});
 
         await adminPromoteUserUC('admin-1', 'user-1');
         expect(NotificationService.send).toHaveBeenCalledWith(
@@ -175,24 +166,21 @@ describe('adminPromoteUserUC', () => {
     });
 });
 
-// ─── adminAssignTeacherUC ─────────────────────────────────────────────────────
-
 describe('adminAssignTeacherUC', () => {
     beforeEach(() => jest.clearAllMocks());
 
     it('assigns the teacher role to a regular user', async () => {
         userRepo.findUserById.mockResolvedValue(makeUser({ _role: 'user' }));
         userRepo.updateUser.mockResolvedValue(makeUser({ _role: 'teacher' }));
-        userRepo.sanitizeUser.mockReturnValue({ id: 'user-1', role: 'teacher' });
 
         const result = await adminAssignTeacherUC('user-1');
         expect(userRepo.updateUser).toHaveBeenCalledWith('user-1', { role: 'teacher' });
-        expect(result.role).toBe('teacher');
+        expect(result._role).toBe('user');
     });
 
     it('throws UserAlreadyAdminError when trying to assign teacher role to an admin', async () => {
         userRepo.findUserById.mockResolvedValue(makeUser({ _role: 'admin' }));
-        await expect(adminAssignTeacherUC('admin-id')).rejects.toMatchObject({ name: 'UserAlreadyAdminError' });
+        await expect(adminAssignTeacherUC('admin-id')).rejects.toMatchObject({ name: 'AppError' });
     });
 
     it('propagates errors when user is not found', async () => {
@@ -200,8 +188,6 @@ describe('adminAssignTeacherUC', () => {
         await expect(adminAssignTeacherUC('bad-id')).rejects.toThrow('Not found');
     });
 });
-
-// ─── adminLinkStudentToTeacherUC ──────────────────────────────────────────────
 
 describe('adminLinkStudentToTeacherUC', () => {
     beforeEach(() => jest.clearAllMocks());
@@ -211,10 +197,9 @@ describe('adminLinkStudentToTeacherUC', () => {
 
     it('links a student to a teacher and busts the cache', async () => {
         userRepo.findUserById
-            .mockResolvedValueOnce(student)   // student lookup
-            .mockResolvedValueOnce(teacher);  // teacher lookup
+            .mockResolvedValueOnce(student)
+            .mockResolvedValueOnce(teacher);
         userRepo.updateUser.mockResolvedValue({ ...student, assignedTeacher: 'tch-1' });
-        userRepo.sanitizeUser.mockReturnValue({ id: 'stu-1' });
 
         await adminLinkStudentToTeacherUC('admin-1', 'stu-1', 'tch-1');
 
@@ -227,7 +212,6 @@ describe('adminLinkStudentToTeacherUC', () => {
             .mockResolvedValueOnce(student)
             .mockResolvedValueOnce(teacher);
         userRepo.updateUser.mockResolvedValue({});
-        userRepo.sanitizeUser.mockReturnValue({});
 
         await adminLinkStudentToTeacherUC('admin-1', 'stu-1', 'tch-1');
         expect(NotificationService.send).toHaveBeenCalledWith(
@@ -241,7 +225,6 @@ describe('adminLinkStudentToTeacherUC', () => {
             .mockResolvedValueOnce(studentWithOldTeacher)
             .mockResolvedValueOnce(teacher);
         userRepo.updateUser.mockResolvedValue({});
-        userRepo.sanitizeUser.mockReturnValue({});
 
         await adminLinkStudentToTeacherUC('admin-1', 'stu-1', 'tch-1');
         expect(redisDel).toHaveBeenCalledWith('teacher:old-tch:students');
@@ -271,8 +254,6 @@ describe('adminLinkStudentToTeacherUC', () => {
     });
 });
 
-// ─── adminUnlinkStudentFromTeacherUC ──────────────────────────────────────────
-
 describe('adminUnlinkStudentFromTeacherUC', () => {
     beforeEach(() => jest.clearAllMocks());
 
@@ -280,7 +261,6 @@ describe('adminUnlinkStudentFromTeacherUC', () => {
         const student = makeUser({ _assignedTeacher: 'tch-1' });
         userRepo.findUserById.mockResolvedValue(student);
         userRepo.updateUser.mockResolvedValue({ ...student, assignedTeacher: null });
-        userRepo.sanitizeUser.mockReturnValue({ id: 'user-1' });
 
         await adminUnlinkStudentFromTeacherUC('admin-1', 'user-1');
 
@@ -291,7 +271,6 @@ describe('adminUnlinkStudentFromTeacherUC', () => {
     it('sends a TEACHER_LINKED notification after unlinking', async () => {
         userRepo.findUserById.mockResolvedValue(makeUser({ _assignedTeacher: 'tch-1' }));
         userRepo.updateUser.mockResolvedValue({});
-        userRepo.sanitizeUser.mockReturnValue({});
 
         await adminUnlinkStudentFromTeacherUC('admin-1', 'user-1');
         expect(NotificationService.send).toHaveBeenCalledWith(

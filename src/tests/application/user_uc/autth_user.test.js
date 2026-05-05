@@ -3,28 +3,28 @@ import { jest } from '@jest/globals';
 
 jest.unstable_mockModule('../../../infrastructure/repositories/user_repo.js', () => ({
     findUserByEmailWithPassword: jest.fn(),
-    sanitizeUser:                jest.fn(),
+    // sanitizeUser is NOT here – it comes from user.mapper.js
+}));
+
+jest.unstable_mockModule('../../../infrastructure/mapper/user.mapper.js', () => ({
+    sanitizeUser: jest.fn(),
 }));
 
 jest.unstable_mockModule('../../../app/validators/password_hash.js', () => ({
     verifyPassword: jest.fn(),
 }));
 
-// ← audit.service.js MUST be mocked — the UC calls recordAudit/recordFailure on
-//   every login attempt; without this mock Jest will try to import the real service
-//   which hits DB/Redis and breaks the unit test.
 jest.unstable_mockModule('../../../core/services/audit.service.js', () => ({
     recordAudit:   jest.fn(),
     recordFailure: jest.fn(),
 }));
 
 // ─── Import SUT after mocks ───────────────────────────────────────────────────
-// NOTE: file on disk is auth_user.uc.js (lowercase u) — previous version had
-//       auth_User.uc.js which fails on case-sensitive Linux file systems.
 const { authenticateUserUseCase } = await import('../../../app/user_uc/auth_user.uc.js');
 const userRepo    = await import('../../../infrastructure/repositories/user_repo.js');
 const hashUtil    = await import('../../../app/validators/password_hash.js');
 const auditSvc    = await import('../../../core/services/audit.service.js');
+const userMapper  = await import('../../../infrastructure/mapper/user.mapper.js');
 const { UserRole } = await import('../../../domain/base/user_enums.js');
 const {
     InvalidCredentialsError,
@@ -53,7 +53,7 @@ describe('authenticateUserUseCase', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         userRepo.findUserByEmailWithPassword.mockResolvedValue(mockUser);
-        userRepo.sanitizeUser.mockReturnValue(mockSanitized);
+        userMapper.sanitizeUser.mockReturnValue(mockSanitized);
         hashUtil.verifyPassword.mockReturnValue(true);
     });
 

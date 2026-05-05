@@ -1,13 +1,16 @@
 /**
  * oauth_user.uc.test.js
  *
- * Tests for findOrCreateOAuthUser use-case.
- * No external dependencies — userRepo is a plain mock object.
+ * Comprehensive tests for findOrCreateOAuthUser use-case.
+ * No external dependencies — userRepo and audit functions are plain mocks.
  */
 
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
-// Mocks must be registered before the SUT is imported
+// ---------------------------------------------------------------------------
+// Mocks
+// ---------------------------------------------------------------------------
+
 jest.unstable_mockModule('../../../core/services/audit.service.js', () => ({
     recordAudit:   jest.fn(),
     recordFailure: jest.fn(),
@@ -21,7 +24,12 @@ jest.unstable_mockModule('../../../domain/base/audit_enums.js', () => ({
     },
 }));
 
+jest.unstable_mockModule('../../../domain/base/user_enums.js', () => ({
+    UserRole: { USER: 'user' },
+}));
+
 const { findOrCreateOAuthUser } = await import('../../../app/auth_uc/oauth_user.uc.js');
+const { recordAudit, recordFailure } = await import('../../../core/services/audit.service.js');
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -39,7 +47,7 @@ const githubProfile = {
     provider:    'github',
     id:          'github-id-456',
     username:    'alicehub',
-    displayName: '',          // GitHub sometimes returns empty string
+    displayName: '',           // empty string – should fall back to username
     emails:      [{ value: 'alice@github.com' }],
     photos:      [],
 };
@@ -49,7 +57,7 @@ const githubProfileJsonEmail = {
     id:          'github-id-789',
     username:    'bobhub',
     displayName: '',
-    emails:      [],           // no emails array — falls back to _json.email
+    emails:      [],           // no emails array → falls back to _json.email
     _json:       { email: 'bob@github.com' },
     photos:      [],
 };
@@ -69,83 +77,150 @@ const profileNoEmail = {
 
 const makeRepo = ({ existing = null } = {}) => ({
     findByEmail: jest.fn().mockResolvedValue(existing),
-    create:      jest.fn().mockImplementation(async (data) => ({ id: 'new-id', ...data })),
+    create: jest.fn().mockImplementation(async (user) => ({
+        // Extract public properties from the User entity
+        // so the returned object behaves like a plain user record.
+        id:         'new-id',
+        email:      user.email,
+        name:       user.name,
+        role:       user.role,
+        provider:   user.provider,
+        providerId: user.providerId,
+        avatarUrl:  user.avatarUrl,
+    })),
 });
 
 // ---------------------------------------------------------------------------
-// findOrCreateOAuthUser — existing user
+// Helpers
 // ---------------------------------------------------------------------------
 
-describe('findOrCreateOAuthUser — existing user', () => {
+beforeEach(() => {
+    recordAudit.mockClear();
+    recordFailure.mockClear();
+});
+
+// ---------------------------------------------------------------------------
+// Existing user – Google
+// ---------------------------------------------------------------------------
+describe('findOrCreateOAuthUser — existing Google user', () => {
     let repo;
 
     beforeEach(() => {
         repo = makeRepo({ existing: { id: 'existing-1', email: 'alice@gmail.com' } });
     });
 
-    it('calls findByEmail with the normalised email', async () => {
+    it('looks up by normalised email', async () => {
         const handler = findOrCreateOAuthUser(repo);
         await handler(googleProfile);
         expect(repo.findByEmail).toHaveBeenCalledWith('alice@gmail.com');
     });
 
-    it('returns the existing user without calling create', async () => {
+    it('returns the existing user without creating a new one', async () => {
         const handler = findOrCreateOAuthUser(repo);
         const result  = await handler(googleProfile);
         expect(result).toEqual({ id: 'existing-1', email: 'alice@gmail.com' });
         expect(repo.create).not.toHaveBeenCalled();
     });
+
+    it('records an audit event for a returning Google user', async () => {
+        const handler = findOrCreateOAuthUser(repo);
+        await handler(googleProfile);
+        expect(recordAudit).toHaveBeenCalledWith(
+            'AUTH_OAUTH_LOGIN_GOOGLE',
+            'existing-1',
+            {
+                email:     'alice@gmail.com',
+                provider:  'google',
+                isNewUser: false,
+            },
+            null
+        );
+    });
 });
 
 // ---------------------------------------------------------------------------
-// findOrCreateOAuthUser — new user (Google)
+// Existing user – GitHub
 // ---------------------------------------------------------------------------
+describe('findOrCreateOAuthUser — existing GitHub user', () => {
+    let repo;
 
+    beforeEach(() => {
+        repo = makeRepo({ existing: { id: 'existing-gh', email: 'alice@github.com' } });
+    });
+
+    it('records an audit event with the GitHub action', async () => {
+        const handler = findOrCreateOAuthUser(repo);
+        await handler(githubProfile);
+        expect(recordAudit).toHaveBeenCalledWith(
+            'AUTH_OAUTH_LOGIN_GITHUB',
+            'existing-gh',
+            {
+                email:     'alice@github.com',
+                provider:  'github',
+                isNewUser: false,
+            },
+            null
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// New user – Google
+// ---------------------------------------------------------------------------
 describe('findOrCreateOAuthUser — new Google user', () => {
     let repo;
 
     beforeEach(() => { repo = makeRepo(); });
 
-    it('calls create when no existing user is found', async () => {
+    it('calls create when no user is found', async () => {
         await findOrCreateOAuthUser(repo)(googleProfile);
         expect(repo.create).toHaveBeenCalledTimes(1);
     });
 
-    it('creates without provider/providerId fields (not forwarded to repo)', async () => {
+    it('forwards all normalised fields including provider and providerId', async () => {
         await findOrCreateOAuthUser(repo)(googleProfile);
         const callArg = repo.create.mock.calls[0][0];
-        expect(callArg).not.toHaveProperty('provider');
-        expect(callArg).not.toHaveProperty('providerId');
+        // The implementation uses `new User({...})`, so the object should contain these
+        expect(callArg).toHaveProperty('provider', 'google');
+        expect(callArg).toHaveProperty('providerId', 'google-id-123');
     });
 
-    it('creates with correct name and email', async () => {
+    it('creates with correct name, email, avatar, password, and role', async () => {
         await findOrCreateOAuthUser(repo)(googleProfile);
         expect(repo.create).toHaveBeenCalledWith(
             expect.objectContaining({
-                name:  'Alice Smith',
-                email: 'alice@gmail.com',
+                name:      'Alice Smith',
+                email:     'alice@gmail.com',
+                avatarUrl: 'https://photo.url/alice.jpg',
+                password:  expect.stringMatching(/^[0-9a-f]{64}$/),
+                role:      'user',
             })
         );
     });
 
-    it('creates with the avatar URL from photos[0]', async () => {
-        await findOrCreateOAuthUser(repo)(googleProfile);
+    it('normalises email to lowercase', async () => {
+        const profileMixedCase = {
+            ...googleProfile,
+            emails: [{ value: 'AlIce@Gmail.com' }],
+        };
+        await findOrCreateOAuthUser(repo)(profileMixedCase);
         expect(repo.create).toHaveBeenCalledWith(
-            expect.objectContaining({ avatarUrl: 'https://photo.url/alice.jpg' })
+            expect.objectContaining({ email: 'alice@gmail.com' })
         );
     });
 
-    it('creates with a random hex password (OAuth users never use it)', async () => {
-        await findOrCreateOAuthUser(repo)(googleProfile);
-        expect(repo.create).toHaveBeenCalledWith(
-            expect.objectContaining({ password: expect.stringMatching(/^[0-9a-f]{64}$/) })
-        );
-    });
-
-    it('creates with role "user"', async () => {
-        await findOrCreateOAuthUser(repo)(googleProfile);
-        expect(repo.create).toHaveBeenCalledWith(
-            expect.objectContaining({ role: 'user' })
+    it('records an audit event for a new Google user', async () => {
+        const handler = findOrCreateOAuthUser(repo);
+        await handler(googleProfile);
+        expect(recordAudit).toHaveBeenCalledWith(
+            'AUTH_OAUTH_LOGIN_GOOGLE',
+            'new-id',
+            {
+                email:     'alice@gmail.com',
+                provider:  'google',
+                isNewUser: true,
+            },
+            null
         );
     });
 
@@ -157,15 +232,14 @@ describe('findOrCreateOAuthUser — new Google user', () => {
 });
 
 // ---------------------------------------------------------------------------
-// findOrCreateOAuthUser — new user (GitHub)
+// New user – GitHub
 // ---------------------------------------------------------------------------
-
 describe('findOrCreateOAuthUser — new GitHub user', () => {
     let repo;
 
     beforeEach(() => { repo = makeRepo(); });
 
-    it('reads email from emails[0].value for GitHub profiles', async () => {
+    it('reads email from emails[0].value', async () => {
         await findOrCreateOAuthUser(repo)(githubProfile);
         expect(repo.findByEmail).toHaveBeenCalledWith('alice@github.com');
     });
@@ -184,18 +258,42 @@ describe('findOrCreateOAuthUser — new GitHub user', () => {
         );
     });
 
-    it('does not forward provider/providerId to the repo create call', async () => {
+    it('forwards provider and providerId to the repo', async () => {
         await findOrCreateOAuthUser(repo)(githubProfile);
         const callArg = repo.create.mock.calls[0][0];
-        expect(callArg).not.toHaveProperty('provider');
-        expect(callArg).not.toHaveProperty('providerId');
+        expect(callArg).toHaveProperty('provider', 'github');
+        expect(callArg).toHaveProperty('providerId', 'github-id-456');
+    });
+
+    it('normalises email to lowercase', async () => {
+        const profileMixed = {
+            ...githubProfile,
+            emails: [{ value: 'AlIce@GitHub.com' }],
+        };
+        await findOrCreateOAuthUser(repo)(profileMixed);
+        expect(repo.create).toHaveBeenCalledWith(
+            expect.objectContaining({ email: 'alice@github.com' })
+        );
+    });
+
+    it('records an audit event with the GitHub action', async () => {
+        await findOrCreateOAuthUser(repo)(githubProfile);
+        expect(recordAudit).toHaveBeenCalledWith(
+            'AUTH_OAUTH_LOGIN_GITHUB',
+            'new-id',
+            {
+                email:     'alice@github.com',
+                provider:  'github',
+                isNewUser: true,
+            },
+            null
+        );
     });
 });
 
 // ---------------------------------------------------------------------------
-// Email fallback — _json.email
+// Email fallback – _json.email
 // ---------------------------------------------------------------------------
-
 describe('findOrCreateOAuthUser — _json.email fallback', () => {
     it('uses _json.email when emails array is empty', async () => {
         const repo = makeRepo();
@@ -208,9 +306,8 @@ describe('findOrCreateOAuthUser — _json.email fallback', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Name fallback — 'Unknown'
+// Name fallback – 'Unknown'
 // ---------------------------------------------------------------------------
-
 describe('findOrCreateOAuthUser — name fallback', () => {
     it('uses "Unknown" when both displayName and username are absent', async () => {
         const repo    = makeRepo();
@@ -223,18 +320,17 @@ describe('findOrCreateOAuthUser — name fallback', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Missing email — throws
+// Missing email – throws and records failure
 // ---------------------------------------------------------------------------
-
 describe('findOrCreateOAuthUser — missing email', () => {
-    it('throws when profile has no email in any source', async () => {
+    it('throws when no email is found in any source', async () => {
         const repo = makeRepo();
         await expect(
             findOrCreateOAuthUser(repo)(profileNoEmail)
         ).rejects.toThrow('did not return an email address');
     });
 
-    it('does not call findByEmail or create when email is missing', async () => {
+    it('does not call findByEmail or create', async () => {
         const repo = makeRepo();
         await expect(
             findOrCreateOAuthUser(repo)(profileNoEmail)
@@ -249,39 +345,93 @@ describe('findOrCreateOAuthUser — missing email', () => {
             findOrCreateOAuthUser(repo)(profileNoEmail)
         ).rejects.toThrow('google');
     });
+
+    it('records a failure audit event with the provider and reason', async () => {
+        const repo = makeRepo();
+        await expect(
+            findOrCreateOAuthUser(repo)(profileNoEmail)
+        ).rejects.toThrow();
+
+        expect(recordFailure).toHaveBeenCalledWith(
+            'AUTH_OAUTH_FAILURE',
+            null,
+            {
+                provider: 'google',
+                reason:   expect.stringContaining('did not return an email'),
+            },
+            null
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// UserEmailNotFoundError handled – user is created
+// ---------------------------------------------------------------------------
+describe('findOrCreateOAuthUser — UserEmailNotFoundError handled', () => {
+    class UserEmailNotFoundError extends Error {
+        constructor() { super('User not found'); this.name = 'UserEmailNotFoundError'; }
+    }
+
+    it('creates a new user when findByEmail throws UserEmailNotFoundError', async () => {
+        const repo = {
+            findByEmail: jest.fn().mockRejectedValue(new UserEmailNotFoundError()),
+            create: jest.fn().mockImplementation(async (user) => ({
+                id:         'created-after-error',
+                email:      user.email,
+                name:       user.name,
+                role:       user.role,
+                provider:   user.provider,
+                providerId: user.providerId,
+                avatarUrl:  user.avatarUrl,
+            })),
+        };
+        const result = await findOrCreateOAuthUser(repo)(googleProfile);
+        expect(repo.create).toHaveBeenCalledTimes(1);
+        expect(result.id).toBe('created-after-error');
+        expect(result.email).toBe('alice@gmail.com');
+    });
+
+    it('propagates other errors from findByEmail', async () => {
+        const repo = {
+            findByEmail: jest.fn().mockRejectedValue(new Error('DB error')),
+            create:      jest.fn(),
+        };
+        await expect(
+            findOrCreateOAuthUser(repo)(googleProfile)
+        ).rejects.toThrow('DB error');
+        expect(repo.create).not.toHaveBeenCalled();
+    });
 });
 
 // ---------------------------------------------------------------------------
 // Repo error propagation
 // ---------------------------------------------------------------------------
-
 describe('findOrCreateOAuthUser — repo error propagation', () => {
-    it('propagates errors thrown by findByEmail', async () => {
+    it('propagates errors from findByEmail (non‑UserEmailNotFound)', async () => {
         const repo = {
-            findByEmail: jest.fn().mockRejectedValue(new Error('DB connection failed')),
+            findByEmail: jest.fn().mockRejectedValue(new Error('Connection lost')),
             create:      jest.fn(),
         };
         await expect(
             findOrCreateOAuthUser(repo)(googleProfile)
-        ).rejects.toThrow('DB connection failed');
+        ).rejects.toThrow('Connection lost');
         expect(repo.create).not.toHaveBeenCalled();
     });
 
-    it('propagates errors thrown by create', async () => {
+    it('propagates errors from create', async () => {
         const repo = {
             findByEmail: jest.fn().mockResolvedValue(null),
-            create:      jest.fn().mockRejectedValue(new Error('Duplicate email')),
+            create:      jest.fn().mockRejectedValue(new Error('Duplicate key')),
         };
         await expect(
             findOrCreateOAuthUser(repo)(googleProfile)
-        ).rejects.toThrow('Duplicate email');
+        ).rejects.toThrow('Duplicate key');
     });
 });
 
 // ---------------------------------------------------------------------------
-// Currying — repo is injected once, handler is reusable
+// Currying – repo is injected once, handler is reusable
 // ---------------------------------------------------------------------------
-
 describe('findOrCreateOAuthUser — currying', () => {
     it('returns a function when called with the repo', () => {
         const repo    = makeRepo();
@@ -294,10 +444,10 @@ describe('findOrCreateOAuthUser — currying', () => {
         const handler = findOrCreateOAuthUser(repo);
         const result  = handler(googleProfile);
         expect(result).toBeInstanceOf(Promise);
-        return result; // let Jest await it cleanly
+        return result;
     });
 
-    it('same handler instance can process multiple profiles', async () => {
+    it('same handler can process multiple profiles', async () => {
         const repo    = makeRepo();
         const handler = findOrCreateOAuthUser(repo);
 
@@ -307,5 +457,44 @@ describe('findOrCreateOAuthUser — currying', () => {
         expect(repo.findByEmail).toHaveBeenCalledTimes(2);
         expect(repo.findByEmail).toHaveBeenCalledWith('alice@gmail.com');
         expect(repo.findByEmail).toHaveBeenCalledWith('alice@github.com');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Additional edge cases
+// ---------------------------------------------------------------------------
+describe('findOrCreateOAuthUser — edge cases', () => {
+    it('handles displayName being undefined (not just empty string)', async () => {
+        const repo    = makeRepo();
+        const profile = { ...githubProfile, displayName: undefined, username: 'gh-username' };
+        await findOrCreateOAuthUser(repo)(profile);
+        expect(repo.create).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'gh-username' })
+        );
+    });
+
+    it('passes null req to audit functions when not provided', async () => {
+        const repo    = makeRepo({ existing: { id: 'ex-1', email: 'alice@gmail.com' } });
+        const handler = findOrCreateOAuthUser(repo);
+        await handler(googleProfile);
+        expect(recordAudit).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.any(String),
+            expect.any(Object),
+            null
+        );
+    });
+
+    it('passes req through to audit functions when provided', async () => {
+        const repo    = makeRepo({ existing: { id: 'ex-1', email: 'alice@gmail.com' } });
+        const req     = { ip: '127.0.0.1' };
+        const handler = findOrCreateOAuthUser(repo);
+        await handler(googleProfile, req);
+        expect(recordAudit).toHaveBeenCalledWith(
+            expect.any(String),
+            expect.any(String),
+            expect.any(Object),
+            req
+        );
     });
 });

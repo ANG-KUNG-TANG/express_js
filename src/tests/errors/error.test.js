@@ -1,4 +1,6 @@
-import { AppError } from '../../core/errors/base.errors.js';
+// error.test.js — Complete test suite for all custom error classes
+
+import { AppError, ValidationError as BaseValidationError, NotFoundError as BaseNotFoundError, ForbiddenError as BaseForbiddenError, UnauthorizedError as BaseUnauthorizedError, ConflictError as BaseConflictError, BadRequestError } from '../../core/errors/base.errors.js';
 import {
     ValidationError,
     ConflictError,
@@ -22,6 +24,7 @@ import {
     TaskUserIdRequiredError,
     TaskInvalidUserIdError,
     TaskExtraFieldsError,
+    TaskBusinessRuleError,
     TaskAlreadyCompletedError,
     TaskNotInProgressError,
     TaskNotPendingError,
@@ -34,6 +37,7 @@ import {
 import {
     UserNotFoundError,
     UserEmailNotFoundError,
+    UserFileNotFoundError,
     UserValidationError,
     UserNameRequiredError,
     UserNameTooShortError,
@@ -41,17 +45,48 @@ import {
     UserInvalidEmailError,
     UserPasswordTooWeakError,
     UserInvalidRoleError,
+    UserInvalidAvatarTypeError,
+    UserAvatarTooLargeError,
+    UserInvalidCoverTypeError,
+    UserCoverTooLargeError,
+    UserInvalidFileTypeError,
+    UserFileTooLargeError,
+    UserBioTooLongError,
+    UserBusinessRuleError,
     UserAlreadyAdminError,
     UserEmailAlreadyExistsError,
     InvalidCredentialsError,
     UserNotAuthenticatedError,
     UserInsufficientPermissionError,
 } from '../../core/errors/user.errors.js';
+import {
+    ContentFlagNotFoundError,
+    ContentFlagInvalidIdError,
+    ContentFlagInvalidTaskIdError,
+    ContentFlagAlreadyResolvedError,
+    ContentFlagValidationError,
+} from '../../core/errors/content_flag.errors.js';
+import {
+    NotificationInvalidTypeError,
+    NotificationMissingFieldError,
+    NotificationNotFoundError,
+} from '../../core/errors/notification.errors.js';
+import {
+    PasswordResetTokenExpiredError,
+    PasswordResetTokenAlreadyUsedError,
+    PasswordResetTokenNotFoundError,
+    PasswordResetUserNotFoundError,
+} from '../../core/errors/password_reset.errors.js';
+import {
+    InvalidTopicError,
+    VocabularyNotFoundError,
+    DuplicateVocabularyError,
+    VocabularyRuleViolationError,
+} from '../../core/errors/vocab.errors.js';
 
 // ---------------------------------------------------------------------------
 // base.errors.js
 // ---------------------------------------------------------------------------
-
 describe('AppError (base)', () => {
     it('sets message, statusCode, code and details', () => {
         const err = new AppError('boom', 503, 'SERVICE_DOWN', { info: 'db' });
@@ -81,11 +116,58 @@ describe('AppError (base)', () => {
     });
 });
 
+describe('BaseValidationError (base.errors)', () => {
+    it('defaults to 400 / VALIDATION_ERROR', () => {
+        const err = new BaseValidationError();
+        expect(err.statusCode).toBe(400);
+        expect(err.code).toBe('VALIDATION_ERROR');
+    });
+});
+
+describe('BaseNotFoundError', () => {
+    it('defaults to 404 / NOT_FOUND', () => {
+        const err = new BaseNotFoundError();
+        expect(err.statusCode).toBe(404);
+        expect(err.code).toBe('NOT_FOUND');
+    });
+});
+
+describe('BaseForbiddenError', () => {
+    it('defaults to 403 / FORBIDDEN', () => {
+        const err = new BaseForbiddenError();
+        expect(err.statusCode).toBe(403);
+        expect(err.code).toBe('FORBIDDEN');
+    });
+});
+
+describe('BaseUnauthorizedError', () => {
+    it('defaults to 401 / UNAUTHORIZED', () => {
+        const err = new BaseUnauthorizedError();
+        expect(err.statusCode).toBe(401);
+        expect(err.code).toBe('UNAUTHORIZED');
+    });
+});
+
+describe('BaseConflictError', () => {
+    it('defaults to 409 / CONFLICT', () => {
+        const err = new BaseConflictError();
+        expect(err.statusCode).toBe(409);
+        expect(err.code).toBe('CONFLICT');
+    });
+});
+
+describe('BadRequestError', () => {
+    it('defaults to 400 / BAD_REQUEST', () => {
+        const err = new BadRequestError();
+        expect(err.statusCode).toBe(400);
+        expect(err.code).toBe('BAD_REQUEST');
+    });
+});
+
 // ---------------------------------------------------------------------------
 // http.errors.js
 // ---------------------------------------------------------------------------
-
-describe('ValidationError', () => {
+describe('ValidationError (http)', () => {
     it('defaults to 400 / VALIDATION_ERROR', () => {
         const err = new ValidationError();
         expect(err.statusCode).toBe(400);
@@ -103,7 +185,7 @@ describe('ValidationError', () => {
     });
 });
 
-describe('ConflictError', () => {
+describe('ConflictError (http)', () => {
     it('defaults to 409 / CONFLICT', () => {
         const err = new ConflictError();
         expect(err.statusCode).toBe(409);
@@ -116,8 +198,8 @@ describe('ConflictError', () => {
     });
 });
 
-describe('ForbiddenError', () => {
-    it('defaults to 401 / UNAUTHORIZED', () => {
+describe('ForbiddenError (http)', () => {
+    it('defaults to 401 / UNAUTHORIZED (implementation detail)', () => {
         const err = new ForbiddenError();
         expect(err.statusCode).toBe(401);
         expect(err.code).toBe('UNAUTHORIZED');
@@ -154,7 +236,7 @@ describe('InternaslServerErrror (typo class)', () => {
     });
 });
 
-describe('NotFoundError', () => {
+describe('NotFoundError (http)', () => {
     it('defaults to 404 / NOT_FOUND', () => {
         const err = new NotFoundError();
         expect(err.statusCode).toBe(404);
@@ -168,7 +250,7 @@ describe('NotFoundError', () => {
     });
 });
 
-describe('UnauthorizedError', () => {
+describe('UnauthorizedError (http)', () => {
     it('defaults to 401 / UNAUTHORIZED', () => {
         const err = new UnauthorizedError();
         expect(err.statusCode).toBe(401);
@@ -179,7 +261,6 @@ describe('UnauthorizedError', () => {
 // ---------------------------------------------------------------------------
 // task.errors.js – Not Found
 // ---------------------------------------------------------------------------
-
 describe('TaskNotFoundError', () => {
     it('extends NotFoundError', () => {
         expect(new TaskNotFoundError('abc')).toBeInstanceOf(NotFoundError);
@@ -201,7 +282,6 @@ describe('TaskNotFoundError', () => {
 // ---------------------------------------------------------------------------
 // task.errors.js – Validation
 // ---------------------------------------------------------------------------
-
 describe('TaskValidationError', () => {
     it('extends ValidationError', () => {
         expect(new TaskValidationError('x')).toBeInstanceOf(ValidationError);
@@ -322,6 +402,20 @@ describe('TaskExtraFieldsError', () => {
 // ---------------------------------------------------------------------------
 // task.errors.js – Business Rules
 // ---------------------------------------------------------------------------
+describe('TaskBusinessRuleError', () => {
+    it('extends BusinessRuleError', () => {
+        expect(new TaskBusinessRuleError('err')).toBeInstanceOf(BusinessRuleError);
+    });
+
+    it('has code TASK_BUSINESS_RULE_VIOLATION', () => {
+        expect(new TaskBusinessRuleError('err').code).toBe('TASK_BUSINESS_RULE_VIOLATION');
+    });
+
+    it('accepts rule in details', () => {
+        const err = new TaskBusinessRuleError('msg', 'RULE');
+        expect(err.details).toEqual({ rule: 'RULE' });
+    });
+});
 
 describe('TaskAlreadyCompletedError', () => {
     it('extends BusinessRuleError', () => {
@@ -364,7 +458,6 @@ describe('TaskDueDateChangeAfterCompletionError', () => {
 // ---------------------------------------------------------------------------
 // task.errors.js – Ownership & Conflict
 // ---------------------------------------------------------------------------
-
 describe('TaskOwnershipError', () => {
     it('extends ForbiddenError', () => {
         expect(new TaskOwnershipError('u1', 't1')).toBeInstanceOf(ForbiddenError);
@@ -409,7 +502,7 @@ describe('TaskInvalidIdError', () => {
     });
 
     it('has code "Invalid task Error"', () => {
-        // NOTE: the code string has a typo in the source – tested as-is
+        // code with typo – as-is
         expect(new TaskInvalidIdError().code).toBe('Invalid task Error');
     });
 });
@@ -417,7 +510,6 @@ describe('TaskInvalidIdError', () => {
 // ---------------------------------------------------------------------------
 // user.errors.js – Not Found
 // ---------------------------------------------------------------------------
-
 describe('UserNotFoundError', () => {
     it('extends NotFoundError', () => {
         expect(new UserNotFoundError('123')).toBeInstanceOf(NotFoundError);
@@ -442,10 +534,23 @@ describe('UserEmailNotFoundError', () => {
     });
 });
 
+describe('UserFileNotFoundError', () => {
+    it('extends NotFoundError', () => {
+        expect(new UserFileNotFoundError('f1')).toBeInstanceOf(NotFoundError);
+    });
+
+    it('includes fileId in message', () => {
+        expect(new UserFileNotFoundError('f1').message).toContain('f1');
+    });
+
+    it('has code USER_FILE_NOT_FOUND', () => {
+        expect(new UserFileNotFoundError('x').code).toBe('USER_FILE_NOT_FOUND');
+    });
+});
+
 // ---------------------------------------------------------------------------
 // user.errors.js – Validation
 // ---------------------------------------------------------------------------
-
 describe('UserValidationError', () => {
     it('extends ValidationError', () => {
         expect(new UserValidationError('x')).toBeInstanceOf(ValidationError);
@@ -509,8 +614,101 @@ describe('UserInvalidRoleError', () => {
 });
 
 // ---------------------------------------------------------------------------
+// user.errors.js – Profile Validation
+// ---------------------------------------------------------------------------
+describe('UserInvalidAvatarTypeError', () => {
+    it('has code USER_INVALID_AVATAR_TYPE', () => {
+        expect(new UserInvalidAvatarTypeError('image/bmp').code).toBe('USER_INVALID_AVATAR_TYPE');
+    });
+
+    it('includes mimetype in message', () => {
+        expect(new UserInvalidAvatarTypeError('image/bmp').message).toContain('image/bmp');
+    });
+});
+
+describe('UserAvatarTooLargeError', () => {
+    it('has code USER_AVATAR_TOO_LARGE', () => {
+        expect(new UserAvatarTooLargeError().code).toBe('USER_AVATAR_TOO_LARGE');
+    });
+
+    it('uses default maxMb of 5', () => {
+        expect(new UserAvatarTooLargeError().message).toContain('5 MB');
+    });
+
+    it('accepts custom maxMb', () => {
+        expect(new UserAvatarTooLargeError(2).message).toContain('2 MB');
+    });
+});
+
+describe('UserInvalidCoverTypeError', () => {
+    it('has code USER_INVALID_COVER_TYPE', () => {
+        expect(new UserInvalidCoverTypeError('image/tiff').code).toBe('USER_INVALID_COVER_TYPE');
+    });
+
+    it('includes mimetype in message', () => {
+        expect(new UserInvalidCoverTypeError('image/tiff').message).toContain('image/tiff');
+    });
+});
+
+describe('UserCoverTooLargeError', () => {
+    it('has code USER_COVER_TOO_LARGE', () => {
+        expect(new UserCoverTooLargeError().code).toBe('USER_COVER_TOO_LARGE');
+    });
+
+    it('uses default maxMb of 5', () => {
+        expect(new UserCoverTooLargeError().message).toContain('5 MB');
+    });
+});
+
+describe('UserInvalidFileTypeError', () => {
+    it('has code USER_INVALID_FILE_TYPE', () => {
+        expect(new UserInvalidFileTypeError('app/exe').code).toBe('USER_INVALID_FILE_TYPE');
+    });
+
+    it('includes mimetype in message', () => {
+        expect(new UserInvalidFileTypeError('app/exe').message).toContain('app/exe');
+    });
+});
+
+describe('UserFileTooLargeError', () => {
+    it('has code USER_FILE_TOO_LARGE', () => {
+        expect(new UserFileTooLargeError('report.pdf').code).toBe('USER_FILE_TOO_LARGE');
+    });
+
+    it('includes fileName and default maxMb 10', () => {
+        const err = new UserFileTooLargeError('report.pdf');
+        expect(err.message).toContain('report.pdf');
+        expect(err.message).toContain('10 MB');
+    });
+
+    it('accepts custom maxMb', () => {
+        const err = new UserFileTooLargeError('doc.docx', 5);
+        expect(err.message).toContain('5 MB');
+    });
+});
+
+describe('UserBioTooLongError', () => {
+    it('has code USER_BIO_TOO_LONG', () => {
+        expect(new UserBioTooLongError().code).toBe('USER_BIO_TOO_LONG');
+    });
+
+    it('defaults to 300 characters', () => {
+        expect(new UserBioTooLongError().message).toContain('300');
+    });
+});
+
+// ---------------------------------------------------------------------------
 // user.errors.js – Business Rules
 // ---------------------------------------------------------------------------
+describe('UserBusinessRuleError', () => {
+    it('extends BusinessRuleError', () => {
+        expect(new UserBusinessRuleError('x')).toBeInstanceOf(BusinessRuleError);
+    });
+
+    it('has code USER_BUSINESS_RULE_VIOLATION', () => {
+        expect(new UserBusinessRuleError('x').code).toBe('USER_BUSINESS_RULE_VIOLATION');
+    });
+});
 
 describe('UserAlreadyAdminError', () => {
     it('extends BusinessRuleError', () => {
@@ -529,7 +727,6 @@ describe('UserAlreadyAdminError', () => {
 // ---------------------------------------------------------------------------
 // user.errors.js – Conflict
 // ---------------------------------------------------------------------------
-
 describe('UserEmailAlreadyExistsError', () => {
     it('extends ConflictError', () => {
         expect(new UserEmailAlreadyExistsError('a@b.com')).toBeInstanceOf(ConflictError);
@@ -551,7 +748,6 @@ describe('UserEmailAlreadyExistsError', () => {
 // ---------------------------------------------------------------------------
 // user.errors.js – Auth
 // ---------------------------------------------------------------------------
-
 describe('InvalidCredentialsError', () => {
     it('extends UnauthorizedError', () => {
         expect(new InvalidCredentialsError()).toBeInstanceOf(UnauthorizedError);
@@ -587,5 +783,197 @@ describe('UserInsufficientPermissionError', () => {
 
     it('has code USER_INSUFFICIENT_PERMISSION', () => {
         expect(new UserInsufficientPermissionError('admin').code).toBe('USER_INSUFFICIENT_PERMISSION');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// content_flag.errors.js
+// ---------------------------------------------------------------------------
+describe('ContentFlagNotFoundError', () => {
+    it('is an instance of Error', () => {
+        expect(new ContentFlagNotFoundError(10)).toBeInstanceOf(Error);
+    });
+
+    it('includes id in message', () => {
+        expect(new ContentFlagNotFoundError(10).message).toContain('10');
+    });
+
+    it('has statusCode 404', () => {
+        expect(new ContentFlagNotFoundError(10).statusCode).toBe(404);
+    });
+
+    it('has name ContentFlagNotFoundError', () => {
+        expect(new ContentFlagNotFoundError(10).name).toBe('ContentFlagNotFoundError');
+    });
+});
+
+describe('ContentFlagInvalidIdError', () => {
+    it('includes id in message', () => {
+        expect(new ContentFlagInvalidIdError('abc').message).toContain('abc');
+    });
+
+    it('has statusCode 400', () => {
+        expect(new ContentFlagInvalidIdError('x').statusCode).toBe(400);
+    });
+});
+
+describe('ContentFlagInvalidTaskIdError', () => {
+    it('includes task id in message', () => {
+        expect(new ContentFlagInvalidTaskIdError('t1').message).toContain('t1');
+    });
+
+    it('has statusCode 400', () => {
+        expect(new ContentFlagInvalidTaskIdError('x').statusCode).toBe(400);
+    });
+});
+
+describe('ContentFlagAlreadyResolvedError', () => {
+    it('includes id in message', () => {
+        expect(new ContentFlagAlreadyResolvedError(5).message).toContain('5');
+    });
+
+    it('has statusCode 409', () => {
+        expect(new ContentFlagAlreadyResolvedError(5).statusCode).toBe(409);
+    });
+});
+
+describe('ContentFlagValidationError', () => {
+    it('accepts a message', () => {
+        const err = new ContentFlagValidationError('bad flag');
+        expect(err.message).toBe('bad flag');
+    });
+
+    it('has statusCode 422', () => {
+        expect(new ContentFlagValidationError('x').statusCode).toBe(422);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// notification.errors.js
+// ---------------------------------------------------------------------------
+describe('NotificationInvalidTypeError', () => {
+    it('includes type in message', () => {
+        expect(new NotificationInvalidTypeError('sms').message).toContain('sms');
+    });
+
+    it('has statusCode 400', () => {
+        expect(new NotificationInvalidTypeError('x').statusCode).toBe(400);
+    });
+});
+
+describe('NotificationMissingFieldError', () => {
+    it('includes field name in message', () => {
+        expect(new NotificationMissingFieldError('recipient').message).toContain('recipient');
+    });
+
+    it('has statusCode 400', () => {
+        expect(new NotificationMissingFieldError('x').statusCode).toBe(400);
+    });
+});
+
+describe('NotificationNotFoundError', () => {
+    it('includes id in message', () => {
+        expect(new NotificationNotFoundError('n1').message).toContain('n1');
+    });
+
+    it('has statusCode 404', () => {
+        expect(new NotificationNotFoundError('x').statusCode).toBe(404);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// password_reset.errors.js
+// ---------------------------------------------------------------------------
+describe('PasswordResetTokenExpiredError', () => {
+    it('has statusCode 400', () => {
+        expect(new PasswordResetTokenExpiredError().statusCode).toBe(400);
+    });
+
+    it('mentions “expired”', () => {
+        expect(new PasswordResetTokenExpiredError().message).toMatch(/expired/i);
+    });
+});
+
+describe('PasswordResetTokenAlreadyUsedError', () => {
+    it('has statusCode 400', () => {
+        expect(new PasswordResetTokenAlreadyUsedError().statusCode).toBe(400);
+    });
+
+    it('mentions “already been used”', () => {
+        expect(new PasswordResetTokenAlreadyUsedError().message).toMatch(/already been used/i);
+    });
+});
+
+describe('PasswordResetTokenNotFoundError', () => {
+    it('has statusCode 400', () => {
+        expect(new PasswordResetTokenNotFoundError().statusCode).toBe(400);
+    });
+
+    it('mentions “invalid or expired”', () => {
+        expect(new PasswordResetTokenNotFoundError().message).toMatch(/invalid or expired/i);
+    });
+});
+
+describe('PasswordResetUserNotFoundError', () => {
+    it('has statusCode 200 (special case)', () => {
+        expect(new PasswordResetUserNotFoundError().statusCode).toBe(200);
+    });
+
+    it('mentions “account with that email”', () => {
+        expect(new PasswordResetUserNotFoundError().message).toMatch(/account with that email/i);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// vocab.errors.js
+// ---------------------------------------------------------------------------
+describe('InvalidTopicError', () => {
+    it('extends ValidationError', () => {
+        expect(new InvalidTopicError('bad')).toBeInstanceOf(ValidationError);
+    });
+
+    it('includes topic in message', () => {
+        expect(new InvalidTopicError('bad').message).toContain('bad');
+    });
+
+    it('has details with topic', () => {
+        expect(new InvalidTopicError('bad').details).toEqual({ topic: 'bad' });
+    });
+});
+
+describe('VocabularyNotFoundError', () => {
+    it('extends NotFoundError', () => {
+        expect(new VocabularyNotFoundError('topic')).toBeInstanceOf(NotFoundError);
+    });
+
+    it('includes topic in message', () => {
+        expect(new VocabularyNotFoundError('topic').message).toContain('topic');
+    });
+
+    it('has details with topic', () => {
+        expect(new VocabularyNotFoundError('topic').details).toEqual({ topic: 'topic' });
+    });
+});
+
+describe('DuplicateVocabularyError', () => {
+    it('extends ConflictError', () => {
+        expect(new DuplicateVocabularyError('word', 'topic')).toBeInstanceOf(ConflictError);
+    });
+
+    it('includes word and topic in message', () => {
+        expect(new DuplicateVocabularyError('word', 'topic').message).toContain('word');
+        expect(new DuplicateVocabularyError('word', 'topic').message).toContain('topic');
+    });
+});
+
+describe('VocabularyRuleViolationError', () => {
+    it('extends BusinessRuleError', () => {
+        expect(new VocabularyRuleViolationError('msg')).toBeInstanceOf(BusinessRuleError);
+    });
+
+    it('accepts message and details', () => {
+        const err = new VocabularyRuleViolationError('rule broken', { field: 'x' });
+        expect(err.message).toBe('rule broken');
+        expect(err.details).toEqual({ field: 'x' });
     });
 });

@@ -1,6 +1,13 @@
 // /js/pages/vocab/browse.js
 // Vocabulary browse page — handles search, chip clicks, API calls, and card rendering.
 
+import { initNavbar } from "../../../components/navbar.js";
+import { initSocket}  from '../../core/socket.js'
+
+
+initNavbar();
+initSocket();
+
 const searchInput = document.getElementById('vocab-search');
 const searchBtn   = document.getElementById('search-btn');
 const vocabArea   = document.getElementById('vocab-area');

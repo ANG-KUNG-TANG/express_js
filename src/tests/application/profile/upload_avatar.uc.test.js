@@ -25,7 +25,6 @@ jest.unstable_mockModule('../../../core/errors/user.errors.js', () => {
 });
 
 const userRepo = await import('../../../infrastructure/repositories/user_repo.js');
-const { validateRequired } = await import('../../../app/validators/user_validator.js');
 const { UserInvalidAvatarTypeError, UserAvatarTooLargeError } = await import('../../../core/errors/user.errors.js');
 const { uploadAvatarUseCase, validateAvatarInput } = await import('../../../app/profile/upload_avatar.uc.js');
 

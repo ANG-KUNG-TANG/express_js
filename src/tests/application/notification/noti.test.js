@@ -17,7 +17,7 @@ const makeSavedNotification = (overrides = {}) => ({
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-jest.mock('../../../infrastructure/repositories/notification_repo.js', () => ({
+jest.unstable_mockModule('../../../infrastructure/repositories/notification_repo.js', () => ({
     notificationRepo: {
         create:       jest.fn(),
         deleteOne:    jest.fn(),
@@ -27,11 +27,11 @@ jest.mock('../../../infrastructure/repositories/notification_repo.js', () => ({
     },
 }));
 
-jest.mock('../../../core/services/socket.service.js', () => ({
+jest.unstable_mockModule('../../../core/services/socket.service.js', () => ({
     getIO: jest.fn(),
 }));
 
-jest.mock('../../../core/services/redis.service.js', () => ({
+jest.unstable_mockModule('../../../core/services/redis.service.js', () => ({
     redisGet:        jest.fn(),
     redisSet:        jest.fn(),
     redisDel:        jest.fn(),
@@ -43,7 +43,7 @@ jest.mock('../../../core/services/redis.service.js', () => ({
     TTL: { NOTIFICATIONS: 60 },
 }));
 
-jest.mock('../../../domain/entities/notificaiton_entity.js', () => {
+jest.unstable_mockModule('../../../domain/entities/notificaiton_entity.js', () => {
     const NotificationType = {
         TASK_ASSIGNED: 'TASK_ASSIGNED',
         TEST_RESULT:   'TEST_RESULT',
@@ -56,7 +56,7 @@ jest.mock('../../../domain/entities/notificaiton_entity.js', () => {
     return { Notification, NotificationType };
 });
 
-jest.mock('../../../core/errors/notification.errors.js', () => ({
+jest.unstable_mockModule('../../../core/errors/notification.errors.js', () => ({
     NotificationNotFoundError: class NotificationNotFoundError extends Error {
         constructor(id) {
             super(`Notification not found: ${id}`);

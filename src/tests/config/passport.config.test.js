@@ -99,9 +99,7 @@ describe('passport.config — initPassport', () => {
 
     it('registers a GoogleStrategy', () => {
         initPassport();
-        const names = passport.use.mock.calls.map(
-            (c) => c[0]?.constructor?.name ?? c[1]?.constructor?.name
-        );
+        const names = passport.use.mock.calls.map(getStrategyName);
         expect(names).toContain('GoogleStrategy');
     });
 
@@ -131,10 +129,10 @@ describe('passport.config — initPassport', () => {
         delete process.env.GOOGLE_CALLBACK_URL;
     });
 
-    it('falls back to /auth/google/callback when GOOGLE_CALLBACK_URL is unset', () => {
+    it('falls back to http://localhost:3000/api/auth/google/callback when GOOGLE_CALLBACK_URL is unset', () => {
         delete process.env.GOOGLE_CALLBACK_URL;
         initPassport();
         const strategy = getStrategy('GoogleStrategy');
-        expect(strategy.options.callbackURL).toBe('/auth/google/callback');
+        expect(strategy.options.callbackURL).toBe('http://localhost:3000/api/auth/google/callback');
     });
 });

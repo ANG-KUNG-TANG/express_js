@@ -1,12 +1,11 @@
 services:
   app:
-    image: baw1463i/ielts-js:latest   # <-- change this
+    image: baw1463i/ielts-js:latest
     container_name: ielts_js_prod
     ports:
       - "3000:3000"
-      - "0:3000"
     env_file:
-      - .env                    # friend fills this from .env.example
+      - .env
     depends_on:
       redis:
         condition: service_healthy

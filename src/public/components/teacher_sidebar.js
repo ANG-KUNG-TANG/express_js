@@ -20,8 +20,6 @@ export const initTeacherSidebar = async () => {
     }
 
     const path = window.location.pathname;
-
-    // ── Nav structure ─────────────────────────────────────────────────────────
     const navItems = [
         {
             section: 'Overview',
@@ -64,11 +62,17 @@ export const initTeacherSidebar = async () => {
     };
 
     // ── Sidebar HTML (bell removed — now a fixed topbar via initNotificationTopbar) ──
+    if (!document.querySelector('link[rel="icon"]')) {
+        const link = document.createElement('link');
+        link.rel  = 'icon'; link.type = 'image/svg+xml'; link.href = '/favicon.svg';
+        document.head.appendChild(link);
+    }
+
     const sidebar = document.createElement('aside');
     sidebar.className = 'teacher-sidebar-root admin-sidebar-root';
     sidebar.innerHTML = `
         <div class="asb-brand">
-            <div class="asb-brand-icon" style="background:linear-gradient(135deg,#3a7d5a,#c8a84b)">W</div>
+            <img src="/favicon.svg" alt="WriteSystem" width="36" height="36" style="border-radius:8px;flex-shrink:0;">
             <div class="asb-brand-text">
                 <div class="asb-brand-name">WriteSystem</div>
                 <div class="asb-brand-badge" style="color:var(--sage,#3a7d5a)">Teacher Panel</div>

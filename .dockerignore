@@ -1,9 +1,29 @@
-node_modules
-.pnpm-store
-.git
+# Dependencies — reinstalled inside image
+node_modules/
+
+# Test infrastructure — not needed in production image
+src/tests/
+.mongo-binaries/
+coverage/
+*.test.js
+
+# Git
+.git/
 .gitignore
-Dockerfile
-docker-compose.yml
-logs
-uploads
+.gitlab-ci.yml
+
+# Environment — never bake secrets into image
 .env
+.env.*
+!.env.example
+
+# Dev tools
+.eslintcache
+Dockerfile.dev
+docker-compose*.yml
+makefile
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log

@@ -7,10 +7,13 @@ import { requireAuth }  from '../../core/router.js';
 import { apiFetch }     from '../../core/api.js';
 import { initNavbar }   from '../../../components/navbar.js';
 import { newsCard }     from '../../../components/newsCard.js';
-import { toast }        from '../../core/toast.js';
+import { initSocket}  from '../../core/socket.js'
+import { toast }        from '../../utils/toast.js';
 
-requireAuth();
+
 initNavbar();
+initSocket();
+requireAuth();
 
 const gridEl    = document.getElementById('news-grid');
 const loadingEl = document.getElementById('loading-state');

@@ -76,6 +76,17 @@ app.use('/api/teacher',       teacherRouter);
 app.use('/api',               profileRouter);  // /api/users/me — must be before userRouter
 app.use('/api',               userRouter);     // /api/users/:id
 
+
+//-----Health---------------------------------------------------------------------
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
+ 
+
 // ── Root → redirect to login ──────────────────────────────────────────────────
 app.get('/', (req, res) => {
     res.redirect('/pages/auth/login.html');
