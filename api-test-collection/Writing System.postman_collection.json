@@ -1,0 +1,2849 @@
+{
+  "info": {
+    "_postman_id": "2934bc7e-37a1-4515-bebb-4f0219f006f2",
+    "name": "Writing System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47598626",
+    "_collection_link": "https://go.postman.co/collection/47598626-2934bc7e-37a1-4515-bebb-4f0219f006f2?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "auth",
+      "item": [
+        {
+          "name": "login",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"johndev@gmail.com\",\r\n    \"password\": \"NewPassword123!\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "logout",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "register",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Google_register",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/google",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "google"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Github_register",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/github",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "github"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Google_callback",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/google/callback/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "google",
+                "callback",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Github_callback",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/github/callback/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "github",
+                "callback",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "refresh"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Failure",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/failure",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "failure"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "user",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "create user",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjYyNTIsImV4cCI6MTc3ODE2NzE1Mn0.p2tCRRhW3Cc6xXIuh4euxxMnQ_UZKcZm7Y19w8vTYYU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list users",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjYyNTIsImV4cCI6MTc3ODE2NzE1Mn0.p2tCRRhW3Cc6xXIuh4euxxMnQ_UZKcZm7Y19w8vTYYU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/list_users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "list_users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "user by mail",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjYyNTIsImV4cCI6MTc3ODE2NzE1Mn0.p2tCRRhW3Cc6xXIuh4euxxMnQ_UZKcZm7Y19w8vTYYU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/email/kuku@example.com",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "email",
+                "kuku@example.com"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "user by id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjYyNTIsImV4cCI6MTc3ODE2NzE1Mn0.p2tCRRhW3Cc6xXIuh4euxxMnQ_UZKcZm7Y19w8vTYYU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/69952c273cd581e8ae1610ae",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "69952c273cd581e8ae1610ae"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "admin",
+      "item": [
+        {
+          "name": "Admin_get_users",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjI5MzAsImV4cCI6MTc3ODE2MzgzMH0.tTzEdWPcVJarpfr9V7-9o0O6llWwIaWi06rCIEESsCw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Search_user",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjI5MzAsImV4cCI6MTc3ODE2MzgzMH0.tTzEdWPcVJarpfr9V7-9o0O6llWwIaWi06rCIEESsCw",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"name\" : \"Django\",\r\n    \"email\": \"django@gmail.com\",\r\n    \"password\": \"SecurePassword123\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/search",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Search_email",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/email/alice@gmail.com",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "email",
+                "alice@gmail.com"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_get_userid_activity",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/69981fba7103460234a6c451/activity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "69981fba7103460234a6c451",
+                "activity"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Promote_user_admin",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/69981fba7103460234a6c451/promote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "69981fba7103460234a6c451",
+                "promote"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Assign_Teacher",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/6996da32a45c324f749b5933/assign-teacher",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "6996da32a45c324f749b5933",
+                "assign-teacher"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Suspend_user",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/6996da32a45c324f749b5933/suspend",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "6996da32a45c324f749b5933",
+                "suspend"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Reactivate_user",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/6996da32a45c324f749b5933/reactivate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "6996da32a45c324f749b5933",
+                "reactivate"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Demote_User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/6996da32a45c324f749b5933/demote",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "6996da32a45c324f749b5933",
+                "demote"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Force_password_reset",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"password\": \"StrongPassword123\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/6996da32a45c324f749b5933/force-password-reset",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "6996da32a45c324f749b5933",
+                "force-password-reset"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Link_student_teacehr _by_id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"teacherId\": \"6999f9f1384593cd27d27793\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/6996da32a45c324f749b5933/link-teacher",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "6996da32a45c324f749b5933",
+                "link-teacher"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Delete_User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"teacherId\": \"6999f9f1384593cd27d27793\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/6996da32a45c324f749b5933",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "6996da32a45c324f749b5933"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Delete_Buld_users",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"teacherId\": \"6999f9f1384593cd27d27793\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "bulk"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Bulk_Suspend",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"teacherId\": \"6999f9f1384593cd27d27793\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/bulk/suspend",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "bulk",
+                "suspend"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_Bulk_assign-teacher",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"teacherId\": \"6999f9f1384593cd27d27793\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/bulk/assign-teacher",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "bulk",
+                "assign-teacher"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_get_writing_tasks",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"teacherId\": \"6999f9f1384593cd27d27793\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/writing-tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "writing-tasks"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_search_writing_taskt",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjMzMDYsImV4cCI6MTc3ODE2NDIwNn0.pqqvvUiEqTb-HAoJ81nU4hShixZb9VPksw8ezeZUtYg",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{   \r\n    \"teacherId\": \"6999f9f1384593cd27d27793\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/writing-tasks/search",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "writing-tasks",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_review_writing_task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjQ3NzQsImV4cCI6MTc3ODE2NTY3NH0.3UmZJBnmfdvsvrngpo9FU-0wgMhjQGAG2UI37Po-amA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/writing-tasks/69ca13f35997a2572cb88968/review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "writing-tasks",
+                "69ca13f35997a2572cb88968",
+                "review"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_score_writing_task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjQ3NzQsImV4cCI6MTc3ODE2NTY3NH0.3UmZJBnmfdvsvrngpo9FU-0wgMhjQGAG2UI37Po-amA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/writing-tasks/69ca13f35997a2572cb88968/score",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "writing-tasks",
+                "69ca13f35997a2572cb88968",
+                "score"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin_tarnsfer task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjQ3NzQsImV4cCI6MTc3ODE2NTY3NH0.3UmZJBnmfdvsvrngpo9FU-0wgMhjQGAG2UI37Po-amA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"fromUserId\": \"6999f13f47537a3e4fa0ef90\",\r\n    \"toUserId\": \"69c79e69f8bcb1f5a72a4bf6\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/writing-tasks/transfer",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "writing-tasks",
+                "transfer"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin get flags",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjQ3NzQsImV4cCI6MTc3ODE2NTY3NH0.3UmZJBnmfdvsvrngpo9FU-0wgMhjQGAG2UI37Po-amA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"fromUserId\": \"6999f13f47537a3e4fa0ef90\",\r\n    \"toUserId\": \"69c79e69f8bcb1f5a72a4bf6\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/flags",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "flags"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin flag task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjQ3NzQsImV4cCI6MTc3ODE2NTY3NH0.3UmZJBnmfdvsvrngpo9FU-0wgMhjQGAG2UI37Po-amA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"taskId\": \"69ca13f35997a2572cb88968\",\r\n    \"reason\": \"inappropriate word choices\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/flags",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "flags"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin resolve flag",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjQ3NzQsImV4cCI6MTc3ODE2NTY3NH0.3UmZJBnmfdvsvrngpo9FU-0wgMhjQGAG2UI37Po-amA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"taskId\": \"69ca13f35997a2572cb88968\",\r\n    \"reason\": \"inappropriate word choices\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/flags/69fca63dc47e32e345530524/resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "flags",
+                "69fca63dc47e32e345530524",
+                "resolve"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin get logs",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjQ3NzQsImV4cCI6MTc3ODE2NTY3NH0.3UmZJBnmfdvsvrngpo9FU-0wgMhjQGAG2UI37Po-amA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"taskId\": \"69ca13f35997a2572cb88968\",\r\n    \"reason\": \"inappropriate word choices\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit-logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit-logs"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin noti",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjQ3NzQsImV4cCI6MTc3ODE2NTY3NH0.3UmZJBnmfdvsvrngpo9FU-0wgMhjQGAG2UI37Po-amA",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"taskId\": \"69ca13f35997a2572cb88968\",\r\n    \"reason\": \"inappropriate word choices\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "django@gmail.com",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "notification",
+      "item": [
+        {
+          "name": "Get Noti",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgyMzQ1NjUsImV4cCI6MTc3ODIzNTQ2NX0.kXMNoR4sDinrZQg99qDPXR2tLRZKMd6PcF_LZ18I0tc",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ReadNoti",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgyMzQ1NjUsImV4cCI6MTc3ODIzNTQ2NX0.kXMNoR4sDinrZQg99qDPXR2tLRZKMd6PcF_LZ18I0tc",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "read"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Read id Noti",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgyMzQ1NjUsImV4cCI6MTc3ODIzNTQ2NX0.kXMNoR4sDinrZQg99qDPXR2tLRZKMd6PcF_LZ18I0tc",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications/id/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "id",
+                "read"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete id Not",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgyMzQ1NjUsImV4cCI6MTc3ODIzNTQ2NX0.kXMNoR4sDinrZQg99qDPXR2tLRZKMd6PcF_LZ18I0tc",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications/id/delete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "id",
+                "delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "audit_logs",
+      "item": [
+        {
+          "name": "admin logs actions",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjYyNTIsImV4cCI6MTc3ODE2NzE1Mn0.p2tCRRhW3Cc6xXIuh4euxxMnQ_UZKcZm7Y19w8vTYYU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit-logs/actions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit-logs",
+                "actions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List AuditLogs",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgxNjYyNTIsImV4cCI6MTc3ODE2NzE1Mn0.p2tCRRhW3Cc6xXIuh4euxxMnQ_UZKcZm7Y19w8vTYYU",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit-logs/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit-logs",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "tasks",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "search task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/'The story of coconut\"/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "'The story of coconut\"",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "create task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get task as user",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "get task by id",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/69fec9f671b9806f2128f6d3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "69fec9f671b9806f2128f6d3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "start writing",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/69fec9f671b9806f2128f6d3/start",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "69fec9f671b9806f2128f6d3",
+                "start"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "submit writing",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/69fec9f671b9806f2128f6d3/submit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "69fec9f671b9806f2128f6d3",
+                "submit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "review writing",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/69fec9f671b9806f2128f6d3/review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "69fec9f671b9806f2128f6d3",
+                "review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "score writing",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/69fec9f671b9806f2128f6d3/score",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "69fec9f671b9806f2128f6d3",
+                "score"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "update writing",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/69fec9f671b9806f2128f6d3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "69fec9f671b9806f2128f6d3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "delete writing",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/69fec9f671b9806f2128f6d3",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "69fec9f671b9806f2128f6d3"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "respond task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA2NDk5LCJleHAiOjE3NzgzMDczOTl9.sjtGRlJE9rQJmQYH_Co13oonuQM6QYhlSJr2j_qJxOk",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"Beach\",\r\n    \"taskType\" : \"TASK_2\",\r\n    \"examType\": \"ACADEMIC\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/69fec9f671b9806f2128f6d3/respond-assigment",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "69fec9f671b9806f2128f6d3",
+                "respond-assigment"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "teacher",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "teacher assign task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTZkNzljMDQzZDAzMmRmODg2YzY4MSIsImVtYWlsIjoiYXBwbGVAZXhhbXBsZS5jb20iLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc3ODMwMzY0NSwiZXhwIjoxNzc4MzA0NTQ1fQ.zHrXmfMREYOuNnWL_7KoKnHVURgfl5w57ohzmwrGQyI",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/teacher/assign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "teacher",
+                "assign"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "teacher get students",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTZkNzljMDQzZDAzMmRmODg2YzY4MSIsImVtYWlsIjoiYXBwbGVAZXhhbXBsZS5jb20iLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc3ODMwMzY0NSwiZXhwIjoxNzc4MzA0NTQ1fQ.zHrXmfMREYOuNnWL_7KoKnHVURgfl5w57ohzmwrGQyI",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/teacher/students",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "teacher",
+                "students"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "search by id",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgzMDI2NDksImV4cCI6MTc3ODMwMzU0OX0.L2HnKMZTz70oy0fK6lqeAgrGUPflVAG8kUBKNhHmHHE",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"The stroy of coconut\"   \r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/69abe1fe38a56b348d63ddcc",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "69abe1fe38a56b348d63ddcc"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "search tasks",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgzMDI2NDksImV4cCI6MTc3ODMwMzU0OX0.L2HnKMZTz70oy0fK6lqeAgrGUPflVAG8kUBKNhHmHHE",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"title\": \"The stroy of coconut\"   \r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/search",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "list tasks",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTk0NGVlYjgwYThhYTZhMWI2ODE4NiIsImVtYWlsIjoiam9obmRldkBnbWFpbC5jb20iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzgzMDI2NDksImV4cCI6MTc3ODMwMzU0OX0.L2HnKMZTz70oy0fK6lqeAgrGUPflVAG8kUBKNhHmHHE",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"johndev@gmail.com\",\r\n    \"password\": \"NewPassword123!\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/writing-tasks/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "writing-tasks",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "teacher get student's tasks",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTZkNzljMDQzZDAzMmRmODg2YzY4MSIsImVtYWlsIjoiYXBwbGVAZXhhbXBsZS5jb20iLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc3ODMwMzY0NSwiZXhwIjoxNzc4MzA0NTQ1fQ.zHrXmfMREYOuNnWL_7KoKnHVURgfl5w57ohzmwrGQyI",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/teacher/students/69947e78fdffc661e4241837/tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "teacher",
+                "students",
+                "69947e78fdffc661e4241837",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "teacher get assigned tasks",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTZkNzljMDQzZDAzMmRmODg2YzY4MSIsImVtYWlsIjoiYXBwbGVAZXhhbXBsZS5jb20iLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc3ODMwMzY0NSwiZXhwIjoxNzc4MzA0NTQ1fQ.zHrXmfMREYOuNnWL_7KoKnHVURgfl5w57ohzmwrGQyI",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/teacher/assigned-tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "teacher",
+                "assigned-tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "teacher get student by id",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTZkNzljMDQzZDAzMmRmODg2YzY4MSIsImVtYWlsIjoiYXBwbGVAZXhhbXBsZS5jb20iLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc3ODMwMzY0NSwiZXhwIjoxNzc4MzA0NTQ1fQ.zHrXmfMREYOuNnWL_7KoKnHVURgfl5w57ohzmwrGQyI",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/teacher/students/69947e78fdffc661e4241837/tasks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "teacher",
+                "students",
+                "69947e78fdffc661e4241837",
+                "tasks"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "dashboard stats",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTZkNzljMDQzZDAzMmRmODg2YzY4MSIsImVtYWlsIjoiYXBwbGVAZXhhbXBsZS5jb20iLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc3ODMwMzY0NSwiZXhwIjoxNzc4MzA0NTQ1fQ.zHrXmfMREYOuNnWL_7KoKnHVURgfl5w57ohzmwrGQyI",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/teacher/dashboard/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "teacher",
+                "dashboard",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "teacher profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTZkNzljMDQzZDAzMmRmODg2YzY4MSIsImVtYWlsIjoiYXBwbGVAZXhhbXBsZS5jb20iLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc3ODMwMzY0NSwiZXhwIjoxNzc4MzA0NTQ1fQ.zHrXmfMREYOuNnWL_7KoKnHVURgfl5w57ohzmwrGQyI",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/teacher/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "teacher",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "teacher profile update ",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTZkNzljMDQzZDAzMmRmODg2YzY4MSIsImVtYWlsIjoiYXBwbGVAZXhhbXBsZS5jb20iLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc3ODMwMzY0NSwiZXhwIjoxNzc4MzA0NTQ1fQ.zHrXmfMREYOuNnWL_7KoKnHVURgfl5w57ohzmwrGQyI",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/teacher/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "teacher",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "vocab",
+      "item": [
+        {
+          "name": "search task",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA0NjM5LCJleHAiOjE3NzgzMDU1Mzl9.4AEQFdLow5BpTB6kZtvHbNCmlWK3kDUOVoWJ48lC65g",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/vocab/happy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "vocab",
+                "happy"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "news",
+      "item": [
+        {
+          "name": "New Request",
+          "request": {
+            "method": "GET",
+            "header": []
+          },
+          "response": []
+        },
+        {
+          "name": "news feed",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA2NDk5LCJleHAiOjE3NzgzMDczOTl9.sjtGRlJE9rQJmQYH_Co13oonuQM6QYhlSJr2j_qJxOk",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"johndev@gmail.com\",\r\n    \"password\": \"NewPassword123!\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/news/feed",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "news",
+                "feed"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "search news",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA2NDk5LCJleHAiOjE3NzgzMDczOTl9.sjtGRlJE9rQJmQYH_Co13oonuQM6QYhlSJr2j_qJxOk",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"johndev@gmail.com\",\r\n    \"password\": \"NewPassword123!\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/news/search/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "news",
+                "search",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "news categories",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA2NDk5LCJleHAiOjE3NzgzMDczOTl9.sjtGRlJE9rQJmQYH_Co13oonuQM6QYhlSJr2j_qJxOk",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"johndev@gmail.com\",\r\n    \"password\": \"NewPassword123!\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/news/categories/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "news",
+                "categories",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "interest",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA2NDk5LCJleHAiOjE3NzgzMDczOTl9.sjtGRlJE9rQJmQYH_Co13oonuQM6QYhlSJr2j_qJxOk",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"johndev@gmail.com\",\r\n    \"password\": \"NewPassword123!\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/news/interests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "news",
+                "interests"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "news category cat",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5OTUyYzI3M2NkNTgxZThhZTE2MTBhZSIsImVtYWlsIjoia3VrdUBleGFtcGxlLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc4MzA3NTY5LCJleHAiOjE3NzgzMDg0Njl9.3_sCJKHmuplD9bs72KFXOWZqxngWpasa0c37AaLzq38",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"email\": \"johndev@gmail.com\",\r\n    \"password\": \"NewPassword123!\"\r\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/news/category/business",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "news",
+                "category",
+                "business"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "index",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/health",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
