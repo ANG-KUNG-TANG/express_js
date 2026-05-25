@@ -7,8 +7,10 @@ import * as userRepo                   from '../../infrastructure/repositories/u
 import { emailService }                from '../../core/services/email.service.js';
 import { recordAudit, recordFailure }  from '../../core/services/audit.service.js';
 import { AuditAction }                 from '../../domain/base/audit_enums.js';
+import { PASSWORD_RESET_TTL_MS } from '../../domain/base/token_ttl.js';
+import { revokeAllForUser } from '../../core/services/token_store.service.js';
 
-const TOKEN_EXPIRY_MINUTES = 30;
+
 
 // req passed from controller so IP is captured in the audit log
 export const requestPasswordResetUseCase = async ({ email }, req = null) => {
