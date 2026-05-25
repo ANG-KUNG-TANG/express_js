@@ -1,6 +1,8 @@
+// src/domain/entities/task_entity.js
+
 import { UniqueId } from "../base/id_generator.js";
 import { WritingStatus, TaskType, ExamType, TaskSource, AssignmentStatus } from "../base/task_enums.js";
-
+import { AiEvaluation } from "./ai_evaluate_entity.js";
 
 export class WritingTask {
     constructor(props) {
@@ -25,15 +27,18 @@ export class WritingTask {
         createdAt   = new Date(),
         updatedAt   = new Date(),
 
-        // ── Assignment fields (new) ─────────────────────────────────────────
-        source             = TaskSource.SELF,
-        assignedBy         = null,   // teacher's userId (ObjectId string)
-        assignedTo         = null,   // student's userId (mirrors userId for assigned tasks)
-        assignmentStatus   = null,   // AssignmentStatus | null for self-created
-        declineReason      = null,   // student's reason when declining
-        dueDate            = null,   // ISO date string set by teacher
-        reminderSentAt     = null,   // last TASK_REMINDER noti timestamp
-        unstartedNotiSentAt = null,  // last TASK_UNSTARTED noti timestamp
+        // ── Assignment fields ───────────────────────────────────────────────
+        source              = TaskSource.SELF,
+        assignedBy          = null,
+        assignedTo          = null,
+        assignmentStatus    = null,
+        declineReason       = null,
+        dueDate             = null,
+        reminderSentAt      = null,
+        unstartedNotiSentAt = null,
+
+        // ── AI evaluation ───────────────────────────────────────────────────
+        aiEvaluation = null,
     }) {
         this._validateTitle(title);
         this._validateStatus(status);
@@ -68,10 +73,19 @@ export class WritingTask {
         this._dueDate             = dueDate ? new Date(dueDate) : null;
         this._reminderSentAt      = reminderSentAt ? new Date(reminderSentAt) : null;
         this._unstartedNotiSentAt = unstartedNotiSentAt ? new Date(unstartedNotiSentAt) : null;
+
+        // AI evaluation — reconstruct from plain object if needed
+        if (aiEvaluation instanceof AiEvaluation) {
+            this._aiEvaluation = aiEvaluation;
+        } else if (aiEvaluation && typeof aiEvaluation === 'object') {
+            this._aiEvaluation = new AiEvaluation(aiEvaluation);
+        } else {
+            this._aiEvaluation = null;
+        }
     }
 
     // -------------------------------------------------------------------------
-    // Validators (unchanged)
+    // Validators
     // -------------------------------------------------------------------------
 
     _validateTitle(title) {
@@ -119,14 +133,13 @@ export class WritingTask {
     }
 
     // -------------------------------------------------------------------------
-    // State-transition methods (unchanged)
+    // State-transition methods
     // -------------------------------------------------------------------------
 
     startWriting() {
         if (this._status !== WritingStatus.ASSIGNED) {
             throw new Error("Only assigned tasks can be started");
         }
-        // Guard: assigned tasks must be accepted before starting
         if (this._assignedBy && this._assignmentStatus !== AssignmentStatus.ACCEPTED) {
             throw new Error("You must accept this task before you can start writing");
         }
@@ -179,14 +192,34 @@ export class WritingTask {
         this._updatedAt = new Date();
     }
 
+    // ── AI evaluation ─────────────────────────────────────────────────────────
+
+    /**
+     * Attach a validated AiEvaluation to this task.
+     * Allowed on any task that has been submitted (has submissionText).
+     * Does NOT change the task status — AI check is non-destructive.
+     *
+     * @param {AiEvaluation} evaluation
+     */
+    aiEvaluate(evaluation) {
+        if (!this._submissionText || !this._submissionText.trim()) {
+            throw new Error('Cannot AI-evaluate a task with no submission text.');
+        }
+        if (!(evaluation instanceof AiEvaluation)) {
+            throw new Error('aiEvaluate() expects an AiEvaluation instance.');
+        }
+        this._aiEvaluation = evaluation;
+        this._updatedAt    = new Date();
+    }
+
     // -------------------------------------------------------------------------
-    // Assignment helpers (new)
+    // Assignment helpers
     // -------------------------------------------------------------------------
 
-    isAssigned()   { return this._assignedBy !== null; }
-    isSelfCreated(){ return this._source === TaskSource.SELF; }
-    isAccepted()   { return this._assignmentStatus === AssignmentStatus.ACCEPTED; }
-    isDeclined()   { return this._assignmentStatus === AssignmentStatus.DECLINED; }
+    isAssigned()    { return this._assignedBy !== null; }
+    isSelfCreated() { return this._source === TaskSource.SELF; }
+    isAccepted()    { return this._assignmentStatus === AssignmentStatus.ACCEPTED; }
+    isDeclined()    { return this._assignmentStatus === AssignmentStatus.DECLINED; }
 
     acceptAssignment() {
         if (this._assignmentStatus !== AssignmentStatus.PENDING_ACCEPTANCE) {
@@ -207,38 +240,41 @@ export class WritingTask {
     }
 
     // -------------------------------------------------------------------------
-    // Getters — existing unchanged, new ones appended
+    // Getters
     // -------------------------------------------------------------------------
 
-    get id()             { return this._id; }
-    get title()          { return this._title; }
-    get description()    { return this._description; }
-    get status()         { return this._status; }
-    get taskType()       { return this._taskType; }
-    get examType()       { return this._examType; }
-    get questionPrompt() { return this._questionPrompt; }
-    get submissionText() { return this._submissionText; }
-    get wordCount()      { return this._wordCount; }
-    get bandScore()      { return this._bandScore; }
-    get feedback()       { return this._feedback; }
-    get userId()         { return this._userId; }
-    get submittedAt()    { return this._submittedAt; }
-    get reviewedAt()     { return this._reviewedAt; }
-    get createdAt()      { return this._createdAt; }
-    get updatedAt()      { return this._updatedAt; }
+    get id()                  { return this._id; }
+    get title()               { return this._title; }
+    get description()         { return this._description; }
+    get status()              { return this._status; }
+    get taskType()            { return this._taskType; }
+    get examType()            { return this._examType; }
+    get questionPrompt()      { return this._questionPrompt; }
+    get submissionText()      { return this._submissionText; }
+    get wordCount()           { return this._wordCount; }
+    get bandScore()           { return this._bandScore; }
+    get feedback()            { return this._feedback; }
+    get userId()              { return this._userId; }
+    get submittedAt()         { return this._submittedAt; }
+    get reviewedAt()          { return this._reviewedAt; }
+    get createdAt()           { return this._createdAt; }
+    get updatedAt()           { return this._updatedAt; }
 
-    // assignment getters (new)
-    get source()               { return this._source; }
-    get assignedBy()           { return this._assignedBy; }
-    get assignedTo()           { return this._assignedTo; }
-    get assignmentStatus()     { return this._assignmentStatus; }
-    get declineReason()        { return this._declineReason; }
-    get dueDate()              { return this._dueDate; }
-    get reminderSentAt()       { return this._reminderSentAt; }
-    get unstartedNotiSentAt()  { return this._unstartedNotiSentAt; }
+    // assignment
+    get source()              { return this._source; }
+    get assignedBy()          { return this._assignedBy; }
+    get assignedTo()          { return this._assignedTo; }
+    get assignmentStatus()    { return this._assignmentStatus; }
+    get declineReason()       { return this._declineReason; }
+    get dueDate()             { return this._dueDate; }
+    get reminderSentAt()      { return this._reminderSentAt; }
+    get unstartedNotiSentAt() { return this._unstartedNotiSentAt; }
+
+    // AI evaluation
+    get aiEvaluation()        { return this._aiEvaluation; }
 
     // -------------------------------------------------------------------------
-    // toJSON — includes new assignment fields
+    // toJSON
     // -------------------------------------------------------------------------
 
     toJSON() {
@@ -259,7 +295,7 @@ export class WritingTask {
             reviewedAt:          this._reviewedAt,
             createdAt:           this._createdAt,
             updatedAt:           this._updatedAt,
-            // assignment (new)
+            // assignment
             source:              this._source,
             assignedBy:          this._assignedBy,
             assignedTo:          this._assignedTo,
@@ -268,6 +304,8 @@ export class WritingTask {
             dueDate:             this._dueDate,
             reminderSentAt:      this._reminderSentAt,
             unstartedNotiSentAt: this._unstartedNotiSentAt,
+            // AI evaluation
+            aiEvaluation:        this._aiEvaluation?.toJSON() ?? null,
         };
     }
 }

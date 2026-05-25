@@ -20,40 +20,44 @@ export class User {
         name,
         email,
         password,
-        role        = UserRole.USER,
-        provider    = 'local',          // FIX: was missing — OAuth users were silently dropping this
-        providerId  = null,             // FIX: was missing — never stored after OAuth signup
-        avatarUrl   = null,
-        coverUrl    = null,
-        bio         = '',
-        targetBand  = null,
-        examDate    = null,
-        attachments = [],               // FIX: was destructured but never assigned to this._attachments
-        createdAt   = new Date(),
-        updatedAt   = new Date(),
+        role            = UserRole.USER,
+        provider        = 'local',
+        providerId      = null,
+        avatarUrl       = null,
+        coverUrl        = null,
+        bio             = '',
+        targetBand      = null,
+        examDate        = null,
+        attachments     = [],
+        createdAt       = new Date(),
+        updatedAt       = new Date(),
         assignedTeacher = null,
+        isVerified      = false,   // ← NEW
+        isActive        = true,    // ← NEW
     }) {
         this._validateName(name);
         this._validateEmail(email);
         this._validatePassword(password);
         this._validateRole(role);
 
-        this._id             = id || new UniqueId().generator();
-        this._name           = name;
-        this._email          = email;
-        this._password       = password;
-        this._role           = role;
-        this._provider       = provider;
-        this._providerId     = providerId;
-        this._avatarUrl      = avatarUrl;
-        this._coverUrl       = coverUrl;
-        this._bio            = bio;
-        this._targetBand     = targetBand;
-        this._examDate       = examDate;
-        this._attachments    = attachments;  // FIX: was never assigned — getter returned undefined
-        this._createdAt      = createdAt;
-        this._updatedAt      = updatedAt;
+        this._id              = id || new UniqueId().generator();
+        this._name            = name;
+        this._email           = email;
+        this._password        = password;
+        this._role            = role;
+        this._provider        = provider;
+        this._providerId      = providerId;
+        this._avatarUrl       = avatarUrl;
+        this._coverUrl        = coverUrl;
+        this._bio             = bio;
+        this._targetBand      = targetBand;
+        this._examDate        = examDate;
+        this._attachments     = attachments;
+        this._createdAt       = createdAt;
+        this._updatedAt       = updatedAt;
         this._assignedTeacher = assignedTeacher ?? null;
+        this._isVerified      = isVerified;   // ← NEW
+        this._isActive        = isActive;     // ← NEW
     }
 
     _validateName(name) {
@@ -98,4 +102,6 @@ export class User {
     get createdAt()       { return this._createdAt; }
     get updatedAt()       { return this._updatedAt; }
     get assignedTeacher() { return this._assignedTeacher; }
+    get isVerified()      { return this._isVerified; }   // ← NEW
+    get isActive()        { return this._isActive; }     // ← NEW
 }
