@@ -8,7 +8,7 @@ import auditLogger   from '../core/logger/audit.logger.js';
 // ---------------------------------------------------------------------------
 
 const sendError = (res, status, code, message, details) => {
-    if (res.headersSent) return;   // guard: never double-send
+    if (res.headersSent) return;
     return res.status(status).json({
         success: false,
         error: {
@@ -26,6 +26,10 @@ const sendError = (res, status, code, message, details) => {
 const OPERATIONAL_NAMES = new Set([
     // Auth
     'JsonWebTokenError', 'TokenExpiredError', 'NotBeforeError',
+    // CSRF
+    'ForbiddenError',
+    // Account state (login-time)
+    'EmailNotVerifiedError', 'AccountSuspendedError',
     // Validation / DB
     'ValidationError', 'CastError',
     // Content flags
@@ -36,47 +40,62 @@ const OPERATIONAL_NAMES = new Set([
     'TaskNotFoundError', 'TaskInvalidIdError',
     // Users
     'UserNotFoundError', 'UserValidationError', 'InvalidCredentialsError',
+    'UserEmailNotFoundError',
     // Vocab
     'InvalidTopicError', 'VocabularyRuleViolationError',
     'DuplicateVocabularyError', 'VocabularyNotFoundError',
     // HTTP
-    'ForbiddenError', 'UnauthorizedError', 'NotFoundError',
+    'UnauthorizedError', 'NotFoundError',
 ]);
 
 // ---------------------------------------------------------------------------
-// Main error handler — single middleware, logs + responds
-// Replace both errorHandler and errorLoggerMiddleware with this one export.
+// Main error handler
 // Register ONCE at the bottom of app.js: app.use(errorHandler)
+// Replaces both errorHandler and errorLoggerMiddleware — remove
+// app.use(errorLoggerMiddleware) from server.js if still present.
 // ---------------------------------------------------------------------------
 
 // eslint-disable-next-line no-unused-vars
 export const errorHandler = (err, req, res, next) => {
+
+    // ── 0. CSRF ────────────────────────────────────────────────────────────
+    // csrf-csrf throws ForbiddenError with no .code set.
+    // App-level ForbiddenError subclasses (EmailNotVerifiedError, AccountSuspendedError,
+    // UserInsufficientPermissionError) all set this.code, so the !err.code guard
+    // keeps them out of this branch and lets them fall through to case 2.
+    if ((err.name === 'ForbiddenError' && !err.code) || err.code === 'EBADCSRFTOKEN') {
+        _log(err, 403, req);
+        return sendError(res, 403, 'CSRF_INVALID', 'Invalid or missing CSRF token');
+    }
+
     // ── Resolve status code ────────────────────────────────────────────────
-    // Priority: err.statusCode (set on all custom errors) → err.status → 500
-    let status = err.statusCode ?? err.status ?? 500;
+    const status = err.statusCode ?? err.status ?? 500;
 
     // ── 1. Known AppError subclasses ───────────────────────────────────────
     if (err instanceof AppError) {
-        // statusCode, code, message, details already set by the class
         _log(err, status, req);
         return sendError(res, err.statusCode, err.code, err.message, err.details);
     }
 
-    // ── 2. Plain errors with statusCode (content_flag.errors, task.errors…) ─
-    // These extend Error directly and set this.statusCode in their constructor.
+    // ── 2. Plain errors with statusCode (http.errors.js hierarchy) ────────
+    // Covers NotFoundError, ForbiddenError subclasses, UnauthorizedError subclasses,
+    // ValidationError, ConflictError, etc. — all set this.statusCode in their constructor.
     if (err.statusCode) {
         _log(err, status, req);
-        return sendError(res, err.statusCode, err.name, err.message);
+        return sendError(res, err.statusCode, err.code ?? err.name, err.message);
     }
 
-    // ── 3. Auth errors ─────────────────────────────────────────────────────
+    // ── 3. Auth / JWT errors ───────────────────────────────────────────────
     if (err.name === 'JsonWebTokenError') {
+        _log(err, 401, req);
         return sendError(res, 401, 'INVALID_TOKEN', 'Invalid or malformed token');
     }
     if (err.name === 'TokenExpiredError') {
+        _log(err, 401, req);
         return sendError(res, 401, 'TOKEN_EXPIRED', 'Token has expired');
     }
     if (err.name === 'NotBeforeError') {
+        _log(err, 401, req);
         return sendError(res, 401, 'TOKEN_NOT_ACTIVE', 'Token is not yet active');
     }
 
@@ -138,8 +157,7 @@ const _log = (err, status, req) => {
         logger.warn('Operational error', payload);
     } else {
         logger.error('Unexpected error', payload);
-        // Only audit truly unexpected failures — not every 404 or validation error
-        auditLogger.failure('auth.oauth.failure', {
+        auditLogger.failure('server.unexpected_error', {
             message: err.message,
             status,
         }, req);
