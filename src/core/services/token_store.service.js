@@ -1,12 +1,9 @@
-// FIX: removed unused imports (`param` from express-validator, `number` from fp-ts)
-// FIX: redis.service.js has no default export — import the client getter instead
 import { getRedisClient } from './redis.service.js';
 import { REFRESH_TTL_SEC } from './jwt.service.js';
 
 // ── Key helpers ───────────────────────────────────────────────────────────────
 
 const tokenKey  = (userId, jti) => `rt:${userId}:${jti}`;
-// FIX: was `rt_se: ${userId}` — trailing space in prefix would corrupt every key
 const userSetKey = (userId) => `rt_set:${userId}`;
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -26,9 +23,6 @@ export const saveRefreshToken = async (userId, jti, ttlSeconds = REFRESH_TTL_SEC
   const pipe = redis.pipeline();
   pipe.set(tokenKey(userId, jti), '1', 'EX', ttlSeconds);
   pipe.sadd(userSetKey(userId), jti);
-  // FIX: was `pipe.expir(userSecretKey(...))` — two bugs:
-  //   1. `expir`      → `expire`    (typo; ioredis has no `expir` method)
-  //   2. `userSecretKey` → `userSetKey` (wrong function name — doesn't exist)
   pipe.expire(userSetKey(userId), ttlSeconds * 2);
   await pipe.exec();
 };
