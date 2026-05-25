@@ -168,7 +168,7 @@ export class UserEmailAlreadyExistsError extends ConflictError {
 // ------------------------------------------------------------------
 export class InvalidCredentialsError extends UnauthorizedError {
     constructor() {
-        super('Invalid credentials');   
+        super('Invalid credentials');
         this.code = 'INVALID_CREDENTIALS';
     }
 }
@@ -184,5 +184,29 @@ export class UserInsufficientPermissionError extends ForbiddenError {
     constructor(requiredRole) {
         super(`Insufficient permissions. Required role: ${requiredRole}`);
         this.code = 'USER_INSUFFICIENT_PERMISSION';
+    }
+}
+
+// ------------------------------------------------------------------
+// Account state — login-time forbidden errors
+// FIX: these extend ForbiddenError (gets statusCode=403 from http.errors.js)
+//      and explicitly set this.name so err.name !== 'ForbiddenError',
+//      which prevents the error handler from misidentifying them as CSRF errors.
+//      They also set this.code so errorHandler case-2 (err.statusCode) catches
+//      them and returns the correct code to the client.
+// ------------------------------------------------------------------
+export class EmailNotVerifiedError extends ForbiddenError {
+    constructor() {
+        super('Please verify your email address before logging in. Check your inbox for the verification link.');
+        this.name = 'EmailNotVerifiedError';
+        this.code = 'EMAIL_NOT_VERIFIED';
+    }
+}
+
+export class AccountSuspendedError extends ForbiddenError {
+    constructor() {
+        super('Your account has been suspended. Please contact support.');
+        this.name = 'AccountSuspendedError';
+        this.code = 'ACCOUNT_SUSPENDED';
     }
 }
