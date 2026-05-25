@@ -10,6 +10,9 @@ import { User }                        from '../../domain/entities/user_entity.j
 import { UserRole }                    from '../../domain/base/user_enums.js';
 import { recordAudit, recordFailure }  from '../../core/services/audit.service.js';
 import { AuditAction }                 from '../../domain/base/audit_enums.js';
+import { EMAIL_VERIFY_TTL_MS }         from '../../domain/base/token_ttl.js';
+import { emailService }                from '../../core/services/email.service.js';
+import * as tokenRepo                  from '../../infrastructure/repositories/password_reset_token_repo.js';
 
 export const findOrCreateOAuthUser = (userRepo) => async (profile, req = null) => {
     let normalized;
@@ -47,13 +50,8 @@ export const findOrCreateOAuthUser = (userRepo) => async (profile, req = null) =
     }
 
     // ── New OAuth user ────────────────────────────────────────────────────────
-    // FIX 1: provider and providerId were missing — schema requires provider to
-    //         satisfy the conditional password `required` check, and providerId
-    //         is needed for future provider-scoped lookups.
-    // FIX 2: now constructs through the User entity so domain rules are applied
-    //         consistently (same as createUserUsecase for local accounts).
-    // NOTE:   password is a random hex string — OAuth users never use it, but
-    //         the schema requires a value when provider is not yet saved.
+    // NOTE: password is a random hex string — OAuth users never use it, but
+    //       the schema requires a value when provider is not yet saved.
     const userEntity = new User({
         name:       normalized.name,
         email:      normalized.email.toLowerCase(),
@@ -62,11 +60,33 @@ export const findOrCreateOAuthUser = (userRepo) => async (profile, req = null) =
         provider:   normalized.provider,
         providerId: normalized.providerId,
         avatarUrl:  normalized.avatarUrl ?? null,
+        isVerified: false,
+        isActive:   true,
     });
 
     const created = await userRepo.create(userEntity);
+    const userId  = created.id ?? created._id;
 
-    recordAudit(actionKey, created.id ?? created._id, {
+    // Send verification email
+    const rawToken  = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
+    await tokenRepo.create({
+        userId,
+        token: rawToken,
+        type:  'email_verification',
+        expiresAt,
+    });
+
+    // Fire-and-forget
+    emailService.sendVerificationEmail({
+        toEmail:  normalized.email,
+        userName: normalized.name,
+        rawToken,
+    }).catch((err) => {
+        console.error('[oauthUser] Failed to send verification email:', err.message);
+    });
+
+    recordAudit(actionKey, userId, {
         email:     normalized.email,
         provider,
         isNewUser: true,
