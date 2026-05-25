@@ -1,10 +1,38 @@
+// src/infrastructure/models/task_model.js
+
 import mongoose from 'mongoose';
 import { WritingStatus, TaskType, ExamType } from "../../domain/base/task_enums.js";
-import { TaskSource, AssignmentStatus } from "../../domain/base/task_enums.js";
+import { TaskSource, AssignmentStatus }      from "../../domain/base/task_enums.js";
+
+// ── AI evaluation subdocument schemas ─────────────────────────────────────────
+
+const criterionSchema = new mongoose.Schema(
+    {
+        score:    { type: Number, min: 0, max: 9 },
+        feedback: { type: String, trim: true },
+    },
+    { _id: false }
+);
+
+const aiEvaluationSchema = new mongoose.Schema(
+    {
+        bandScore:         { type: Number, min: 0, max: 9 },
+        taskAchievement:   { type: criterionSchema },
+        coherenceCohesion: { type: criterionSchema },
+        lexicalResource:   { type: criterionSchema },
+        grammaticalRange:  { type: criterionSchema },
+        overallFeedback:   { type: String, trim: true },
+        improvements:      [{ type: String, trim: true }],
+        evaluatedAt:       { type: Date, default: Date.now },
+    },
+    { _id: false }
+);
+
+// ── Main schema ───────────────────────────────────────────────────────────────
 
 const WritingTaskSchema = new mongoose.Schema(
     {
-        // ── Original fields (unchanged) ───────────────────────────────────────
+        // ── Core fields ───────────────────────────────────────────────────────
         title: {
             type:      String,
             required:  true,
@@ -71,49 +99,48 @@ const WritingTaskSchema = new mongoose.Schema(
             required: true,
         },
 
-        // ── Assignment fields (new) ───────────────────────────────────────────
-
-        // Which assignment mode created this task
+        // ── Assignment fields ─────────────────────────────────────────────────
         source: {
             type:    String,
             enum:    Object.values(TaskSource),
             default: TaskSource.SELF,
         },
-        // Teacher who assigned it (null = self-created)
         assignedBy: {
             type:    mongoose.Schema.Types.ObjectId,
             ref:     'User',
             default: null,
         },
-        // Student it was assigned to (mirrors userId for assigned tasks)
         assignedTo: {
             type:    mongoose.Schema.Types.ObjectId,
             ref:     'User',
             default: null,
         },
-        // Student's response to the assignment
         assignmentStatus: {
             type:    String,
             enum:    [...Object.values(AssignmentStatus), null],
             default: null,
         },
-        // Student's reason for declining (populated only when declined)
         declineReason: {
             type:    String,
             default: null,
         },
-        // Teacher-set deadline
         dueDate: {
             type:    Date,
             default: null,
         },
-        // De-dupe guards for cron jobs
         reminderSentAt: {
             type:    Date,
             default: null,
         },
         unstartedNotiSentAt: {
             type:    Date,
+            default: null,
+        },
+
+        // ── AI evaluation ─────────────────────────────────────────────────────
+        // Stored alongside teacher's bandScore/feedback — never overwrites them.
+        aiEvaluation: {
+            type:    aiEvaluationSchema,
             default: null,
         },
     },
@@ -125,14 +152,11 @@ const WritingTaskSchema = new mongoose.Schema(
 
 // ── Indexes ───────────────────────────────────────────────────────────────────
 
-// Original
 WritingTaskSchema.index({ userId: 1, taskType: 1 });
-
-// New — for assignment queries and cron job performance
 WritingTaskSchema.index({ assignedBy: 1, createdAt: -1 });
 WritingTaskSchema.index({ assignedTo: 1, createdAt: -1 });
-WritingTaskSchema.index({ dueDate: 1, status: 1, assignmentStatus: 1 }); // findDueSoon
-WritingTaskSchema.index({ assignmentStatus: 1, status: 1, createdAt: 1 }); // findUnstarted
+WritingTaskSchema.index({ dueDate: 1, status: 1, assignmentStatus: 1 });
+WritingTaskSchema.index({ assignmentStatus: 1, status: 1, createdAt: 1 });
 
 const WritingTaskModel = mongoose.model('WritingTask', WritingTaskSchema);
 export default WritingTaskModel;

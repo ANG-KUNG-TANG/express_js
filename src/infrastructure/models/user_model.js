@@ -42,6 +42,14 @@ const userSchema = new mongoose.Schema(
             enum:    Object.values(UserRole),
             default: UserRole.USER
         },
+        isVerified: {
+            type:    Boolean,
+            default: false,
+        },
+        isActive: {
+            type:    Boolean,
+            default: true,
+        },
         provider: {
             type: String,
             enum: ["local", "google", "github"],
