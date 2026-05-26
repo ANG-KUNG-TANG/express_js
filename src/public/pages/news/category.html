@@ -1,28 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Browse by Category — IELTS Platform</title>
-  <script src="/js/core/theme.js"></script> 
-  <link rel="stylesheet" href="/css/base.css" />
-  <link rel="stylesheet" href="/css/pages/news.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Browse by Category — Writing System</title>
+  <script src="/js/core/theme.js"></script>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/pages/news.css"/>
 </head>
 <body class="page">
-  <div class="container page-content">
-    <div class="page-hero animate-in">
-      <p class="page-hero__eyebrow">News</p>
-      <h1 class="page-hero__title">Browse by Category</h1>
-      <p class="page-hero__sub">
-        Explore articles organised by topic.
-      </p>
+<div class="container page-content">
 
-      <div style="margin-top:20px">
-        <select id="category-select" class="input">
-          <option value="">Choose category…</option>
-        </select>
-      </div>
-</div>
-  <script type="module" src="/js/pages/news/category.js"></script>
+  <div class="page-hero animate-in">
+    <p class="page-hero__eyebrow">News</p>
+    <h1 class="page-hero__title">Browse by Category</h1>
+    <p class="page-hero__sub">Explore articles organised by topic.</p>
+
+    <div style="margin-top:20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+      <select id="category-select" class="input" style="max-width:280px;">
+        <option value="">Choose category…</option>
+      </select>
+      <!-- FIX: #category-title referenced by category.js to display selected category name -->
+      <h2 id="category-title" class="page-section__title" style="margin:0;"></h2>
+    </div>
+  </div>
+
+  <!-- FIX: #news-grid was entirely missing — category.js writes cards here -->
+  <div class="page-section">
+    <div id="news-grid" class="news-grid"></div>
+  </div>
+
+  <!-- FIX: #next-page-btn was missing — category.js shows/hides this for pagination -->
+  <div class="page-section" style="text-align:center;">
+    <button id="next-page-btn" class="btn btn--ghost" style="display:none;">
+      Load More Articles
+    </button>
+  </div>
+
+</div><!-- FIX: closing tag was missing -->
+<script type="module" src="/js/pages/news/category.js"></script>
 </body>
 </html>

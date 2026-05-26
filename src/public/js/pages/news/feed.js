@@ -1,24 +1,26 @@
 /**
  * news/feed.js — personalised news feed
- * Same pattern as category.js and search.js.
  */
 
-import { requireAuth }  from '../../core/router.js';
-import { apiFetch }     from '../../core/api.js';
-import { initNavbar }   from '../../../components/navbar.js';
-import { newsCard }     from '../../../components/newsCard.js';
-import { initSocket}  from '../../core/socket.js'
-import { toast }        from '../../utils/toast.js';
+import { requireAuth }                    from '../../core/router.js';
+import { apiFetch }                       from '../../core/api.js';
+import { initNavbar }                     from '../../../components/navbar.js';
+import { newsCard, initNewsCardGrid }     from '../../../components/newsCard.js';
+import { initSocket }                     from '../../core/socket.js';
+import { toast }                          from '../../utils/toast.js';
 
-
+// FIX: requireAuth() before anything else; initSocket() after auth confirmed
+requireAuth();
 initNavbar();
 initSocket();
-requireAuth();
 
 const gridEl    = document.getElementById('news-grid');
 const loadingEl = document.getElementById('loading-state');
 const nextBtn   = document.getElementById('next-page-btn');
 const searchEl  = document.getElementById('search-input');
+
+// FIX: wire event delegation once — handles current + future "Load More" cards
+initNewsCardGrid(gridEl);
 
 let nextPage  = null;
 let lastQuery = '';

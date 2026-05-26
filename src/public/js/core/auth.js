@@ -1,149 +1,53 @@
 /**
- * auth.js — session helpers + login/register page logic
+ * auth.js — session helpers
  */
 
-import { apiFetch } from './api.js';
+import { apiFetch }       from './api.js';
 import { disconnectSocket } from './socket.js';
 
 // ── Session helpers ───────────────────────────────────────────────────────────
-export const getUser    = () => JSON.parse(localStorage.getItem('user') || 'null');
-export const getToken   = () => localStorage.getItem('token');
-export const isAdmin    = () => getUser()?.role === 'admin';
-export const isTeacher  = () => getUser()?.role === 'teacher';
-export const isLoggedIn = () => !!getToken();
+export const getUser   = () => JSON.parse(localStorage.getItem('user') || 'null');
+export const getToken  = () => localStorage.getItem('token');
+export const isAdmin   = () => getUser()?.role === 'admin';
+export const isTeacher = () => getUser()?.role === 'teacher';
+
+// FIX: isLoggedIn now checks token expiry, not just existence.
+// An expired token in localStorage must be treated as logged out —
+// otherwise protected pages pass the guard and immediately get 401s.
+export const isLoggedIn = () => {
+    const token = getToken();
+    if (!token) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload?.exp && payload.exp * 1000 > Date.now();
+    } catch {
+        return false;
+    }
+};
 
 export const saveSession = (token, user) => {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
-    // Socket is initialised by the page (dashboard.js calls initSocket directly)
-    // — do NOT call initSocket() here to avoid double-connecting.
+    // Socket is initialised by the page — do NOT call initSocket() here
+    // to avoid double-connecting.
 };
 
+export const clearSession = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+};
+
+// ── Logout ────────────────────────────────────────────────────────────────────
+// Calls the server to revoke the refresh token + clear cookies.
+// Session is cleared locally regardless of server response.
 export const logOut = async () => {
     try {
         await apiFetch('/api/auth/logout', { method: 'POST' });
     } catch {
-        // ignore — clear session regardless
+        // Server revoke failed (expired token, network error) — clear locally anyway
     } finally {
         disconnectSocket();
-        localStorage.clear();
+        clearSession();
         window.location.href = '/pages/auth/login.html';
     }
 };
-
-// ── Login page handler ────────────────────────────────────────────────────────
-export const initLoginPage = () => {
-    const form    = document.getElementById('login-form');
-    const alertEl = document.getElementById('login-alert');
-    const btn     = document.getElementById('btn-submit');
-    if (!form) return;
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearErrors(['err-email', 'err-password']);
-        alertEl.style.display = 'none';
-
-        const email    = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-
-        let valid = true;
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            showFieldError('err-email', 'Please enter a valid email address.'); valid = false;
-        }
-        if (!password) {
-            showFieldError('err-password', 'Password is required.'); valid = false;
-        }
-        if (!valid) return;
-
-        setLoading(btn, true, 'Signing in…');
-        try {
-            const data = await apiFetch('/api/auth/login', {
-                method: 'POST',
-                body: JSON.stringify({ email, password }),
-            });
-            saveSession(data.token ?? data.data?.token, data.user ?? data.data?.user);
-            redirectAfterLogin();
-        } catch (err) {
-            showAlert(alertEl, err.message || 'Invalid email or password.');
-            setLoading(btn, false, 'Sign In');
-        }
-    });
-};
-
-// ── Register page handler ─────────────────────────────────────────────────────
-export const initRegisterPage = () => {
-    const form    = document.getElementById('register-form');
-    const alertEl = document.getElementById('reg-alert');
-    const btn     = document.getElementById('btn-submit');
-    if (!form) return;
-
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearErrors(['err-name', 'err-email', 'err-password', 'err-confirm']);
-        alertEl.style.display = 'none';
-
-        const name     = document.getElementById('name').value.trim();
-        const email    = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const confirm  = document.getElementById('confirm-password').value;
-
-        let valid = true;
-        if (!name || name.length < 3) {
-            showFieldError('err-name', 'Name must be at least 3 characters.'); valid = false;
-        }
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            showFieldError('err-email', 'Please enter a valid email address.'); valid = false;
-        }
-        if (!password || password.length < 8) {
-            showFieldError('err-password', 'Password must be at least 8 characters.'); valid = false;
-        }
-        if (password !== confirm) {
-            showFieldError('err-confirm', 'Passwords do not match.'); valid = false;
-        }
-        if (!valid) return;
-
-        setLoading(btn, true, 'Creating account…');
-        try {
-            const data = await apiFetch('/api/auth/register', {
-                method: 'POST',
-                body: JSON.stringify({ name, email, password }),
-            });
-            saveSession(data.token ?? data.data?.token, data.user ?? data.data?.user);
-            redirectAfterLogin();
-        } catch (err) {
-            showAlert(alertEl, err.message || 'Registration failed. Please try again.');
-            setLoading(btn, false, 'Create Account');
-        }
-    });
-};
-
-// ── Redirect after login/register ────────────────────────────────────────────
-// All roles go to the single dashboard — dashboard.js handles role switching.
-function redirectAfterLogin() {
-    window.location.href = '/pages/dashboard.html';
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function showFieldError(id, msg) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = msg;
-}
-
-function clearErrors(ids) {
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = '';
-    });
-}
-
-function showAlert(el, msg) {
-    el.textContent = msg;
-    el.style.display = 'block';
-}
-
-function setLoading(btn, loading, label) {
-    btn.disabled = loading;
-    btn.innerHTML = loading
-        ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> ${label}`
-        : label;
-}

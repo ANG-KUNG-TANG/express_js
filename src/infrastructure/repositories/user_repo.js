@@ -156,16 +156,18 @@ export const updateUser = async (id, updates) => {
     logger.debug('userRepo.updateUser', { id, fields: Object.keys(updates) });
 
     const user = await findUserById(id);
-    if (updates.name       !== undefined) user._name       = updates.name;
-    if (updates.email      !== undefined) user._email      = updates.email.toLowerCase();
-    if (updates.password   !== undefined) user._password   = updates.password;
-    if (updates.role       !== undefined) user._role       = updates.role;
-    if (updates.avatarUrl  !== undefined) user._avatarUrl  = updates.avatarUrl;
-    if (updates.coverUrl   !== undefined) user._coverUrl   = updates.coverUrl;
-    if (updates.bio        !== undefined) user._bio        = updates.bio;
-    if (updates.targetBand !== undefined) user._targetBand = updates.targetBand;
+    if (updates.name            !== undefined) user._name            = updates.name;
+    if (updates.email           !== undefined) user._email           = updates.email.toLowerCase();
+    if (updates.password        !== undefined) user._password        = updates.password;
+    if (updates.role            !== undefined) user._role            = updates.role;
+    if (updates.avatarUrl       !== undefined) user._avatarUrl       = updates.avatarUrl;
+    if (updates.coverUrl        !== undefined) user._coverUrl        = updates.coverUrl;
+    if (updates.bio             !== undefined) user._bio             = updates.bio;
+    if (updates.targetBand      !== undefined) user._targetBand      = updates.targetBand;
     if (updates.examDate        !== undefined) user._examDate        = updates.examDate;
     if (updates.assignedTeacher !== undefined) user._assignedTeacher = updates.assignedTeacher;
+    if (updates.isVerified      !== undefined) user._isVerified      = updates.isVerified;  
+    if (updates.isActive        !== undefined) user._isActive        = updates.isActive;    
     user._updatedAt = new Date();
 
     const persistence = toPersistence(user);

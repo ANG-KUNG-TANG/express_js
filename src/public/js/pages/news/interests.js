@@ -2,18 +2,18 @@
  * news/interests.js — manage user's news interest categories (max 5)
  */
 
-import { requireAuth }       from '../../core/router.js';
-import { getUser, saveSession, getToken } from '../../core/auth.js';
-import { apiFetch }          from '../../core/api.js';
-import { initNavbar }        from '../../../components/navbar.js';
-import { toast }             from '../../core/toast.js';
+import { requireAuth }              from '../../core/router.js';
+import { getUser, saveSession }     from '../../core/auth.js';
+import { apiFetch }                 from '../../core/api.js';
+import { initNavbar }               from '../../../components/navbar.js';
+import { toast }                    from '../../utils/toast.js'; // FIX: was core/toast.js
 
 requireAuth();
 initNavbar();
 
-const gridEl     = document.getElementById('categories-grid');
-const saveBtn    = document.getElementById('save-btn');
-const countEl    = document.getElementById('selected-count');
+const gridEl  = document.getElementById('categories-grid');
+const saveBtn = document.getElementById('save-btn');
+const countEl = document.getElementById('selected-count');
 
 const MAX = 5;
 let selected = new Set(getUser()?.interests || []);
@@ -75,25 +75,27 @@ const updateCount = () => {
 // Save interests
 // ---------------------------------------------------------------------------
 saveBtn.addEventListener('click', async () => {
-    saveBtn.disabled = true;
+    saveBtn.disabled    = true;
     saveBtn.textContent = 'Saving…';
 
     try {
         const res = await apiFetch('/api/news/interests', {
             method: 'PATCH',
-            body: JSON.stringify({ interests: [...selected] }),
+            body:   JSON.stringify({ interests: [...selected] }),
         });
 
-        // Update stored user object with new interests
+        // FIX: auth uses httpOnly cookies — no token in JS.
+        // saveSession only needs the updated user object; pass null for token.
+        const updatedInterests = res?.data?.interests || [...selected];
         const user = getUser();
-        user.interests = res?.data?.interests || [...selected];
-        saveSession(getToken(), user);
+        user.interests = updatedInterests;
+        saveSession(null, user); // token managed server-side via cookie
 
         toast('Interests saved!');
         window.location.href = '/pages/news/feed.html';
     } catch (err) {
         toast(err.message, 'error');
-        saveBtn.disabled = false;
+        saveBtn.disabled    = false;
         saveBtn.textContent = 'Save Interests';
     }
 });

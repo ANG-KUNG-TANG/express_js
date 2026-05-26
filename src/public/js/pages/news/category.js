@@ -2,23 +2,25 @@
  * news/category.js — browse news by category
  */
 
-import { requireAuth, getParam } from '../../core/router.js';
-import { apiFetch }              from '../../core/api.js';
-import { initNavbar }            from '../../../components/navbar.js';
-import { newsCard }              from '../../../components/newsCard.js';
-import { toast }                 from '../../core/toast.js';
+import { requireAuth, getParam }          from '../../core/router.js';
+import { apiFetch }                       from '../../core/api.js';
+import { initNavbar }                     from '../../../components/navbar.js';
+import { newsCard, initNewsCardGrid }     from '../../../components/newsCard.js';
+import { toast }                          from '../../utils/toast.js'; // FIX: was core/toast.js
 
 requireAuth();
 initNavbar();
 
-const gridEl      = document.getElementById('news-grid');
-const categoryEl  = document.getElementById('category-select');
-const titleEl     = document.getElementById('category-title');
-const nextBtn     = document.getElementById('next-page-btn');
+const gridEl     = document.getElementById('news-grid');
+const categoryEl = document.getElementById('category-select');
+const titleEl    = document.getElementById('category-title');
+const nextBtn    = document.getElementById('next-page-btn');
+
+// FIX: wire delegation once — covers all current + appended cards
+initNewsCardGrid(gridEl);
 
 let nextPage = null;
 
-// Pre-select from URL ?category= (applied after options are loaded)
 const preCategory = getParam('category');
 
 // ---------------------------------------------------------------------------
@@ -56,15 +58,14 @@ const loadCategory = async (page = null, append = false) => {
 // ---------------------------------------------------------------------------
 const loadCategories = async () => {
     try {
-        const res = await apiFetch('/api/news/categories');
+        const res        = await apiFetch('/api/news/categories');
         const categories = res?.data?.categories || [];
         categories.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c;
+            const opt       = document.createElement('option');
+            opt.value       = c;
             opt.textContent = c.charAt(0).toUpperCase() + c.slice(1);
             categoryEl.appendChild(opt);
         });
-        // Apply URL pre-selection now that options exist, then load
         if (preCategory) {
             categoryEl.value = preCategory;
             loadCategory();

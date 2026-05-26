@@ -37,6 +37,22 @@ const _hydrate = () => {
     try {
         const token = localStorage.getItem(STORAGE_TOKEN);
         const raw   = localStorage.getItem(STORAGE_USER);
+
+        if (token) {
+            try{
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (!payload?.exp || payload.exp * 1000 <= Date.now()) {
+                    localStorage.removeItem(STORAGE_TOKEN);
+                    localStorage.removeItem(STORAGE_TOKEN);
+                    _state = { token: null, user: null};
+                    return;
+                }
+            } catch{
+                localStorage.removeItem(STORAGE_TOKEN);
+                _state = { token: null, user: null};
+                return;
+            }
+        }
         const user  = raw ? JSON.parse(raw) : null;
         _state = { token: token ?? null, user: user ?? null };
     } catch {
@@ -59,7 +75,13 @@ export const authStore = {
     getRole: () => _state.user?.role ?? _state.user?._role ?? null,
 
     /** True if a token exists in state. */
-    isLoggedIn: () => !!_state.token,
+    isLoggedIn: () => {
+        if (!_state.token) return false;
+        try {
+            const payload = JSON.parse(atob(_state.token.split('.')[1]));
+            return payload?.exp && payload.exp * 1000 > Date.now();
+        } catch {return false; }
+    },
 
     /** True if role === 'admin'. */
     isAdmin: () => authStore.getRole() === 'admin',

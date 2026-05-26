@@ -1,24 +1,28 @@
 /**
  * news/search.js — search news by keyword with optional category filter
  */
-import { requireAuth }  from '../../core/router.js';
-import { apiFetch }     from '../../core/api.js';
-import { initNavbar }   from '../../../components/navbar.js';
-import { newsCard }     from '../../../components/newsCard.js';
-import { toast }        from '../../core/toast.js';
+
+import { requireAuth }                    from '../../core/router.js';
+import { apiFetch }                       from '../../core/api.js';
+import { initNavbar }                     from '../../../components/navbar.js';
+import { newsCard, initNewsCardGrid }     from '../../../components/newsCard.js';
+import { toast }                          from '../../utils/toast.js'; // FIX: was core/toast.js
 
 requireAuth();
 initNavbar();
 
-const formEl      = document.getElementById('search-form');
-const inputEl     = document.getElementById('search-input');
-const categoryEl  = document.getElementById('filter-category');
-const gridEl      = document.getElementById('news-grid');
-const nextBtn     = document.getElementById('next-page-btn');
+const formEl       = document.getElementById('search-form');
+const inputEl      = document.getElementById('search-input');
+const categoryEl   = document.getElementById('filter-category');
+const gridEl       = document.getElementById('news-grid');
+const nextBtn      = document.getElementById('next-page-btn');
 const resultInfoEl = document.getElementById('result-info');
 
-let nextPage = null;
-let lastQuery = '';
+// FIX: wire delegation once — covers all current + appended cards
+initNewsCardGrid(gridEl);
+
+let nextPage     = null;
+let lastQuery    = '';
 let lastCategory = '';
 
 // ---------------------------------------------------------------------------
@@ -26,12 +30,12 @@ let lastCategory = '';
 // ---------------------------------------------------------------------------
 const loadCategories = async () => {
     try {
-        const res = await apiFetch('/api/news/categories');
+        const res        = await apiFetch('/api/news/categories');
         const categories = res?.data?.categories || [];
         categoryEl.innerHTML = '<option value="">All Categories</option>';
         categories.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c;
+            const opt       = document.createElement('option');
+            opt.value       = c;
             opt.textContent = c.charAt(0).toUpperCase() + c.slice(1);
             categoryEl.appendChild(opt);
         });
@@ -44,8 +48,6 @@ const loadCategories = async () => {
 // Search
 // ---------------------------------------------------------------------------
 const search = async (page = null, append = false) => {
-    // When paginating (append), use the frozen query/category from the original search
-    // so a mid-pagination edit to the inputs doesn't corrupt the result set.
     const q        = append ? lastQuery    : inputEl.value.trim();
     const category = append ? lastCategory : categoryEl.value;
 
@@ -88,9 +90,7 @@ formEl.addEventListener('submit', (e) => { e.preventDefault(); search(); });
 categoryEl.addEventListener('change', () => { if (lastQuery) search(); });
 nextBtn.addEventListener('click', () => { if (nextPage) search(nextPage, true); });
 
-// Pre-fill from URL ?q=
 const preQ = new URLSearchParams(window.location.search).get('q');
 if (preQ) { inputEl.value = preQ; search(); }
 
-// Load categories on page load
 loadCategories();

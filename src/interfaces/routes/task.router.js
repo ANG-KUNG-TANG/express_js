@@ -1,7 +1,7 @@
-import { Router } from 'express';
+import { Router }       from 'express';
 import { asyncHandler } from '../async_handler.js';
-import { authenticate, authorizeAdmin } from '../../middleware/auth.middelware.js';
-import { requireRole } from '../../middleware/role.middleware.js';
+import { authenticate, authorizeAdmin } from '../../middleware/authenticate.middelware.js';
+import { requireRole }  from '../../middleware/role.middleware.js';
 import {
     createWritingTaskController,
     getWritingTaskByIdController,
@@ -15,41 +15,50 @@ import {
     scoreTaskController,
     transferWritingTaskController,
     lookupVocabController,
-    respondAssignmentController,           // ← new
+    respondAssignmentController,
+    aiCheckTaskController,              
 } from '../table/task.controller.js';
 
 const router = Router();
 
 router.use(authenticate);
 
-// ── Static routes FIRST (before /:id to avoid param collision) ────────────────
+// ── Static routes FIRST (before /:id to avoid param collision) ───────────────
 router.post('/transfer', authorizeAdmin, asyncHandler(transferWritingTaskController));
-router.get('/search',                   asyncHandler(searchWritingTaskController));
+router.get ('/search',                  asyncHandler(searchWritingTaskController));
 
 // ── Vocabulary lookup ─────────────────────────────────────────────────────────
 router.get('/vocab/:word',              asyncHandler(lookupVocabController));
 
 // ── Collection ────────────────────────────────────────────────────────────────
 router.post('/',  asyncHandler(createWritingTaskController));
-router.get('/',   asyncHandler(listWritingTaskController));
+router.get ('/',  asyncHandler(listWritingTaskController));
 
 // ── Single resource ───────────────────────────────────────────────────────────
-router.get('/:id',             asyncHandler(getWritingTaskByIdController));
-router.patch('/:id/start',     asyncHandler(startWritingTaskController));
-router.patch('/:id/submit',    asyncHandler(submitTaskController));
-router.patch('/:id/review',    authorizeAdmin, asyncHandler(reviewTaskController));
-router.patch('/:id/score',     authorizeAdmin, asyncHandler(scoreTaskController));
-router.patch('/:id',           asyncHandler(updateWritingTaskController));
+router.get   ('/:id',          asyncHandler(getWritingTaskByIdController));
+router.patch ('/:id/start',    asyncHandler(startWritingTaskController));
+router.patch ('/:id/submit',   asyncHandler(submitTaskController));
+router.patch ('/:id/review',   authorizeAdmin, asyncHandler(reviewTaskController));
+router.patch ('/:id/score',    authorizeAdmin, asyncHandler(scoreTaskController));
+router.patch ('/:id',          asyncHandler(updateWritingTaskController));
 router.delete('/:id',          asyncHandler(deleteWritingTaskController));
 
-// ── Assignment response (new) ─────────────────────────────────────────────────
-// Student accepts or declines a teacher-assigned task
-// Must be AFTER /:id routes to avoid conflicts, uses full :taskId param name
-// No role restriction needed — respondAssignmentUC enforces task ownership.
-// 'user' is the default role (UserRole.USER); 'student' is an alias some setups use.
+// ── AI check ──────────────────────────────────────────────────────────────────
+// Only available AFTER submission (SUBMITTED / REVIEWED / SCORED).
+// Blocked while status is ASSIGNED or WRITING — enforced in evaluateWritingUC.
+// Rate limited to 5 checks per user per UTC day — enforced in controller.
+// Does NOT affect teacher's bandScore or feedback.
+router.post('/:id/ai-check',
+    requireRole('user', 'student'),
+    asyncHandler(aiCheckTaskController),
+);
+
+// ── Assignment response ───────────────────────────────────────────────────────
+// Student accepts or declines a teacher-assigned task.
+// Must be AFTER /:id routes — uses full :taskId param name.
 router.post('/:taskId/respond-assignment',
     requireRole('user', 'student'),
-    asyncHandler(respondAssignmentController)
+    asyncHandler(respondAssignmentController),
 );
 
 export default router;

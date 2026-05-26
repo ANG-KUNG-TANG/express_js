@@ -1,6 +1,6 @@
 // infrastructure/repositories/password_reset_token_repo.js
 
-import { PasswordResetTokenModel } from '../../infrastructure/models/password_reset_token_model.js';
+import { PasswordResetTokenModel } from '../models/password_reset_token_model.js';
 import { PasswordResetToken }      from '../../domain/entities/password_reset_token_entity.js';
 
 const toEntity = (doc) => doc
@@ -28,13 +28,25 @@ export const passwordResetTokenRepo = {
     },
 
     async findByHash(tokenHash) {
-        // FIX: Mongoose uses .findOne(filter) directly — no { where: } wrapper
         const doc = await PasswordResetTokenModel.findOne({ tokenHash }).lean();
         return toEntity(doc);
     },
 
+    async findByToken(rawToken){
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        return this.findByHash(tokenHash)
+    },
+
+    async deleteById(id){
+        await PasswordResetTokenModel.deleteOne({_id: id});
+    },
+
+    async deleteByUserId(userId){
+        await PasswordResetTokenModel.deleteMany({useId});
+    },
+
+
     async save(tokenEntity) {
-        // FIX: Mongoose uses .updateOne(filter, update) — no { where: } wrapper
         await PasswordResetTokenModel.updateOne(
             { _id: tokenEntity.id },
             { used: tokenEntity.used }
@@ -42,7 +54,6 @@ export const passwordResetTokenRepo = {
     },
 
     async invalidateAllForUser(userId) {
-        // FIX: Mongoose uses .updateMany(filter, update) — no { where: } wrapper
         await PasswordResetTokenModel.updateMany(
             { userId, used: false },
             { used: true }

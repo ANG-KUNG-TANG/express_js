@@ -3,13 +3,33 @@
  * Usage: import { requireAuth, requireTeacher, requireRole } from './router.js';
  */
 
-import { isLoggedIn, isAdmin, getUser, getToken } from './auth.js';
+import { isAdmin, getUser, getToken } from './auth.js';
 
 export const isTeacher = () => getUser()?.role === 'teacher';
 
+// ── Token validity check ──────────────────────────────────────────────────────
+// FIX: isLoggedIn() only checked token existence — expired tokens passed the
+// guard, causing API 401s and redirect loops on every protected page.
+// Now we decode the JWT exp claim and treat expired tokens as logged out.
+const isTokenValid = () => {
+    const token = getToken();
+    if (!token) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload?.exp && payload.exp * 1000 > Date.now();
+    } catch {
+        return false;
+    }
+};
+
+// ── Guards ────────────────────────────────────────────────────────────────────
+
 /** Redirect unauthenticated users to login. */
 export const requireAuth = () => {
-    if (!isLoggedIn()) {
+    if (!isTokenValid()) {
+        // Clear stale token so login page doesn't try to redirect back
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         window.location.href = '/pages/auth/login.html';
     }
 };
@@ -31,9 +51,8 @@ export const requireTeacher = () => {
 };
 
 /**
- * requireRole(...roles) — flexible role guard used by teacher pages.
+ * requireRole(...roles) — flexible role guard.
  * e.g. requireRole('teacher', 'admin')
- * Redirects to dashboard if the current user's role is not in the allowed list.
  */
 export const requireRole = (...roles) => {
     requireAuth();
@@ -44,12 +63,19 @@ export const requireRole = (...roles) => {
 };
 
 /** Redirect already-logged-in users away from guest-only pages. */
-export function requireGuest() {
-    const token = getToken();
-    if (token) {
-        window.location.href = '/pages/dashboard.html';
+export const requireGuest = () => {
+    if (isTokenValid()) {
+        // Token is valid — send to correct dashboard
+        const user = getUser();
+        const role = user?.role ?? '';
+        switch (role) {
+            case 'admin':   window.location.href = '/pages/admin/dashboard.html'; break;
+            case 'teacher': window.location.href = '/pages/teacher/dashboard.html'; break;
+            default:        window.location.href = '/pages/dashboard.html';
+        }
     }
-}
+    // Token missing or expired — stay on guest page (login/register)
+};
 
 /** Pull a query param from the current URL. */
 export const getParam = (key) =>

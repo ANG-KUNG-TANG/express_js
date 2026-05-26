@@ -1,38 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Search News — IELTS Platform</title>
-  <script src="/js/core/theme.js"></script> 
-  <link rel="stylesheet" href="/css/base.css" />
-  <link rel="stylesheet" href="/css/pages/news.css" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Search News — Writing System</title>
+  <script src="/js/core/theme.js"></script>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/pages/news.css"/>
 </head>
 <body class="page">
-    <div class="page-hero animate-in">
+<!-- FIX: entire content was unwrapped — no container div -->
+<div class="container page-content">
+
+  <div class="page-hero animate-in">
     <p class="page-hero__eyebrow">News</p>
     <h1 class="page-hero__title">Search Articles</h1>
-    <p class="page-hero__sub">
-      Discover articles by keyword or category.
-    </p>
+    <p class="page-hero__sub">Discover articles by keyword or category.</p>
 
-    <form id="search-form" style="margin-top:20px">
+    <form id="search-form" style="margin-top:20px;">
       <div class="search-bar">
-        <input type="text" id="search-input"
-              class="input"
-              placeholder="Search for keywords…" />
-        <button type="submit" class="btn btn--primary">
-          Search
-        </button>
+        <input type="text" id="search-input" class="input" placeholder="Search for keywords…"/>
+        <button type="submit" class="btn btn--primary">Search</button>
       </div>
-
-      <div style="margin-top:12px">
+      <div style="margin-top:12px;">
         <select id="filter-category" class="input">
           <option value="">All Categories</option>
         </select>
       </div>
-  </form>
+    </form>
+  </div>
+
+  <!-- FIX: #result-info was missing — search.js writes "N results for X" here -->
+  <div class="page-section">
+    <p id="result-info" style="font-size:.85rem; color:var(--text-secondary); margin-bottom:16px;"></p>
+
+    <!-- FIX: #news-grid was missing — search.js injects cards here -->
+    <div id="news-grid" class="news-grid"></div>
+  </div>
+
+  <!-- FIX: #next-page-btn was missing — search.js shows/hides for pagination -->
+  <div class="page-section" style="text-align:center;">
+    <button id="next-page-btn" class="btn btn--ghost" style="display:none;">
+      Load More Results
+    </button>
+  </div>
+
 </div>
-  <script type="module" src="/js/pages/news/search.js"></script>
+<script type="module" src="/js/pages/news/search.js"></script>
 </body>
 </html>

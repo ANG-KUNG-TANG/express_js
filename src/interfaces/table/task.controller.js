@@ -1,3 +1,5 @@
+// src/interfaces/controllers/task.controller.js
+
 import { createWritingTask }    from '../../app/task_uc/create_task.uc.js';
 import { getWritingTaskById }   from '../../app/task_uc/get_task.uc.js';
 import { listWritingTasks }     from '../../app/task_uc/list_task.uc.js';
@@ -11,14 +13,19 @@ import { reviewTask }           from '../../app/task_uc/review_task.uc.js';
 import { scoreTask }            from '../../app/task_uc/score_task.uc.js';
 import { lookupVocabUseCase }   from '../../app/task_uc/lookup_vocab.uc.js';
 import { respondAssignmentUC }  from '../../app/task_uc/respond_assignment.uc.js';
+import { evaluateWritingUC }    from '../../app/task_uc/evaluate_writing.uc.js';
 import { sendSuccess }          from '../response_formatter.js';
 import { HTTP_STATUS }          from '../http_status.js';
 import { sanitizeCreateInput, sanitizeUpdateInput } from '../input_sanitizers/task.input_sanitizer.js';
 import { recordAudit }          from '../../core/services/audit.service.js';
 import { AuditAction }          from '../../domain/base/audit_enums.js';
+import { AppError }             from '../../core/errors/base.errors.js';
 import logger                   from '../../core/logger/logger.js';
 
 const getUserId = (req) => req.user?.id ?? req.user?._id;
+
+// ── Redis rate-limit constant ─────────────────────────────────────────────────
+const AI_CHECK_DAILY_LIMIT = 5;
 
 // POST /writing-tasks
 export const createWritingTaskController = async (req, res) => {
@@ -76,12 +83,12 @@ export const updateWritingTaskController = async (req, res) => {
 };
 
 // DELETE /writing-tasks/:id
-// audit is handled inside deleteWritingTask UC — do NOT call recordAudit here too
+// audit handled inside deleteWritingTask UC
 export const deleteWritingTaskController = async (req, res) => {
     const { id } = req.params;
     const userId  = getUserId(req);
     logger.debug('writingTask.delete called', { requestId: req.id, taskId: id, userId });
-    const result = await deleteWritingTask(id, userId, req);  // pass req → UC logs it
+    const result = await deleteWritingTask(id, userId, req);
     return sendSuccess(res, result, HTTP_STATUS.OK);
 };
 
@@ -96,24 +103,24 @@ export const startWritingTaskController = async (req, res) => {
 };
 
 // PATCH /writing-tasks/:id/submit
-// audit is handled inside submitTask UC — do NOT call recordAudit here too
+// audit handled inside submitTask UC
 export const submitTaskController = async (req, res) => {
     const { id }             = req.params;
     const userId             = getUserId(req);
     const { submissionText } = req.body;
     logger.debug('writingTask.submit called', { requestId: req.id, taskId: id, userId });
-    const task = await submitTask(id, userId, submissionText, req);  // pass req → UC logs it
+    const task = await submitTask(id, userId, submissionText, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
 // PATCH /writing-tasks/:id/review
-// audit is handled inside reviewTask UC — do NOT call recordAudit here too
+// audit handled inside reviewTask UC
 export const reviewTaskController = async (req, res) => {
     const { id }       = req.params;
     const reviewerId   = getUserId(req);
     const { feedback } = req.body;
     logger.debug('writingTask.review called', { requestId: req.id, taskId: id, reviewerId });
-    const task = await reviewTask(id, reviewerId, feedback, req);  // pass req → UC logs it
+    const task = await reviewTask(id, reviewerId, feedback, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
@@ -154,12 +161,58 @@ export const transferWritingTaskController = async (req, res, next) => {
 };
 
 // POST /writing-tasks/:taskId/respond-assignment
-// audit is handled inside respondAssignmentUC — do NOT call recordAudit here too
+// audit handled inside respondAssignmentUC
 export const respondAssignmentController = async (req, res) => {
     const student                   = req.user;
     const { taskId }                = req.params;
     const { action, declineReason } = req.body;
     logger.debug('writingTask.respondAssignment called', { requestId: req.id, taskId, action, userId: student.id });
-    const task = await respondAssignmentUC(student, { taskId, action, declineReason }, req);  // pass req → UC logs it
+    const task = await respondAssignmentUC(student, { taskId, action, declineReason }, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
+};
+
+// POST /writing-tasks/:id/ai-check
+//
+// Rate-limited: AI_CHECK_DAILY_LIMIT checks per user per UTC day (via Redis).
+// Returns cached aiEvaluation if it already exists on the task.
+// Teacher's bandScore and feedback are never modified.
+export const aiCheckTaskController = async (req, res, next) => {
+    try {
+        const { id }   = req.params;
+        const userId   = getUserId(req);
+
+        logger.debug('writingTask.aiCheck called', { requestId: req.id, taskId: id, userId });
+
+        // ── Redis rate limit ──────────────────────────────────────────────────
+        const today        = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
+        const rateLimitKey = `ai_check:${userId}:${today}`;
+        const redis        = req.app.locals.redis;
+
+        const count = await redis.incr(rateLimitKey);
+        if (count === 1) {
+            // First hit today — expire at end of day (86400s)
+            await redis.expire(rateLimitKey, 86400);
+        }
+        if (count > AI_CHECK_DAILY_LIMIT) {
+            throw new AppError(
+                `AI evaluation limit reached (${AI_CHECK_DAILY_LIMIT}/day). Try again tomorrow.`,
+                429
+            );
+        }
+
+        // ── run use case ──────────────────────────────────────────────────────
+        const task = await evaluateWritingUC(id, userId);
+
+        // ── audit (fire-and-forget) ───────────────────────────────────────────
+        recordAudit(
+            AuditAction.TASK_AI_EVALUATED,
+            userId,
+            { taskId: id, bandScore: task._aiEvaluation?.bandScore },
+            req
+        );
+
+        return sendSuccess(res, task, HTTP_STATUS.OK);
+    } catch (err) {
+        next(err);
+    }
 };

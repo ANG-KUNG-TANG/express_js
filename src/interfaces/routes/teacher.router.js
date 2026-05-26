@@ -1,6 +1,6 @@
 import { Router }       from 'express';
 import { asyncHandler } from '../async_handler.js';
-import { authenticate } from '../../middleware/auth.middelware.js';
+import { authenticate } from '../../middleware/authenticate.middelware.js';
 import { requireRole }  from '../../middleware/role.middleware.js';
 import {
     // ── existing ──

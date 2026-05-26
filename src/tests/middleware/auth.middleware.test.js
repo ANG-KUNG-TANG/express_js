@@ -108,8 +108,7 @@ describe('authenticate', () => {
         expect(mockRevokeRefreshToken).toHaveBeenCalledWith('jti1');
         expect(mockGenerateTokenPair).toHaveBeenCalledWith({ id: '1', email: 'test@test.com', role: 'user' });
         expect(mockSaveRefreshToken).toHaveBeenCalledWith('newJti', '1');
-        expect(res.cookie).toHaveBeenCalledWith('refreshToken', 'newRefresh', expect.any(Object));
-        expect(res.setHeader).toHaveBeenCalledWith('X-New-Access-Token', 'newAccess');
+        expect(res.cookie).toHaveBeenCalledWith('refresh_token', 'newRefresh', expect.any(Object));        expect(res.setHeader).toHaveBeenCalledWith('X-New-Access-Token', 'newAccess');
         expect(req.user).toEqual({ id: '1', email: 'test@test.com', role: 'user' });
         expect(next).toHaveBeenCalledWith();
     });

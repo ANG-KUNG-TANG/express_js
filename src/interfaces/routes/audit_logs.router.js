@@ -1,7 +1,7 @@
 // src/interfaces/routes/admin/audit_log.routes.js
 import { Router }                          from 'express';
 import { listAuditActions, listAuditLogs } from '../table/audit_logs.controller.js';
-import { authenticate }                    from '../../middleware/auth.middelware.js';
+import { authenticate }                    from '../../middleware/authenticate.middelware.js';
 import { requireRole }                     from '../../middleware/role.middleware.js';
 
 const router = Router();

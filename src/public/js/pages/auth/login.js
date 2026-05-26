@@ -1,44 +1,55 @@
 // public/js/pages/auth/login.js
-// Single, authoritative login handler.
-// Handles: already-logged-in redirect, form submit, OAuth buttons.
 
 import { saveSession } from '../../core/auth.js';
 import { apiFetch }    from '../../core/api.js';
 
-/* ── All roles land on the single main dashboard ────────────────────────── */
-// dashboard.js reads the role and shows the correct panel automatically.
+/* ── Role-based destination ──────────────────────────────────────────────── */
 function destForRole(role) {
     switch (role) {
         case 'admin':   return '/pages/admin/dashboard.html';
         case 'teacher': return '/pages/teacher/dashboard.html';
-        default:        return '/pages/dashboard.html';   
+        default:        return '/pages/dashboard.html';
     }
 }
 
-/* ── Already logged in? Skip straight to the right dashboard ────────────── */
+/* ── Already logged in? Verify token is still valid before redirecting ───── */
+// redirect loop: login → dashboard (401) → refresh fails → login → repeat.
+// Now we check expiry from the JWT payload before redirecting.
 const existingToken = localStorage.getItem('token');
 if (existingToken) {
     try {
-        const stored = localStorage.getItem('user');
-        const user   = stored ? JSON.parse(stored) : null;
-        window.location.replace(destForRole(user?.role));
+        // Decode JWT payload (base64) — no library needed, just check exp
+        const payload = JSON.parse(atob(existingToken.split('.')[1]));
+        const isValid = payload?.exp && payload.exp * 1000 > Date.now();
+
+        if (isValid) {
+            const stored = localStorage.getItem('user');
+            const user   = stored ? JSON.parse(stored) : null;
+            window.location.replace(destForRole(user?.role));
+        } else {
+            // Token expired — clear stale session, stay on login page
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+        }
     } catch {
-        window.location.replace('/pages/dashboard.html');
+        // Malformed token — clear and stay on login
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
     }
 }
 
 /* ── DOM refs ────────────────────────────────────────────────────────────── */
-const form     = document.getElementById('login-form');
-const emailEl  = document.getElementById('email');
-const passEl   = document.getElementById('password');
-const alertEl  = document.getElementById('login-alert');
-const subBtn   = document.getElementById('subbtn');
+const form    = document.getElementById('login-form');
+const emailEl = document.getElementById('email');
+const passEl  = document.getElementById('password');
+const alertEl = document.getElementById('login-alert');
+const subBtn  = document.getElementById('subbtn');
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
 function showAlert(msg) {
     if (!alertEl) return;
-    alertEl.textContent    = msg;
-    alertEl.style.display  = 'flex';
+    alertEl.textContent   = msg;
+    alertEl.style.display = 'flex';
 }
 
 function clearAlert() {
@@ -69,7 +80,7 @@ function clearFieldErrors() {
     document.querySelectorAll('.fg input').forEach(i => i.classList.remove('err'));
 }
 
-/* ── Inline validation on change ─────────────────────────────────────────── */
+/* ── Inline validation ───────────────────────────────────────────────────── */
 emailEl?.addEventListener('input', function () {
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value)) {
         document.getElementById('fg-email')?.classList.remove('has-err');
@@ -93,7 +104,6 @@ form?.addEventListener('submit', async (e) => {
     const email    = emailEl.value.trim();
     const password = passEl.value;
 
-    // Client-side validation
     let valid = true;
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         setFieldError('fg-email', 'err-email', 'Please enter a valid email address.');
@@ -120,10 +130,8 @@ form?.addEventListener('submit', async (e) => {
             throw new Error('Invalid response from server. Please try again.');
         }
 
-        // Persist session
         saveSession(token, user);
 
-        // Show success tick briefly, then redirect to role-appropriate dashboard
         const lbl = subBtn?.querySelector('.blbl');
         if (lbl) lbl.textContent = '✓ Signed in!';
 

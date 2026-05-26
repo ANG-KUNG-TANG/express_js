@@ -1,27 +1,35 @@
-// interfaces/routes/password_reset.router.js
-// Mirrors auth.router.js — add these routes to your existing auth router
-// or mount separately with:  app.use('/auth', passwordResetRouter)
-
-import { Router }    from 'express';
-import rateLimit     from 'express-rate-limit';
-import { asyncHandler } from '../async_handler.js';  // reuse your existing wrapper
+import { Router }                       from 'express';
+import { asyncHandler }                 from '../async_handler.js';
+import { passwordResetRateLimit }       from '../../middleware/rate_limit.middleware.js';
+import { csrfMiddleware }               from '../../middleware/csrf.middleware.js';
 import {
     forgotPassword,
     validateResetToken,
     resetPassword,
 } from '../table/password_reset.controller.js';
 
-// 5 attempts per IP per 15 min — protects against abuse
-const resetLimiter = rateLimit({
-    windowMs:        15 * 60 * 1000,
-    max:             5,
-    standardHeaders: true,
-    legacyHeaders:   false,
-    message:         { success: false, message: 'Too many reset attempts. Try again later.' },
-});
+// Mount under /api/auth:  app.use('/api/auth', passwordResetRouter)
 
 export const passwordResetRouter = Router();
 
-passwordResetRouter.post('/forgot-password',         resetLimiter, asyncHandler(forgotPassword));
-passwordResetRouter.get ('/reset-password/validate',              asyncHandler(validateResetToken));
-passwordResetRouter.post('/reset-password',          resetLimiter, asyncHandler(resetPassword));
+// ── Request reset email — unauthenticated, rate-limited ───────────────────────
+passwordResetRouter.post('/forgot-password',
+    passwordResetRateLimit,
+    asyncHandler(forgotPassword),
+);
+
+// ── Validate token — unauthenticated GET, rate-limited ────────────────────────
+passwordResetRouter.get('/reset-password/validate',
+    passwordResetRateLimit,
+    asyncHandler(validateResetToken),
+);
+
+// ── Perform reset — unauthenticated POST, rate-limited + CSRF ─────────────────
+// CSRF is needed here because this is a state-changing POST triggered from
+// a browser form. The frontend should fetch /api/auth/csrf-token first and
+// include it as the x-csrf-token header.
+passwordResetRouter.post('/reset-password',
+    passwordResetRateLimit,
+    csrfMiddleware,
+    asyncHandler(resetPassword),
+);

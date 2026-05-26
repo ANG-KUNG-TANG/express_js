@@ -1,5 +1,7 @@
+// src/infrastructure/repositories/task_repo.js
+
 import WritingTaskModel from "../models/task_model.js";
-import { WritingTask } from "../../domain/entities/task_entity.js";
+import { WritingTask }  from "../../domain/entities/task_entity.js";
 import { WritingStatus, AssignmentStatus } from "../../domain/base/task_enums.js";
 import mongoose from 'mongoose';
 import {
@@ -11,7 +13,7 @@ import {
     TaskOwnershipError,
 } from '../../core/errors/task.errors.js';
 import logger from '../../core/logger/logger.js';
-import { toDomain, toDomainList, toPersistence} from '../mapper/tasks.mapper.js';
+import { toDomain, toDomainList, toPersistence } from '../mapper/tasks.mapper.js';
 
 
 // ---------------------------------------------------------------------------
@@ -39,7 +41,6 @@ export const findTasks = async (filter = {}, options = {}) => {
 
     const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
 
-    // it comes through options. Just spread filter directly.
     const query = { ...filter };
 
     if (status)   query.status   = status;
@@ -88,26 +89,21 @@ export const createTask = async (taskData) => {
 
 export const createManyTasks = async (payloads) => {
     if (!payloads?.length) return [];
- 
+
     logger.debug('taskRepo.createManyTasks', { count: payloads.length });
- 
-    // Map each payload through the entity constructor so domain validation
-    // (required fields, enum checks) runs on every item before hitting the DB.
+
     const docs = payloads.map((p) => {
-        const entity = new WritingTask(p);   // same entity class used in createTask
-        return toPersistence(entity);        // same mapper used in createTask
+        const entity = new WritingTask(p);
+        return toPersistence(entity);
     });
- 
-    // ordered: false  → if one insert fails, the rest still go through.
-    // Remove it if you prefer all-or-nothing (ordered: true is Mongoose default).
+
     const inserted = await WritingTaskModel.insertMany(docs, { ordered: false });
- 
+
     logger.debug('taskRepo.createManyTasks: inserted', { count: inserted.length });
     return inserted.map(toDomain);
 };
 
 export const updateTask = async (id, updates) => {
-    // FIX #3: Pass the actual `id` value to TaskInvalidIdError, not the string literal 'TaskNotFoundError'
     if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError(id);
     logger.debug('writingTaskRepo.updateTask', { id, fields: Object.keys(updates) });
 
@@ -115,43 +111,42 @@ export const updateTask = async (id, updates) => {
     if (!existing) throw new TaskNotFoundError(id);
 
     const task = toDomain(existing);
-    if (updates.title          !== undefined) { task._validateTitle(updates.title); task._title = updates.title; }
-    if (updates.description    !== undefined) task._description    = updates.description;
-    if (updates.status         !== undefined) task._status         = updates.status;
-    if (updates.taskType       !== undefined) task._taskType       = updates.taskType;
-    if (updates.examType       !== undefined) task._examType       = updates.examType;
-    if (updates.questionPrompt !== undefined) task._questionPrompt = updates.questionPrompt;
-    if (updates.submissionText !== undefined) task._submissionText = updates.submissionText;
-    if (updates.wordCount      !== undefined) task._wordCount      = updates.wordCount;
-    if (updates.bandScore      !== undefined) task._bandScore      = updates.bandScore;
-    if (updates.feedback       !== undefined) task._feedback       = updates.feedback;
-    if (updates.submittedAt       !== undefined) task._submittedAt       = updates.submittedAt;
-    if (updates.reviewedAt        !== undefined) task._reviewedAt        = updates.reviewedAt;
-    if (updates.assignmentStatus  !== undefined) task._assignmentStatus  = updates.assignmentStatus;
-    if (updates.declineReason     !== undefined) task._declineReason     = updates.declineReason;
-    if (updates.dueDate           !== undefined) task._dueDate           = updates.dueDate;
-    if (updates.source            !== undefined) task._source            = updates.source;
-    if (updates.assignedBy        !== undefined) task._assignedBy        = updates.assignedBy;
-    if (updates.assignedTo        !== undefined) task._assignedTo        = updates.assignedTo;
+    if (updates.title            !== undefined) { task._validateTitle(updates.title); task._title = updates.title; }
+    if (updates.description      !== undefined) task._description    = updates.description;
+    if (updates.status           !== undefined) task._status         = updates.status;
+    if (updates.taskType         !== undefined) task._taskType       = updates.taskType;
+    if (updates.examType         !== undefined) task._examType       = updates.examType;
+    if (updates.questionPrompt   !== undefined) task._questionPrompt = updates.questionPrompt;
+    if (updates.submissionText   !== undefined) task._submissionText = updates.submissionText;
+    if (updates.wordCount        !== undefined) task._wordCount      = updates.wordCount;
+    if (updates.bandScore        !== undefined) task._bandScore      = updates.bandScore;
+    if (updates.feedback         !== undefined) task._feedback       = updates.feedback;
+    if (updates.submittedAt      !== undefined) task._submittedAt    = updates.submittedAt;
+    if (updates.reviewedAt       !== undefined) task._reviewedAt     = updates.reviewedAt;
+    if (updates.assignmentStatus !== undefined) task._assignmentStatus = updates.assignmentStatus;
+    if (updates.declineReason    !== undefined) task._declineReason  = updates.declineReason;
+    if (updates.dueDate          !== undefined) task._dueDate        = updates.dueDate;
+    if (updates.source           !== undefined) task._source         = updates.source;
+    if (updates.assignedBy       !== undefined) task._assignedBy     = updates.assignedBy;
+    if (updates.assignedTo       !== undefined) task._assignedTo     = updates.assignedTo;
     task._updatedAt = new Date();
 
     const doc = await WritingTaskModel.findByIdAndUpdate(
         id,
         { $set: {
-            title:          task._title,
-            description:    task._description,
-            status:         task._status,
-            taskType:       task._taskType,
-            examType:       task._examType,
-            questionPrompt: task._questionPrompt,
-            submissionText: task._submissionText,
-            wordCount:      task._wordCount,
-            bandScore:      task._bandScore,
-            feedback:       task._feedback,
-            submittedAt:    task._submittedAt,
-            reviewedAt:     task._reviewedAt,
-            updatedAt:      task._updatedAt,
-            // FIX: these fields were missing — assignment updates were silently dropped
+            title:             task._title,
+            description:       task._description,
+            status:            task._status,
+            taskType:          task._taskType,
+            examType:          task._examType,
+            questionPrompt:    task._questionPrompt,
+            submissionText:    task._submissionText,
+            wordCount:         task._wordCount,
+            bandScore:         task._bandScore,
+            feedback:          task._feedback,
+            submittedAt:       task._submittedAt,
+            reviewedAt:        task._reviewedAt,
+            updatedAt:         task._updatedAt,
             assignmentStatus:  task._assignmentStatus,
             declineReason:     task._declineReason,
             dueDate:           task._dueDate,
@@ -185,9 +180,7 @@ export const countTasks = async (filters = {}) => {
 
 export const startWritingTask = async (task) => {
     logger.debug('writingTaskRepo.startWritingTask', { id: task.id });
-
     task.startWriting();
-
     return await updateTask(task.id, { status: task._status });
 };
 
@@ -225,9 +218,9 @@ export const scoreTask = async (id, bandScore) => {
 };
 
 export const acceptAssignment = async (taskId) => {
-    logger.debug("writingTaskRepo.acceptAssigment", { taskId});
+    logger.debug('writingTaskRepo.acceptAssignment', { taskId });
     const task = await findTaskByID(taskId);
-    task.acceptAssigment();
+    task.acceptAssignment();
     return await updateTask(taskId, {
         assignmentStatus: task._assignmentStatus,
     });
@@ -244,6 +237,48 @@ export const declineAssignment = async (taskId, reason) => {
     });
 };
 
+// ---------------------------------------------------------------------------
+// AI evaluation
+// ---------------------------------------------------------------------------
+
+/**
+ * Attach a Gemini AI evaluation to a task document.
+ *
+ * Uses $set on only the aiEvaluation subdoc so that:
+ *   - teacher's bandScore is NEVER overwritten
+ *   - teacher's feedback  is NEVER overwritten
+ *
+ * Follows the same fetch → entity.method() → DB write pattern
+ * as submitTask, reviewTask, scoreTask etc.
+ *
+ * @param {string}       taskId     - MongoDB _id
+ * @param {AiEvaluation} evaluation - validated AiEvaluation instance
+ * @returns {Promise<WritingTask>}
+ */
+export const saveAiEvaluation = async (taskId, evaluation) => {
+    if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
+    logger.debug('writingTaskRepo.saveAiEvaluation', { taskId, bandScore: evaluation.bandScore });
+
+    const doc = await WritingTaskModel.findByIdAndUpdate(
+        taskId,
+        {
+            $set: {
+                aiEvaluation: evaluation.toJSON ? evaluation.toJSON() : evaluation,
+                updatedAt:    new Date(),
+            },
+        },
+        { returnDocument: 'after', runValidators: true }
+    ).lean();
+
+    if (!doc) throw new TaskNotFoundError(taskId);
+    logger.debug('writingTaskRepo.saveAiEvaluation: saved', { taskId });
+    return toDomain(doc);
+};
+
+// ---------------------------------------------------------------------------
+// Cron helpers
+// ---------------------------------------------------------------------------
+
 export const findDueSoon = async (withinHours = 24) => {
     const now    = new Date();
     const cutoff = new Date(now.getTime() + withinHours * 60 * 60 * 1000);
@@ -259,37 +294,35 @@ export const findDueSoon = async (withinHours = 24) => {
             { reminderSentAt: { $lte: dedupe } },
         ],
     }).lean();
-    // FIX: was doc.length (undefined) — should be docs.length
     logger.debug('writingTaskRepo.findDueSoon: result', { count: docs.length });
     return toDomainList(docs);
 };
 
-export const findUnstarted = async (afterDays = 3) =>{
+export const findUnstarted = async (afterDays = 3) => {
     const staleCutoff = new Date();
     staleCutoff.setDate(staleCutoff.getDate() - afterDays);
-    const dedupe = new Date(Date.now() - 24*60*60*1000);
+    const dedupe = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    logger.debug('writingTaskRepo.findUnstarted', { afterDays, staleCutoff});
+    logger.debug('writingTaskRepo.findUnstarted', { afterDays, staleCutoff });
     const docs = await WritingTaskModel.find({
         assignmentStatus: AssignmentStatus.ACCEPTED,
-        status: WritingStatus.ASSIGNED,
-        createdAt: { $lte: staleCutoff},
+        status:           WritingStatus.ASSIGNED,
+        createdAt:        { $lte: staleCutoff },
         $or: [
-            {unstartedNotiSentAt: null},
-            { unstartedNotiSentAt: {$lte: dedupe}},
+            { unstartedNotiSentAt: null },
+            { unstartedNotiSentAt: { $lte: dedupe } },
         ],
-
     }).lean();
-    logger.debug('writingTaskRepo.findUnstarted: resut', { count: docs.length});
+    logger.debug('writingTaskRepo.findUnstarted: result', { count: docs.length });
     return toDomainList(docs);
 };
 
-export const findByAssignedBy = async (teacherId, filter = {}, options = {}) =>{
+export const findByAssignedBy = async (teacherId, filter = {}, options = {}) => {
     if (!mongoose.Types.ObjectId.isValid(teacherId)) throw new TaskInvalidUserIdError(teacherId);
-    const { page =1, limit = 20, sort = { createdAt: -1}} = options;
-    const skip = (Math.max(1, Number(page)) -1 ) * Number(limit);
+    const { page = 1, limit = 20, sort = { createdAt: -1 } } = options;
+    const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
 
-    logger.debug('writingTaskRepo.FindByAssignedBy', { teacherId} );
+    logger.debug('writingTaskRepo.findByAssignedBy', { teacherId });
     const docs = await WritingTaskModel.find({
         assignedBy: new mongoose.Types.ObjectId(teacherId),
         ...filter,
@@ -298,12 +331,12 @@ export const findByAssignedBy = async (teacherId, filter = {}, options = {}) =>{
     return toDomainList(docs);
 };
 
-export const findByAssignedTo = async ( studentId, filter = {}, options = {}) => {
-    if (!mongoose.Types.ObjectId.isValid(studentId)) {throw new TaskInvalidIdError(studentId)};
-    const { page = 1, limit = 20, sort = { createdAt: -1}} = options; 
-    const skip = (Math.max(1,Number(page)) -1) * Number(limit);
+export const findByAssignedTo = async (studentId, filter = {}, options = {}) => {
+    if (!mongoose.Types.ObjectId.isValid(studentId)) throw new TaskInvalidIdError(studentId);
+    const { page = 1, limit = 20, sort = { createdAt: -1 } } = options;
+    const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
 
-    logger.debug('writingTaskRepo.findByAssignedTo', { studentId});
+    logger.debug('writingTaskRepo.findByAssignedTo', { studentId });
     const docs = await WritingTaskModel.find({
         assignedTo: new mongoose.Types.ObjectId(studentId),
         ...filter,
@@ -312,21 +345,22 @@ export const findByAssignedTo = async ( studentId, filter = {}, options = {}) =>
     return toDomainList(docs);
 };
 
-export const markReminderSent = async (taskId) =>{
+export const markReminderSent = async (taskId) => {
     if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
-    logger.debug('writingTaskRepo.markReminderSent', { taskId});
+    logger.debug('writingTaskRepo.markReminderSent', { taskId });
     await WritingTaskModel.findByIdAndUpdate(taskId, {
-        $set: { reminderSentAt: new Date(), updateAt: new Date()},
+        $set: { reminderSentAt: new Date(), updatedAt: new Date() },
     });
 };
 
-export const markUnstartedNotiSent = async (taskId) =>{
+export const markUnstartedNotiSent = async (taskId) => {
     if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
-    logger.debug('writingTaskRepo.markUnstartedNotiSent', { taskId});
+    logger.debug('writingTaskRepo.markUnstartedNotiSent', { taskId });
     await WritingTaskModel.findByIdAndUpdate(taskId, {
-        $set: { unstartedNotiSentAt: new Date(), updateAt: new Date()},
+        $set: { unstartedNotiSentAt: new Date(), updatedAt: new Date() },
     });
-}
+};
+
 // ---------------------------------------------------------------------------
 // Convenience finders
 // ---------------------------------------------------------------------------
@@ -414,30 +448,9 @@ export const transferSingleTask = async (taskId, fromUserId, toUserId, session =
 };
 
 // ---------------------------------------------------------------------------
-// Vocabulary lookup  (GET /api/vocab/:word)
+// Vocabulary lookup
 // ---------------------------------------------------------------------------
 
-/**
- * Look up a word using the Free Dictionary API.
- * Returns a normalised vocab entry so callers never need to know the
- * upstream shape.
- *
- * @param {string} word
- * @returns {Promise<{
- *   word: string,
- *   phonetic: string|null,
- *   audio: string|null,
- *   meanings: Array<{
- *     partOfSpeech: string,
- *     definitions: Array<{ definition: string, example: string|null, synonyms: string[], antonyms: string[] }>,
- *     synonyms: string[],
- *     antonyms: string[],
- *   }>,
- *   sourceUrls: string[],
- * }>}
- * @throws {TaskValidationError}  when the word param is blank
- * @throws {TaskNotFoundError}    when the dictionary has no entry for the word
- */
 export const lookupVocab = async (word) => {
     if (!word || typeof word !== 'string' || !word.trim()) {
         throw new TaskValidationError('word is required');
@@ -461,9 +474,8 @@ export const lookupVocab = async (word) => {
     }
 
     const entries = await response.json();
-    const entry   = entries[0];                     // use the primary entry
+    const entry   = entries[0];
 
-    // Flatten all phonetics to find the first non-empty text and audio URL
     const phonetic = entry.phonetic
         ?? entry.phonetics?.find((p) => p.text)?.text
         ?? null;

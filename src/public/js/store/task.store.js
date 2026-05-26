@@ -113,6 +113,12 @@ export const taskStore = {
         return _state.tasks.find(t => (t._id ?? t.id) === id) ?? null;
     },
 
+    // no socket event for AI check — it's user-triggered, call directly:
+// taskStore.aiCheckOne(id, result.aiEvaluation) after taskAPI.aiCheck(id)
+    aiCheckOne: (id, aiEvaluation) => {
+        taskStore.updateOne(id, { aiEvaluation });
+    },
+
     /**
      * Update a single task in the cache after a PATCH (start, submit, update notes).
      * Prevents stale data when navigating back to the list.
@@ -154,6 +160,7 @@ export const taskStore = {
         };
         _emit();
     },
+
 };
 
 // ── Keep cache in sync with real-time socket events ───────────────────────────
