@@ -58,3 +58,77 @@ export const getAvailableCategories = () => {
     return Object.values(NewsCategory);
 };
 
+// ---------------------------------------------------------------------------
+// Scrape full article content from a source URL.
+//
+// Uses @postlight/parser (Firefox Reader Mode engine) to extract clean
+// plain text from any article page.
+//
+// SSRF guard: validates protocol and blocks private/internal hostnames
+// before making any outbound request.
+//
+// @param  {string} url - publicly accessible article URL
+// @returns {{ title, content, author, date_published, lead_image_url, url }}
+// @throws  Error with .statusCode for known failures (bad URL, blocked host,
+//          unextractable content) so the controller can respond correctly.
+// ---------------------------------------------------------------------------
+
+export const fetchArticleContent = async (url) => {
+    // ── Input validation ──────────────────────────────────────────────────
+    if (!url || typeof url !== 'string') {
+        const err = new Error('url is required');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    let parsed;
+    try {
+        parsed = new URL(url);
+    } catch {
+        const err = new Error('Invalid URL');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+        const err = new Error('Only http/https URLs allowed');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    // ── SSRF guard — block private/internal hostnames ─────────────────────
+    const hostname = parsed.hostname.toLowerCase();
+    const blocked  = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
+    if (
+        blocked.includes(hostname)         ||
+        hostname.startsWith('192.168.')    ||
+        hostname.startsWith('10.')         ||
+        hostname.startsWith('172.')
+    ) {
+        const err = new Error('URL not allowed');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    // ── Parse ─────────────────────────────────────────────────────────────
+    // Dynamic import keeps ESM compatibility and avoids loading the heavy
+    // parser module on every cold start — only paid for when actually used.
+    const { default: Parser } = await import('@postlight/parser');
+
+    const result = await Parser.parse(url, { contentType: 'text' });
+
+    if (!result?.content) {
+        const err = new Error('Could not extract content from this article.');
+        err.statusCode = 422;
+        throw err;
+    }
+
+    return {
+        title:          result.title          || '',
+        content:        result.content        || '',
+        author:         result.author         || '',
+        date_published: result.date_published || '',
+        lead_image_url: result.lead_image_url || '',
+        url:            result.url            || url,
+    };
+};

@@ -6,6 +6,7 @@ import { getPersonalisedFeedController,
     getNewsByCategoryController,
     getCategoriesController,
     updateInterestsController,
+    fetchArticleContentController,
  } from '../table/news.controller.js';
 const router = Router();
 
@@ -16,7 +17,7 @@ router.get('/feed',              asyncHandler(getPersonalisedFeedController));
 router.get('/search',            asyncHandler(searchNewsController));
 router.get('/categories',        asyncHandler(getCategoriesController));
 router.patch('/interests',       asyncHandler(updateInterestsController));
-
+router.post('/fetch-content', asyncHandler(fetchArticleContentController));
 // Dynamic routes last
 router.get('/category/:category', asyncHandler(getNewsByCategoryController));
 

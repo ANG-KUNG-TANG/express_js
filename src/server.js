@@ -128,7 +128,7 @@ app.get('/', (req, res) => {
     res.redirect('/pages/auth/login.html');
 });
 
-// FIX 3: favicon.ico — browsers request this automatically on every page load.
+// browsers request this automatically on every page load.
 //         Without this handler the request fell through to the JSON 404 catch-all,
 //         returning { "error": "ROUTE_NOT_FOUND" } instead of a silent 204.
 //         Placed before the 404 handler so it is matched first.

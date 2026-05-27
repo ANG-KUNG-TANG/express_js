@@ -49,7 +49,6 @@ const OPERATIONAL_ERRORS = new Set(Object.keys(ERROR_STATUS_MAP));
 
 // eslint-disable-next-line no-unused-vars
 export const errorLoggerMiddleware = (err, req, res, next) => {
-  // ← KEY FIX: fall back to err.statusCode before defaulting to 500
   const status =
     ERROR_STATUS_MAP[err.name] ??
     err.statusCode ??
