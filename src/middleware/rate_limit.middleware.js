@@ -163,3 +163,16 @@ export const authLimiter = rateLimit({
     message: 'Too many authentication attempts. Please try again in 15 minutes.',
     keyGenerator: (req) => ipKeyGenerator(req),
 });
+
+//---Ai Evaluate Rate Limit
+export const aiEvaluationRateLimit = rateLimit({
+    windowMs: 24 * 60 * 60 * 1000, // 24 hours
+    max: 5,                        // AI_CHECK_DAILY_LIMIT
+    standardHeaders: true,
+    legacyHeaders:   false,
+    store:           makeStore('rl:ai_eval:'),
+    handler,
+    message: 'AI evaluation limit reached (5/day). Try again tomorrow.',
+    // IMPORTANT: keyGenerator should be user ID, not IP, for this specific feature
+    keyGenerator: (req) => req.user?.id ?? req.ip, 
+});
