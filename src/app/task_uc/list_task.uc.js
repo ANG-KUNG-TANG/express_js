@@ -1,9 +1,16 @@
-// list_writing_task_uc.js
-import * as taskRepo from "../../infrastructure/repositories/task_repo.js";
+import * as taskService from '../../core/services/task_service.js';
 
 export const listWritingTasks = async (filters = {}, options = {}, userId = null) => {
-    // findTasks reads status/taskType/examType from options, not the filter object
+    // 1. Prepare options
     const finalOptions = { ...options, ...filters };
-    if (userId) finalOptions.userId = userId;
-    return await taskRepo.findTasks({}, finalOptions);
+    
+    // 2. Add security context (userId) if provided
+    if (userId) {
+        finalOptions.userId = userId;
+    }
+
+    // 3. Delegate to Service
+    // The service handles calling the Repo to fetch the list.
+    // Note: If you want caching for lists, the service should handle that logic.
+    return await taskService.findTasks(finalOptions);
 };

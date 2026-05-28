@@ -1,19 +1,21 @@
-import * as taskRepo from '../../infrastructure/repositories/task_repo.js';
-import {
-    validateRequired,
-    validateStringLength,
-    validateEnum,
-} from '../../app/validators/task_validator.js';
+import { createWritingTask as serviceCreate } from '../../core/services/task_service.js';
+import { validateRequired, validateStringLength, validateEnum } from '../../app/validators/task_validator.js';
 import { TaskType, ExamType } from '../../domain/base/task_enums.js';
 
 export const createWritingTask = async (userId, data) => {
+    // 1. Validation
     validateRequired(userId, 'userId');
-    const title         = validateStringLength(data.title, 'title', 3, 100);
-    const description   = data.description || '';
-    const taskType      = validateEnum(data.taskType, TaskType, 'taskType');
-    const examType      = validateEnum(data.examType, ExamType, 'examType');
-    const questionPrompt = data.questionPrompt || '';
+    const title = validateStringLength(data.title, 'title', 3, 100);
+    const taskType = validateEnum(data.taskType, TaskType, 'taskType');
+    const examType = validateEnum(data.examType, ExamType, 'examType');
 
-    const taskData = { title, description, taskType, examType, questionPrompt, userId };
-    return await taskRepo.createTask(taskData);
+    // 2. Orchestration via Service
+    return await serviceCreate({ 
+        title, 
+        description: data.description || '', 
+        taskType, 
+        examType, 
+        questionPrompt: data.questionPrompt || '', 
+        userId 
+    });
 };

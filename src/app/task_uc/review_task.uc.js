@@ -1,28 +1,27 @@
-// src/app/task_uc/review_task.uc.js
-//
-// Student submits their task for review (marks it SUBMITTED).
-// Distinct from teacher_review_task_uc which is the teacher scoring it.
+import * as taskService from '../../app/services/task_service.js';
+import { TaskValidationError } from '../../core/errors/task.errors.js';
+import { recordAudit } from '../../core/services/audit.service.js';
+import { AuditAction } from '../../domain/base/audit_enums.js';
 
-import * as taskRepo                   from '../../infrastructure/repositories/task_repo.js';
-import { TaskValidationError }         from '../../core/errors/task.errors.js';
-import { recordAudit}  from '../../core/services/audit.service.js';
-import { AuditAction }                 from '../../domain/base/audit_enums.js';
-
-// reviewerId = the student's userId (ownership is checked at controller level)
-// req passed from controller so IP is captured
 export const reviewTask = async (taskId, reviewerId, feedback, req = null) => {
+    // 1. Input Validation
     if (!feedback || typeof feedback !== 'string' || !feedback.trim()) {
         throw new TaskValidationError('feedback is required');
     }
 
-    // Ensure task exists — throws NotFoundError if missing
-    const task = await taskRepo.findTaskByID(taskId);
+    // 2. Fetch via Service (Handles Redis Cache)
+    const task = await taskService.getTaskById(taskId);
+    
+    // 3. Ownership Check (Business rule)
+    taskService.ensureTaskOwnership(task, reviewerId);
 
-    const result = await taskRepo.reviewTask(taskId, feedback);
+    // 4. Delegate to Service (Handles Repo + Cache Invalidation)
+    const result = await taskService.reviewTask(taskId, feedback);
 
+    // 5. Audit (Use public getter)
     recordAudit(AuditAction.TASK_REVIEWED_USER, reviewerId, {
         taskId,
-        taskTitle: task._title ?? null,
+        taskTitle: task.title,
     }, req);
 
     return result;

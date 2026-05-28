@@ -1,20 +1,17 @@
-// src/app/task_uc/start_task.uc.js
-
-import * as taskRepo from '../../infrastructure/repositories/task_repo.js';
+import * as taskService from '../../core/services/task_service.js';
 
 export const startWritingTask = async (id, userId) => {
-    const task = await taskRepo.findTaskByID(id);
+    // 1. Fetch via Service (Handles Redis Cache)
+    const task = await taskService.getTaskById(id);
 
-    // Ownership check
-    taskRepo.ensureTaskOwnership(task, userId);
+    // 2. Ownership check
+    taskService.ensureTaskOwnership(task, userId);
 
-    // entity.startWriting() handles all guards:
-    //   - status must be ASSIGNED
-    //   - if teacher-assigned, assignmentStatus must be ACCEPTED
+    // 3. Domain Logic: trigger the status transition
+    // Note: ensure your entity has a startWriting() method
     task.startWriting();
 
-    return await taskRepo.updateTask(id, {
-        status:    task._status,
-        startedAt: task._startedAt,
-    });
+    // 4. Delegate mutation to Service
+    // The service will save to DB and clear the cache
+    return await taskService.updateTask(id, (t) => t.startWriting());
 };

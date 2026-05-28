@@ -1,10 +1,13 @@
-// get_writing_task_uc.js
-import * as taskRepo from '../../infrastructure/repositories/task_repo.js';
+import * as taskService from '../../app/services/task_service.js'; // Ensure path is correct
 
 export const getWritingTaskById = async (taskId, requestingUserId = null) => {
-    const task = await taskRepo.findTaskByID(taskId);
+    // 1. Fetch via Service (Handles Redis Cache-Aside + Repo fallback)
+    const task = await taskService.getTaskById(taskId);
+    
+    // 2. Ownership Check (Business rule: ensure user has rights to this task)
     if (requestingUserId) {
-        taskRepo.ensureTaskOwnership(task, requestingUserId);
+        taskService.ensureTaskOwnership(task, requestingUserId);
     }
+    
     return task;
 };

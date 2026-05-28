@@ -1,54 +1,51 @@
-// src/app/task_uc/complete_task.uc.js
+import * as taskService from '../../core/services/task_service.js';
+import { TaskValidationError } from '../../core/errors/task.errors.js';
+import { NotificationService } from '../../core/services/notification.service.js';
+import { TaskSource, AssignmentStatus } from '../../domain/base/task_enums.js';
+import { recordAudit, recordFailure } from '../../core/services/audit.service.js';
+import { AuditAction } from '../../domain/base/audit_enums.js';
 
-import * as taskRepo                         from '../../infrastructure/repositories/task_repo.js';
-import { TaskValidationError }               from '../../core/errors/task.errors.js';
-import { NotificationService }               from '../../core/services/notification.service.js';
-import { TaskSource, AssignmentStatus }      from '../../domain/base/task_enums.js';
-import { recordAudit, recordFailure }        from '../../core/services/audit.service.js';
-import { AuditAction }                       from '../../domain/base/audit_enums.js';
-
-// req passed from controller so IP + userAgent are captured
 export const submitTask = async (taskId, userId, submissionText, req = null) => {
-    // ── Validate input ────────────────────────────────────────────────────────
+    // 1. Validate Input (Keep this here: UCs handle business rules/input)
     if (!submissionText || typeof submissionText !== 'string' || !submissionText.trim()) {
         throw new TaskValidationError('submissionText is required');
     }
 
-    const task = await taskRepo.findTaskByID(taskId);
-    taskRepo.ensureTaskOwnership(task, userId);
+    // 2. Fetch via Service (Handles Cache check)
+    const task = await taskService.getTaskById(taskId);
+    taskService.ensureTaskOwnership(task, userId);
 
-    // ── Assignment guard ──────────────────────────────────────────────────────
-    if (task._assignedBy && task._assignmentStatus !== AssignmentStatus.ACCEPTED) {
+    // 3. Assignment Guard (Domain Logic)
+    if (task.assignedBy && task.assignmentStatus !== AssignmentStatus.ACCEPTED) {
         recordFailure(AuditAction.TASK_SUBMITTED, userId, {
             taskId,
-            reason:           'task not accepted before submission',
-            assignmentStatus: task._assignmentStatus,
+            reason: 'task not accepted before submission',
+            assignmentStatus: task.assignmentStatus,
         }, req);
         throw new TaskValidationError(
-            `You must accept this task before submitting. Current state: "${task._assignmentStatus}"`
+            `You must accept this task before submitting. Current state: "${task.assignmentStatus}"`
         );
     }
 
-    // ── Submit ────────────────────────────────────────────────────────────────
-    const submitted = await taskRepo.submitTask(taskId, submissionText);
+    // 4. Submit via Service (Handles Repo mutation + Cache Invalidation)
+    const submitted = await taskService.submitTask(taskId, submissionText);
 
+    // 5. Audit & Notifications
     recordAudit(AuditAction.TASK_SUBMITTED, userId, {
         taskId,
-        taskTitle:  task._title,
-        isAssigned: !!(task._source !== TaskSource.SELF && task._assignedBy),
-        teacherId:  task._assignedBy ? String(task._assignedBy) : null,
+        taskTitle:  task.title,
+        isAssigned: task.isAssigned(),
+        teacherId:  task.assignedBy ? String(task.assignedBy) : null,
     }, req);
 
-    // ── Notify teacher (assigned tasks only) ─────────────────────────────────
-    const isAssigned = task._source !== TaskSource.SELF && task._assignedBy;
-    if (isAssigned) {
+    if (task.isAssigned()) {
         NotificationService.send({
-            recipientId: String(task._assignedBy),
+            recipientId: String(task.assignedBy),
             actorId:     String(userId),
             type:        NotificationService.TYPES.TASK_SUBMITTED,
             title:       'Task submitted for review',
-            message:     `A student submitted "${task._title}" — it is ready for your review.`,
-            refId:       String(task._id),
+            message:     `A student submitted "${task.title}" — it is ready for your review.`,
+            refId:       String(task.id),
             refModel:    'Task',
         });
     }

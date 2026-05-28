@@ -1,29 +1,28 @@
-// src/app/task_uc/score_task.uc.js
-
-import * as taskRepo               from '../../infrastructure/repositories/task_repo.js';
-import { TaskValidationError }     from '../../core/errors/task.errors.js';
-import { NotificationService }     from '../../core/services/notification.service.js';
+import * as taskService from '../../core/services/task_service.js';
+import { TaskValidationError } from '../../core/errors/task.errors.js';
+import { NotificationService } from '../../core/services/notification.service.js';
 
 export const scoreTask = async (taskId, scorerId, bandScore) => {
-    // ── Validate score ────────────────────────────────────────────────────────
+    // 1. Validate Input
     const score = Number(bandScore);
     if (isNaN(score) || score < 0 || score > 9) {
         throw new TaskValidationError('bandScore must be a number between 0 and 9');
     }
 
-    // ── Fetch & score ─────────────────────────────────────────────────────────
-    const task   = await taskRepo.findTaskByID(taskId);
-    const scored = await taskRepo.scoreTask(taskId, score);
+    // 2. Fetch via Service (Handles Redis Cache)
+    const task = await taskService.getTaskById(taskId);
 
-    // ── Notify student ────────────────────────────────────────────────────────
-    // Fire-and-forget — NotificationService catches its own errors internally
+    // 3. Score via Service (Handles Repo mutation + Cache Invalidation)
+    const scored = await taskService.scoreTask(taskId, score);
+
+    // 4. Notify Student (Use public getters)
     NotificationService.send({
-        recipientId: String(task._userId ?? task.userId),
+        recipientId: String(task.userId),
         actorId:     String(scorerId),
         type:        NotificationService.TYPES.TASK_SCORED,
         title:       'Your task has been scored',
-        message:     `Your task "${task._title}" received a score of ${score}/9`,
-        refId:       String(task._id),
+        message:     `Your task "${task.title}" received a score of ${score}/9`,
+        refId:       String(task.id),
         refModel:    'Task',
     });
 

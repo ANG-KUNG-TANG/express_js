@@ -1,28 +1,29 @@
-// src/app/task_uc/delete_task.uc.js
-
-import * as taskRepo                   from '../../infrastructure/repositories/task_repo.js';
+import * as taskService from '../../core/services/task_service.js'; // Use the Service
 import { recordAudit }  from '../../core/services/audit.service.js';
-import { AuditAction }                 from '../../domain/base/audit_enums.js';
+import { AuditAction }  from '../../domain/base/audit_enums.js';
 
-// req passed from controller so IP + userAgent are captured
 export const deleteWritingTask = async (taskId, userId, req = null) => {
-    const task = await taskRepo.findTaskByID(taskId);
-    taskRepo.ensureTaskOwnership(task, userId);
+    // 1. Fetch via Service (which handles cache-aside)
+    const task = await taskService.getTaskById(taskId);
+    
+    // 2. Business Rule: Ensure Ownership
+    // Note: ensureTaskOwnership logic should ideally be inside the UC or Service
+    taskService.ensureTaskOwnership(task, userId);
 
-    await taskRepo.deleteTask(taskId);
+    // 3. Delete via Service (Service handles Repo + Cache Invalidation)
+    await taskService.deleteTask(taskId);
 
-    // Log after successful delete — include title so the admin dashboard
-    // shows what was deleted, not just a bare ID
+    // 4. Audit
     recordAudit(AuditAction.TASK_DELETED, userId, {
         taskId,
-        taskTitle:  task._title ?? task.title ?? null,
-        taskSource: task._source ?? null,
-        assignedBy: task._assignedBy ? String(task._assignedBy) : null,
+        taskTitle:  task.title, // Use public getter, not _title
+        taskSource: task.source,
+        assignedBy: task.assignedBy ? String(task.assignedBy) : null,
     }, req);
 
     return {
         deleted: true,
-        taskId:  task.id ?? task._id?.toString(),
-        title:   task._title ?? task.title ?? null,
+        taskId:  task.id,
+        title:   task.title,
     };
 };
