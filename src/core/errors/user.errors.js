@@ -210,3 +210,27 @@ export class AccountSuspendedError extends ForbiddenError {
         this.code = 'ACCOUNT_SUSPENDED';
     }
 }
+
+export class UserAlreadyVerifiedError extends ConflictError {
+    constructor() {
+        super('User already verified.');
+        this.name = 'UserAlreadyVerifiedError';
+        this.code = 'USER_ALREADY_VERIFIED';
+    }
+}
+
+export class UserAlreadyActiveError extends ConflictError {
+    constructor() {
+        super('User already active.');
+        this.name = 'UserAlreadyActiveError';
+        this.code = 'USER_ALREADY_ACTIVE_ERROR';
+    }
+}
+
+export class UserAlreadyInactiveError extends ConflictError {
+    constructor() {
+        super('User already inactive.');
+        this.name = 'UserAlreadyInactiveError';
+        this.code = 'USER_ALREADY_INACTIVE_ERROR';
+    }
+}
