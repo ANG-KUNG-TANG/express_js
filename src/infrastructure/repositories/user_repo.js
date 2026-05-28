@@ -2,7 +2,7 @@ import UserModel from "../models/user_model.js";
 import mongoose from 'mongoose';
 import { User } from '../../domain/entities/user_entity.js';
 import { UserRole } from "../../domain/base/user_enums.js";
-import { toDomain, toPersistence } from './user_mapper.js'; // Clean external imports
+import { toDomain, toPersistence } from './user_mapper.js';
 import {
     UserValidationError,
     UserEmailNotFoundError,
@@ -11,7 +11,7 @@ import {
     UserNotFoundError,
 } from '../../core/errors/user.errors.js';
 import logger from '../../core/logger/logger.js';
-import { verifyPassword } from '../../app/validators/password_hash.js';
+import { verifyPassword } from '../../domain/validators/password_hash.js';
 
 // ---------------------------------------------------------------------------
 // Guard helper — DRY ObjectId validation used throughout
@@ -23,58 +23,39 @@ const assertValidId = (id, label = 'user id') => {
 };
 
 // ===========================================================================
-// Queries
+// Queries (Kept completely silent unless a structural data boundary error happens)
 // ===========================================================================
 
 export const findUserById = async (id) => {
     assertValidId(id);
-    logger.debug('userRepo.findUserById', { id });
-    
     const doc = await UserModel.findById(id).select('-password').lean();
     if (!doc) throw new UserNotFoundError(id);
-    
     return toDomain(doc);
 };
 
 export const findUserByEmail = async (email) => {
-    logger.debug('userRepo.findUserByEmail', { email });
-    
     const doc = await UserModel.findOne({ email: email.toLowerCase() }).select('-password').lean();
     if (!doc) throw new UserEmailNotFoundError(email);
-    
     return toDomain(doc);
 };
 
-/**
- * Like findUserByEmail but includes the hashed password field.
- * Only used by authenticateUser — never expose the result directly to HTTP layers.
- */
 export const findUserByEmailWithPassword = async (email) => {
-    logger.debug('userRepo.findUserByEmailWithPassword', { email });
-    
     const doc = await UserModel.findOne({ email: email.toLowerCase() }).lean();
     if (!doc) {
-        logger.warn('userRepo.findUserByEmailWithPassword: not found', { email });
+        // KEEP: Security monitoring context for non-existent users attempting logins
+        logger.warn('userRepo.findUserByEmailWithPassword: Not found', { email });
         throw new UserEmailNotFoundError(email);
     }
-    
     return toDomain(doc);
 };
 
 export const listAllUsers = async () => {
-    logger.debug('userRepo.listAllUsers');
-    
     const docs = await UserModel.find().select('-password').lean();
-    logger.debug('userRepo.listAllUsers: result', { count: docs.length });
-    
     return docs.map(toDomain);
 };
 /** @deprecated use listAllUsers */
 export const lisAllUsers = listAllUsers;
 
-/**
- * Generic filtered list — used by admin and teacher views.
- */
 export const findAll = async (filter = {}) => {
     const query = {};
     if (filter.assignedTeacher) {
@@ -83,20 +64,12 @@ export const findAll = async (filter = {}) => {
     }
     if (filter.role) query.role = filter.role;
 
-    logger.debug('userRepo.findAll', { filter });
     const docs = await UserModel.find(query).select('-password').lean();
-    logger.debug('userRepo.findAll: result', { count: docs.length });
-    
     return docs.map(toDomain);
 };
 
-/**
- * Returns a lightweight public list — optimized shape, bypassing entities.
- */
 export const findStudentsByTeacher = async (teacherId) => {
     assertValidId(teacherId, 'teacherId');
-    logger.debug('userRepo.findStudentsByTeacher', { teacherId });
-
     const docs = await UserModel.find({
         assignedTeacher: new mongoose.Types.ObjectId(teacherId),
         role:            { $nin: [UserRole.TEACHER, UserRole.ADMIN] },
@@ -104,7 +77,6 @@ export const findStudentsByTeacher = async (teacherId) => {
         .select('_id name email')
         .lean();
 
-    logger.debug('userRepo.findStudentsByTeacher: result', { count: docs.length });
     return docs.map((d) => ({
         id:    d._id.toString(),
         name:  d.name  ?? '',
@@ -112,13 +84,9 @@ export const findStudentsByTeacher = async (teacherId) => {
     }));
 };
 
-/**
- * Verifies teacher assignment before returning the student entity.
- */
 export const findStudentByIdForTeacher = async (teacherId, studentId) => {
     assertValidId(teacherId, 'teacherId');
     assertValidId(studentId, 'studentId');
-    logger.debug('userRepo.findStudentByIdForTeacher', { teacherId, studentId });
 
     const doc = await UserModel.findOne({
         _id:             new mongoose.Types.ObjectId(studentId),
@@ -133,46 +101,38 @@ export const findStudentByIdForTeacher = async (teacherId, studentId) => {
 };
 
 // ===========================================================================
-// Writes & Updates (The Domain Mutation Core)
+// Writes & Updates (The Domain Mutation Core — Debug/Warn logs kept for logic tracking)
 // ===========================================================================
 
-/**
- * Accepts a fully-constructed User entity, checks for duplicates, then persists.
- */
 export const createUser = async (user) => {
-    // Backward compatibility check to ensure we are holding an entity
     const entity = user instanceof User ? user : User.create(user);
-    logger.debug('userRepo.createUser', { email: entity.email });
 
     const existing = await UserModel.findOne({ email: entity.email });
     if (existing) {
-        logger.warn('userRepo.createUser: email already exists', { email: entity.email });
+        // KEEP: Warn log protects against malicious/automated double sign-up collisions
+        logger.warn('userRepo.createUser: Registration conflict', { email: entity.email });
         throw new UserEmailAlreadyExistsError(entity.email);
     }
 
-    // Pass structured plain data from the external mapper straight to Mongoose
     const [doc] = await UserModel.create([toPersistence(entity)]);
-    logger.debug('userRepo.createUser: saved', { id: doc._id });
-    
     return toDomain(doc);
 };
 
-/**
- * Unified Functional Mutation Engine.
- * Loads the entity, lets the caller run private instance methods on it, 
- * then serializes and saves back the clean results.
- */
 export const updateUser = async (id, mutate) => {
     assertValidId(id);
-    logger.debug('userRepo.updateUser', { id });
 
-    // Load current entity state safely without password tracking overhead
     const user = await findUserById(id);
 
-    // Run the domain operations (e.g. u.verify(), u.updateProfile())
+    // Run custom, domain-driven operations inside functional hook
     mutate(user);
 
-    // Save the post-mutated entity across the mapper bridge
+    // KEEP: Useful debugging log to watch what properties are moving over to the DB
+    logger.debug('[repo.updateUser] Persisting domain mutation changes', { 
+        id, 
+        role: user.role, 
+        isVerified: user.isVerified 
+    });
+
     const doc = await UserModel.findByIdAndUpdate(
         id,
         { $set: toPersistence(user) },
@@ -180,54 +140,22 @@ export const updateUser = async (id, mutate) => {
     ).lean();
 
     if (!doc) throw new UserNotFoundError(id);
-    logger.debug('userRepo.updateUser: updated', { id });
-    
     return toDomain(doc);
 };
 
 // ---------------------------------------------------------------------------
-// Convenience Wrapper Callers (Orchestrated perfectly via updateUser)
+// Convenience Wrapper Callers
 // ---------------------------------------------------------------------------
-
-export const updateProfileInfo = async (id, fields) => {
-    return updateUser(id, (u) => u.updateProfile(fields));
-};
-
-export const updateAvatarUrl = async (id, avatarUrl) => {
-    return updateUser(id, (u) => u.setAvatarUrl(avatarUrl));
-};
-
-export const updateCoverUrl = async (id, coverUrl) => {
-    return updateUser(id, (u) => u.setCoverUrl(coverUrl));
-};
-
-export const promoteToAdmin = async (id) => {
-    return updateUser(id, (u) => u.promoteToAdmin());
-};
-
-export const demoteToStudent = async (id) => {
-    return updateUser(id, (u) => u.demoteToUser());
-};
-
-export const verifyUser = async (id) => {
-    return updateUser(id, (u) => u.verify());
-};
-
-export const deactivateUser = async (id) => {
-    return updateUser(id, (u) => u.deactivate());
-};
-
-export const reactivateUser = async (id) => {
-    return updateUser(id, (u) => u.reactivate());
-};
-
-export const assignTeacher = async (studentId, teacherId) => {
-    return updateUser(studentId, (u) => u.assignTeacher(teacherId));
-};
-
-export const changePassword = async (id, hashedPassword) => {
-    return updateUser(id, (u) => u.changePassword(hashedPassword));
-};
+export const updateProfileInfo = async (id, fields) => updateUser(id, (u) => u.updateProfile(fields));
+export const updateAvatarUrl   = async (id, avatarUrl) => updateUser(id, (u) => u.setAvatarUrl(avatarUrl));
+export const updateCoverUrl    = async (id, coverUrl) => updateUser(id, (u) => u.setCoverUrl(coverUrl));
+export const promoteToAdmin    = async (id) => updateUser(id, (u) => u.promoteToAdmin());
+export const demoteToStudent   = async (id) => updateUser(id, (u) => u.demoteToUser());
+export const verifyUser        = async (id) => updateUser(id, (u) => u.verify());
+export const deactivateUser    = async (id) => updateUser(id, (u) => u.deactivate());
+export const reactivateUser    = async (id) => updateUser(id, (u) => u.reactivate());
+export const assignTeacher     = async (studentId, teacherId) => updateUser(studentId, (u) => u.assignTeacher(teacherId));
+export const changePassword    = async (id, hashedPassword) => updateUser(id, (u) => u.changePassword(hashedPassword));
 
 // ===========================================================================
 // Atomic Sub-Document Array Management (Attachments)
@@ -235,8 +163,6 @@ export const changePassword = async (id, hashedPassword) => {
 
 export const addAttachment = async (id, attachment) => {
     assertValidId(id);
-    logger.debug('userRepo.addAttachment', { id, file: attachment.originalName });
-
     const doc = await UserModel.findByIdAndUpdate(
         id,
         { $push: { attachments: attachment } },
@@ -249,8 +175,6 @@ export const addAttachment = async (id, attachment) => {
 
 export const removeAttachment = async (userId, fileId) => {
     assertValidId(userId);
-    logger.debug('userRepo.removeAttachment', { userId, fileId });
-
     const doc = await UserModel.findByIdAndUpdate(
         userId,
         { $pull: { attachments: { _id: new mongoose.Types.ObjectId(fileId) } } },
@@ -263,24 +187,19 @@ export const removeAttachment = async (userId, fileId) => {
 
 export const getAttachments = async (userId) => {
     assertValidId(userId);
-    logger.debug('userRepo.getAttachments', { userId });
-
     const doc = await UserModel.findById(userId).select('attachments').lean();
     if (!doc) throw new UserNotFoundError(userId);
     return doc.attachments ?? [];
 };
 
 // ===========================================================================
-// Authentication Layer Coordination
+// Authentication Layer Coordination (Crucial Security Checkpoints)
 // ===========================================================================
 
 export const authenticateUser = async (email, password) => {
-    logger.debug('userRepo.authenticateUser', { email });
-
-    // Grab the database shape including the password hash explicitly
     const doc = await UserModel.findOne({ email: email.toLowerCase() }).lean();
     if (!doc) {
-        logger.warn('userRepo.authenticateUser: not found', { email });
+        logger.warn('userRepo.authenticateUser: Account not found', { email });
         throw new UserEmailNotFoundError(email);
     }
 
@@ -288,13 +207,11 @@ export const authenticateUser = async (email, password) => {
         if (!verifyPassword(password, doc.password)) throw new InvalidCredentialsError();
     } catch (err) {
         if (err instanceof InvalidCredentialsError) throw err;
-        logger.warn('userRepo.authenticateUser: verify error', { email, error: err.message });
+        // KEEP: Security log to track algorithmic failures or key injection attempts
+        logger.warn('userRepo.authenticateUser: Crypto validation failure', { email, error: err.message });
         throw new InvalidCredentialsError();
     }
 
-    logger.debug('userRepo.authenticateUser: valid', { email });
-    
-    // Returns a pure domain entity. Passwords never exit this function scope!
     return toDomain(doc);
 };
 
@@ -304,8 +221,6 @@ export const authenticateUser = async (email, password) => {
 
 export const setPasswordResetRequired = async (id) => {
     assertValidId(id);
-    logger.debug('userRepo.setPasswordResetRequired', { id });
-    
     const doc = await UserModel.findByIdAndUpdate(
         id,
         { $set: { mustResetPassword: true, updatedAt: new Date() } },
@@ -318,32 +233,26 @@ export const setPasswordResetRequired = async (id) => {
 
 export const updateLastLogin = async (id) => {
     assertValidId(id);
-    logger.debug('userRepo.updateLastLogin', { id });
-    await UserModel.findByIdAndUpdate(
-        id,
-        { $set: { lastLoginAt: new Date() } }
-    );
+    await UserModel.findByIdAndUpdate(id, { $set: { lastLoginAt: new Date() } });
 };
 
 export const deleteUser = async (id) => {
     assertValidId(id);
-    logger.debug('userRepo.deleteUser', { id });
-    
     const doc = await UserModel.findByIdAndDelete(id).lean();
     if (!doc) throw new UserNotFoundError(id);
-    
     return { deleted: true };
 };
 
 // ===========================================================================
-// Bulk Database Operations (Performance Multi-writes)
+// Bulk Database Operations (KEEP: Performance multi-writes logs)
 // ===========================================================================
 
 export const bulkDeleteUsers = async (ids = []) => {
     const invalid = ids.filter((id) => !mongoose.Types.ObjectId.isValid(id));
     if (invalid.length) throw new UserValidationError(`invalid id(s): ${invalid.join(', ')}`);
 
-    logger.debug('userRepo.bulkDeleteUsers', { count: ids.length });
+    // KEEP: Tracking bulk mutations ensures data losses can be audited via system logs
+    logger.debug('[repo.bulkDeleteUsers] Executing bulk deletion', { count: ids.length });
     const objectIds = ids.map((id) => new mongoose.Types.ObjectId(id));
     const { deletedCount } = await UserModel.deleteMany({ _id: { $in: objectIds } });
     
@@ -354,7 +263,7 @@ export const bulkDeactivateUsers = async (ids = []) => {
     const invalid = ids.filter((id) => !mongoose.Types.ObjectId.isValid(id));
     if (invalid.length) throw new UserValidationError('one or more invalid id formats');
 
-    logger.debug('userRepo.bulkDeactivateUsers', { count: ids.length });
+    logger.debug('[repo.bulkDeactivateUsers] Executing bulk deactivation', { count: ids.length });
     const objectIds = ids.map((id) => new mongoose.Types.ObjectId(id));
     
     const { modifiedCount } = await UserModel.updateMany(
@@ -370,7 +279,7 @@ export const bulkAssignTeacher = async (studentIds = [], teacherId) => {
     const invalid = studentIds.filter((id) => !mongoose.Types.ObjectId.isValid(id));
     if (invalid.length) throw new UserValidationError('one or more invalid student id formats');
 
-    logger.debug('userRepo.bulkAssignTeacher', { studentCount: studentIds.length, teacherId });
+    logger.debug('[repo.bulkAssignTeacher] Reassigning student workload tier', { studentCount: studentIds.length, teacherId });
     const objectIds    = studentIds.map((id) => new mongoose.Types.ObjectId(id));
     const teacherObjId = new mongoose.Types.ObjectId(teacherId);
 
@@ -387,8 +296,6 @@ export const bulkAssignTeacher = async (studentIds = [], teacherId) => {
 // ===========================================================================
 
 export const searchUsers = async ({ q, role, isActive, from, to, page = 1, limit = 20 } = {}) => {
-    logger.debug('userRepo.searchUsers', { q, role, isActive, from, to, page, limit });
-
     const query = {};
 
     if (q) {
@@ -428,7 +335,6 @@ export const searchUsers = async ({ q, role, isActive, from, to, page = 1, limit
 };
 
 export const getTeacherWorkloads = async () => {
-    logger.debug('userRepo.getTeacherWorkloads');
     const rows = await UserModel.aggregate([
         { $match: { role: UserRole.TEACHER } },
         {
@@ -460,7 +366,6 @@ export const getTeacherWorkloads = async () => {
 
 export const getTeacherDashboardStats = async (teacherId) => {
     assertValidId(teacherId, 'teacherId');
-    logger.debug('userRepo.getTeacherDashboardStats', { teacherId });
 
     const teacherObjId  = new mongoose.Types.ObjectId(teacherId);
     const now           = new Date();
@@ -529,7 +434,6 @@ export const getTeacherDashboardStats = async (teacherId) => {
 
 export const getUserActivitySummary = async (id) => {
     assertValidId(id);
-    logger.debug('userRepo.getUserActivitySummary', { id });
     const objectId = new mongoose.Types.ObjectId(id);
 
     const [row] = await UserModel.aggregate([
@@ -587,7 +491,6 @@ export const getUserActivitySummary = async (id) => {
     };
 };
 
-// Aliases kept explicitly for backwards compatibility with legacy routes/use cases
 export const findById    = findUserById;
 export const findByEmail = findUserByEmail;
 export const create      = createUser;

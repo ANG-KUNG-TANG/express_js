@@ -1,78 +1,74 @@
 import { createUserUsecase } from "../../app/user_uc/create_user.uc.js";
-import { getUseByIdUc, getUserByEamilUc } from "../../app/user_uc/get_user.uc.js";
-import { updateUserUseCase } from "../../app/user_uc/update_use.uc.js";
+import { getUserByIdUc, getUserByEmailUc } from "../../app/user_uc/get_user.uc.js";
+import { updateUserUseCase } from "../../app/user_uc/update_user.uc.js";
 import { deleteUserUc } from "../../app/user_uc/delete_user.uc.js";
 import { promoteUserToAdminUseCase } from "../../app/user_uc/promote_user.uc.js";
+import { listAllUsersUseCase } from "../../app/user_uc/list_user.uc.js";
 import { sendSuccess } from '../response_formatter.js';
 import { HTTP_STATUS } from '../http_status.js';
 import { sanitizeCreateInput, sanitizeUpdateInput } from "../input_sanitizers/user.input_sanitizer.js";
-import { listAllUsersUseCase } from "../../app/user_uc/list_user.uc.js";
 import logger from '../../core/logger/logger.js';
 import { recordAudit } from '../../core/services/audit.service.js';
 import { AuditAction } from '../../domain/base/audit_enums.js';
 
-// FIX: removed stale imports for UserModel, sanitizeUser, and error classes that were only
-// needed by the misplaced repo functions below — keeping them would hide future dead-import lint warnings.
+/**
+ * Higher-Order Function to catch async unhandled promise rejections.
+ * Bypasses the need for repetitive try/catch blocks across every method,
+ * safely piping errors downward into your global error middleware.
+ */
+const catchAsync = (fn) => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
 
-// const REFRESH_COOKIE_OPTIONS = {
-//     httpOnly: true,
-//     secure:   process.env.NODE_ENV === 'production',
-//     sameSite: 'strict',
-//     maxAge:   7 * 24 * 60 * 60 * 1000,
-// };
-
-// ---------------------------------------------------------------------------
-// Create user  (POST /users)
-// ---------------------------------------------------------------------------
-
-export const createUser = async (req, res) => {
+// ===========================================================================
+// Create User (POST /users)
+// ===========================================================================
+export const createUser = catchAsync(async (req, res) => {
     const input = sanitizeCreateInput(req.body);
 
     logger.debug('user.createUser called', { requestId: req.id, email: input.email });
 
     const user = await createUserUsecase(input);
 
-    recordAudit(AuditAction.USER_CREATED, user.id ?? user._id, {
-        email: user.email ?? user._email,
-        role:  user.role  ?? user._role,
+    recordAudit(AuditAction.USER_CREATED, user.id, {
+        email: user.email,
+        role:  user.role,
     }, req);
 
     return sendSuccess(res, user, HTTP_STATUS.CREATED);
-};
+});
 
-// ---------------------------------------------------------------------------
-// Get user by ID  (GET /users/:id)
-// ---------------------------------------------------------------------------
-
-export const getUserById = async (req, res) => {
+// ===========================================================================
+// Get User By ID (GET /users/:id)
+// ===========================================================================
+export const getUserById = catchAsync(async (req, res) => {
     const { id } = req.params;
 
     logger.debug('user.getUserById called', { requestId: req.id, targetUserId: id });
 
-    const user = await getUseByIdUc(id);
+    // Hits your lightning-fast Redis Cache-Aside pattern
+    const user = await getUserByIdUc(id);
 
     return sendSuccess(res, user, HTTP_STATUS.OK);
-};
+});
 
-// ---------------------------------------------------------------------------
-// Get user by email  (GET /users/email/:email)
-// ---------------------------------------------------------------------------
-
-export const getUserByEamil = async (req, res) => {
+// ===========================================================================
+// Get User By Email (GET /users/email/:email)
+// ===========================================================================
+export const getUserByEamil = catchAsync(async (req, res) => {
     const { email } = req.params;
 
     logger.debug('user.getUserByEmail called', { requestId: req.id, email });
 
-    const user = await getUserByEamilUc(email);
+    const user = await getUserByEmailUc(email);
 
     return sendSuccess(res, user, HTTP_STATUS.OK);
-};
+});
 
-// ---------------------------------------------------------------------------
-// List all users  (GET /users)
-// ---------------------------------------------------------------------------
-
-export const listUsers = async (req, res) => {
+// ===========================================================================
+// List All Users (GET /users)
+// ===========================================================================
+export const listUsers = catchAsync(async (req, res) => {
     logger.debug('user.listUsers called', { requestId: req.id });
 
     const users = await listAllUsersUseCase();
@@ -80,18 +76,18 @@ export const listUsers = async (req, res) => {
     logger.debug('user.listUsers: returned results', { requestId: req.id, count: users.length });
 
     return sendSuccess(res, users, HTTP_STATUS.OK);
-};
+});
 
-// ---------------------------------------------------------------------------
-// Update user  (PATCH /users/:id)
-// ---------------------------------------------------------------------------
-
-export const updateUser = async (req, res) => {
+// ===========================================================================
+// Update User (PATCH /users/:id)
+// ===========================================================================
+export const updateUser = catchAsync(async (req, res) => {
     const { id } = req.params;
     const updates = sanitizeUpdateInput(req.body);
 
     logger.debug('user.updateUser called', { requestId: req.id, targetUserId: id, fields: Object.keys(updates) });
 
+    // Mutates database and auto-invalidates associated Redis cache layers
     const user = await updateUserUseCase(id, updates);
 
     recordAudit(AuditAction.USER_UPDATED, req.user?.id ?? null, {
@@ -100,20 +96,12 @@ export const updateUser = async (req, res) => {
     }, req);
 
     return sendSuccess(res, user, HTTP_STATUS.OK);
-};
+});
 
-// ---------------------------------------------------------------------------
-// Delete user  (DELETE /users/:id)
-// ---------------------------------------------------------------------------
-
-// FIX: removed updateProfileInfo, updateAvatarUrl, updateCoverUrl, addAttachemet,
-// getAttachments, and authenticateUser — these are repository-layer functions that
-// were copy-pasted here by mistake. They referenced `mongoose` and `toDomain` without
-// importing either (guaranteed ReferenceError at runtime), and authenticateUser used
-// plain string equality for password comparison instead of hashed verification
-// (security vulnerability). All correct implementations live in user_repo.js.
-
-export const deleteUser = async (req, res) => {
+// ===========================================================================
+// Delete User (DELETE /users/:id)
+// ===========================================================================
+export const deleteUser = catchAsync(async (req, res) => {
     const { id } = req.params;
 
     logger.debug('user.deleteUser called', { requestId: req.id, targetUserId: id });
@@ -123,13 +111,12 @@ export const deleteUser = async (req, res) => {
     recordAudit(AuditAction.USER_DELETED_GENERAL, req.user?.id ?? null, { targetUserId: id }, req);
 
     return sendSuccess(res, result, HTTP_STATUS.OK);
-};
+});
 
-// ---------------------------------------------------------------------------
-// Promote user to admin  (PATCH /users/:id/promote)
-// ---------------------------------------------------------------------------
-
-export const promoteUser = async (req, res) => {
+// ===========================================================================
+// Promote User To Admin (PATCH /users/:id/promote)
+// ===========================================================================
+export const promoteUser = catchAsync(async (req, res) => {
     const { id } = req.params;
 
     logger.debug('user.promoteUser called', { requestId: req.id, targetUserId: id });
@@ -139,4 +126,4 @@ export const promoteUser = async (req, res) => {
     recordAudit(AuditAction.USER_PROMOTED_TO_ADMIN, req.user?.id ?? null, { targetUserId: id }, req);
 
     return sendSuccess(res, user, HTTP_STATUS.OK);
-};
+});

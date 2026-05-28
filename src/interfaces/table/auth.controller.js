@@ -1,5 +1,3 @@
-// interfaces/table/auth.controller.js
-
 import passport                                    from 'passport';
 import crypto                                      from 'crypto';
 import { UniqueId }                                from '../../domain/base/id_generator.js';
@@ -12,6 +10,7 @@ import { recordAudit }                             from '../../core/services/aud
 import { AuditAction }                             from '../../domain/base/audit_enums.js';
 import { authenticateUserUseCase }                 from '../../app/user_uc/auth_user.uc.js';
 import { createUserUsecase }                       from '../../app/user_uc/create_user.uc.js';
+import { verifyEmailUc }                           from '../../app/user_uc/verify_email.uc.js'; // Added missing use case import
 import * as authService                            from '../../core/services/auth.service.js';
 import { passwordResetTokenRepo as tokenRepo }     from '../../infrastructure/repositories/password_reset_token_repo.js';
 import * as userRepo                               from '../../infrastructure/repositories/user_repo.js';
@@ -19,10 +18,18 @@ import { emailService }                            from '../../core/services/ema
 import { BadRequestError }                         from '../../core/errors/base.errors.js';
 import { EMAIL_VERIFY_TTL_MS }                     from '../../domain/base/token_ttl.js';
 
-// ---------------------------------------------------------------------------
-// Login  (POST /auth/login)
-// ---------------------------------------------------------------------------
-export const loginUser = async (req, res) => {
+/**
+ * Higher-Order Function to pass asynchronous runtime errors down 
+ * safely into your global Express error-handling middleware.
+ */
+const catchAsync = (fn) => (req, res, next) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+// ===========================================================================
+// Login (POST /auth/login)
+// ===========================================================================
+export const loginUser = catchAsync(async (req, res) => {
     const input = sanitizeAuthInput(req.body);
     logger.debug('auth.loginUser called', { requestId: req.id, email: input.email });
 
@@ -32,63 +39,54 @@ export const loginUser = async (req, res) => {
     return sendSuccess(res, {
         token: accessToken,
         user: {
-            id:    user.id    ?? user._id,
-            email: user.email ?? user._email,
-            role:  user.role  ?? user._role,
-            name:  user.name  ?? user._name,
+            id:    user.id,
+            email: user.email,
+            role:  user.role,
+            name:  user.name,
         },
     }, HTTP_STATUS.OK);
-};
+});
 
-// ---------------------------------------------------------------------------
-// Register  (POST /auth/register)
-// ---------------------------------------------------------------------------
-export const registerUser = async (req, res) => {
+// ===========================================================================
+// Register (POST /auth/register)
+// ===========================================================================
+export const registerUser = catchAsync(async (req, res) => {
     const input = sanitizeCreateInput(req.body);
     logger.debug('auth.registerUser called', { requestId: req.id, email: input.email });
 
     const user = await createUserUsecase(input);
-    const { accessToken } = await authService.createSession(res, user);
+    const { accessToken } = await authService.createSession(res, user, req);
 
-    recordAudit(AuditAction.USER_CREATED, user.id ?? user._id, {
-        email: user.email ?? user._email,
-        role:  user.role  ?? user._role,
+    recordAudit(AuditAction.USER_CREATED, user.id, {
+        email: user.email,
+        role:  user.role,
     }, req);
 
     return sendSuccess(res, {
         token:   accessToken,
         message: 'Account created. Please check your email to verify your address before logging in.',
     }, HTTP_STATUS.CREATED);
-};
+});
 
-// ---------------------------------------------------------------------------
-// Verify email  (GET /auth/verify-email?token=...)
-// ---------------------------------------------------------------------------
-export const verifyEmail = async (req, res) => {
+// ===========================================================================
+// Verify Email (GET /auth/verify-email?token=...)
+// ===========================================================================
+export const verifyEmail = catchAsync(async (req, res) => {
     const { token } = req.query;
     if (!token) throw new BadRequestError('Verification token is required.');
 
-    // findByToken hashes the raw token internally before querying —
-    // we never store or compare raw tokens directly
-    const record = await tokenRepo.findByToken(token);
-    if (!record) throw new BadRequestError('This verification link is invalid or has already been used.');
+    logger.debug('auth.verifyEmail initiating verification worker', { requestId: req.id });
 
-    // assertValid() throws PasswordResetTokenExpiredError if past expiresAt
-    // or PasswordResetTokenAlreadyUsedError if already used
-    record.assertValid();
-
-    await userRepo.updateUser(record.userId, { isVerified: true });
-    await tokenRepo.deleteById(record.id);
-
-    logger.debug('auth.verifyEmail: email verified', { requestId: req.id, userId: record.userId });
+    // FIX: Completely offloaded db/cache manipulation down into your optimized Redis verify usecase
+    await verifyEmailUc(token);
 
     return sendSuccess(res, { message: 'Email verified. You can now log in.' }, HTTP_STATUS.OK);
-};
+});
 
-// ---------------------------------------------------------------------------
-// Resend verification  (POST /auth/resend-verification)
-// ---------------------------------------------------------------------------
-export const resendVerification = async (req, res) => {
+// ===========================================================================
+// Resend Verification (POST /auth/resend-verification)
+// ===========================================================================
+export const resendVerification = catchAsync(async (req, res) => {
     const { email } = req.body;
     if (!email) throw new BadRequestError('Email is required.');
 
@@ -96,11 +94,11 @@ export const resendVerification = async (req, res) => {
         message: 'If that email is registered and unverified, a new link has been sent.',
     };
 
-    // Always return 200 — never reveal whether the email exists
     let user = null;
     try {
         user = await userRepo.findByEmail(email.toLowerCase());
     } catch {
+        // Enforce strong security alignment: never leak if an account exists or not
         return sendSuccess(res, SAFE_RESPONSE, HTTP_STATUS.OK);
     }
 
@@ -108,17 +106,15 @@ export const resendVerification = async (req, res) => {
         return sendSuccess(res, SAFE_RESPONSE, HTTP_STATUS.OK);
     }
 
-    // Delete all existing verification tokens for this user before issuing a new one
-    await tokenRepo.deleteByUserId(user.id ?? user._id);
+    await tokenRepo.deleteByUserId(user.id);
 
-    // Hash before storing — raw token goes in the email link only
     const rawToken  = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
     const expiresAt = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
 
     const tokenEntity = new PasswordResetToken({
         id:        new UniqueId().generator(),
-        userId:    user.id ?? user._id,
+        userId:    user.id,
         tokenHash,
         expiresAt,
         used:      false,
@@ -127,28 +123,28 @@ export const resendVerification = async (req, res) => {
     await tokenRepo.create(tokenEntity);
 
     emailService.sendVerificationEmail({
-        toEmail:  user.email ?? user._email,
-        userName: user.name  ?? user._name,
+        toEmail:  user.email,
+        userName: user.name,
         rawToken,
     }).catch((err) => {
         logger.error('auth.resendVerification: email send failed', { err: err.message });
     });
 
     return sendSuccess(res, SAFE_RESPONSE, HTTP_STATUS.OK);
-};
+});
 
-// ---------------------------------------------------------------------------
-// OAuth initiators
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// OAuth Initiators (Passed synchronously down to passport engines)
+// ===========================================================================
 export const googleAuth = (req, res, next) =>
     passport.authenticate('google', { scope: ['profile', 'email'], session: false })(req, res, next);
 
 export const githubAuth = (req, res, next) =>
     passport.authenticate('github', { scope: ['user:email'], session: false })(req, res, next);
 
-// ---------------------------------------------------------------------------
-// OAuth callbacks  (GET /auth/google/callback  |  GET /auth/github/callback)
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// OAuth Callbacks
+// ===========================================================================
 const oauthCallback = (provider) => [
     (req, res, next) =>
         passport.authenticate(provider, {
@@ -156,13 +152,13 @@ const oauthCallback = (provider) => [
             failureRedirect: '/pages/auth/auth_fail.html?message=Authentication+failed',
         })(req, res, next),
 
-    async (req, res) => {
+    catchAsync(async (req, res) => {
         const user = req.user;
 
         if (!user.isVerified) {
             logger.debug(`auth.oauthCallback: new ${provider} user, awaiting verification`, {
                 requestId: req.id,
-                userId:    user.id ?? user._id,
+                userId:    user.id,
             });
             return res.redirect('/pages/auth/auth_success.html?pending=verify');
         }
@@ -171,29 +167,29 @@ const oauthCallback = (provider) => [
 
         logger.debug(`auth.oauthCallback: ${provider} login successful`, {
             requestId: req.id,
-            userId:    user.id ?? user._id,
+            userId:    user.id,
             provider,
         });
 
         const safeUser = {
-            id:    user.id    ?? user._id,
-            email: user.email ?? user._email,
-            role:  user.role  ?? user._role,
-            name:  user.name  ?? user._name,
+            id:    user.id,
+            email: user.email,
+            role:  user.role,
+            name:  user.name,
         };
 
         const userBase64 = Buffer.from(JSON.stringify(safeUser)).toString('base64');
         return res.redirect(`/pages/auth/auth_success.html?token=${accessToken}&user=${userBase64}`);
-    },
+    }),
 ];
 
 export const googleCallback = oauthCallback('google');
 export const githubCallback = oauthCallback('github');
 
-// ---------------------------------------------------------------------------
-// Refresh  (POST /auth/refresh)
-// ---------------------------------------------------------------------------
-export const refreshTokens = async (req, res) => {
+// ===========================================================================
+// Refresh Tokens (POST /auth/refresh)
+// ===========================================================================
+export const refreshTokens = catchAsync(async (req, res) => {
     try {
         const { accessToken } = await authService.rotateSession(req, res);
         return sendSuccess(res, { accessToken }, HTTP_STATUS.OK);
@@ -206,23 +202,23 @@ export const refreshTokens = async (req, res) => {
             case 'REUSE_DETECTED':
                 return res.status(HTTP_STATUS.UNAUTHORIZED).json({ success: false, message: 'Refresh token reuse detected' });
             default:
-                logger.error('auth.refreshTokens: unexpected error', { requestId: req.id, error: err });
+                logger.error('auth.refreshTokens: unexpected error', { requestId: req.id, error: err.message });
                 return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Internal server error' });
         }
     }
-};
+});
 
-// ---------------------------------------------------------------------------
-// Logout  (POST /auth/logout)
-// ---------------------------------------------------------------------------
-export const logout = async (req, res) => {
+// ===========================================================================
+// Logout (POST /auth/logout)
+// ===========================================================================
+export const logout = catchAsync(async (req, res) => {
     await authService.revokeSession(req, res);
     return sendSuccess(res, { message: 'Logged out successfully' }, HTTP_STATUS.OK);
-};
+});
 
-// ---------------------------------------------------------------------------
-// Failure fallback  (GET /auth/failure)
-// ---------------------------------------------------------------------------
+// ===========================================================================
+// Failure Fallback
+// ===========================================================================
 export const authFailure = (req, res) => {
     logger.warn('auth.authFailure: OAuth authentication failed', { requestId: req.id });
     return res.redirect('/pages/auth/auth_fail.html?message=OAuth+authentication+failed');
