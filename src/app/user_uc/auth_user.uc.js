@@ -1,10 +1,9 @@
+import * as userRepo from '../../infrastructure/repositories/user_repo.js';
 import { InvalidCredentialsError, EmailNotVerifiedError, AccountSuspendedError } from '../../core/errors/user.errors.js';
-import { verifyPassword }              from '../validators/password_hash.js';
 import { validateRequired, validateEmail } from '../validators/user_validator.js';
-import { findUserByEmailWithPassword } from '../../infrastructure/repositories/user_repo.js';
-import { sanitizeUser }                from '../../infrastructure/mapper/user.mapper.js';
-import { recordAudit, recordFailure }  from '../../core/services/audit.service.js';
-import { AuditAction }                 from '../../domain/base/audit_enums.js';
+import { toResponseDTO } from '../../infrastructure/mappers/user_mapper.js';
+import { recordAudit, recordFailure } from '../../core/services/audit.service.js';
+import { AuditAction } from '../../domain/base/audit_enums.js';
 
 const validateAuthInput = ({ email, password }) => {
     validateRequired(email, 'email');
@@ -12,61 +11,62 @@ const validateAuthInput = ({ email, password }) => {
     validateRequired(password, 'password');
 };
 
-// req is passed in from the controller so the audit log captures IP + userAgent
+/**
+ * authenticateUserUseCase — Orchestrates user sign-in validation and account guard status checks.
+ */
 export const authenticateUserUseCase = async ({ email, password }, req = null) => {
+    // 1. Guard input boundary conditions
     validateAuthInput({ email, password });
+    const normalizedEmail = email.toLowerCase().trim();
 
-    const normalizedEmail = email.toLowerCase();
-
-    // Catch UserEmailNotFoundError and convert to InvalidCredentialsError to
-    // prevent email enumeration — caller can't tell if the email doesn't exist
-    // or the password was wrong.
-    let user;
+    let userEntity;
     try {
-        user = await findUserByEmailWithPassword(normalizedEmail);
-    } catch {
+        // Leverages your existing repo-layer verification strategy.
+        // Catches any internal lookup or crypto failures and standardizes them.
+        userEntity = await userRepo.authenticateUser(normalizedEmail, password);
+    } catch (err) {
+        // Defends against account enumeration attacks
         recordFailure(AuditAction.AUTH_LOGIN, null, {
-            email:  normalizedEmail,
-            reason: 'email not found',
+            email: normalizedEmail,
+            reason: 'invalid credentials context',
         }, req);
         throw new InvalidCredentialsError();
     }
 
-    // 1. Credential check
-    const passwordValid = await verifyPassword(password, user._password ?? user.password);
-    if (!passwordValid) {
-        recordFailure(AuditAction.AUTH_LOGIN, user._id ?? user.id, {
-            email:  normalizedEmail,
-            reason: 'invalid password',
-        }, req);
-        throw new InvalidCredentialsError();
-    }
-
-    // 2. Email verified check — admins are exempt
-    const isAdmin = (user.role ?? user._role) === 'admin';
-    if (!isAdmin && !user.isVerified) {
-        recordFailure(AuditAction.AUTH_LOGIN, user._id ?? user.id, {
-            email:  normalizedEmail,
+    // 2. State-Based Business Rule Guards (Checked safely via clean Entity properties)
+    
+    // Exception: Admins are exempt from email verification checks
+    const isAdmin = userEntity.role === 'ADMIN'; 
+    if (!isAdmin && !userEntity.isVerified) {
+        recordFailure(AuditAction.AUTH_LOGIN, userEntity.id, {
+            email: normalizedEmail,
             reason: 'email not verified',
         }, req);
         throw new EmailNotVerifiedError();
     }
 
-    // 3. Account active check
-    if (!user.isActive) {
-        recordFailure(AuditAction.AUTH_LOGIN, user._id ?? user.id, {
-            email:  normalizedEmail,
+    // Check account freeze status
+    if (!userEntity.isActive) {
+        recordFailure(AuditAction.AUTH_LOGIN, userEntity.id, {
+            email: normalizedEmail,
             reason: 'account suspended',
         }, req);
         throw new AccountSuspendedError();
     }
 
-    const sanitized = sanitizeUser(user);
+    // 3. Document login timestamp to DB asynchronously (Non-blocking)
+    userRepo.updateLastLogin(userEntity.id).catch((err) => 
+        console.error(`[authUseCase] Failed to log login time for user ${userEntity.id}:`, err.message)
+    );
 
-    recordAudit(AuditAction.AUTH_LOGIN, sanitized.id ?? sanitized._id, {
-        email: sanitized.email ?? sanitized._email,
-        role:  sanitized.role  ?? sanitized._role,
+    // 4. Map to clear, predictable presentation DTO contract
+    const userDTO = toResponseDTO(userEntity);
+
+    // 5. Commit audit and return sanitized object
+    recordAudit(AuditAction.AUTH_LOGIN, userDTO.id, {
+        email: userDTO.email,
+        role:  userDTO.role,
     }, req);
 
-    return sanitized;
+    return userDTO;
 };

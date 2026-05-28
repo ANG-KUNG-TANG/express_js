@@ -1,48 +1,58 @@
-import { findUserById, updateUser } from '../../infrastructure/repositories/user_repo.js';
+import * as userRepo from '../../infrastructure/repositories/user_repo.js';
 import { UserValidationError } from '../../core/errors/user.errors.js';
-import { hashPassword } from '../validators/password_hash.js';  
-import {
-    validateRequired,
-    validateStringLength,
-    validateEmail,
-    validatePassword,
-    validateRole,
-} from '../validators/user_validator.js';
+import { hashPassword } from '../../domain/validators/password_hash.js';  
+import { validateRequired, validatePasswordStrength } from '../../domain/validators/user_validator.js';
+import { redisDel, CacheKeys } from '../../core/services/redis.service.js';
+import { toResponseDTO } from '../../infrastructure/mappers/user_mapper.js';
 
-const NAME_MIN = 3;
-const NAME_MAX = 100;
 const PASSWORD_MIN = 8;
 const ALLOWED_FIELDS = ['name', 'email', 'password', 'role'];
 
-const sanitizeUpdates = (updates) =>
-    Object.fromEntries(Object.entries(updates).filter(([key]) => ALLOWED_FIELDS.includes(key)));
-
-const validateUpdateInput = (updates) => {
-    if (Object.keys(updates).length === 0) throw new UserValidationError('No valid fields provided to update');
-    if (updates.name !== undefined) {
-        validateRequired(updates.name, 'name');
-        validateStringLength(updates.name, 'name', NAME_MIN, NAME_MAX);
-    }
-    if (updates.email !== undefined) {
-        validateRequired(updates.email, 'email');
-        validateEmail(updates.email);
-    }
-    if (updates.password !== undefined) validatePassword(updates.password, PASSWORD_MIN);
-    if (updates.role !== undefined) validateRole(updates.role);
+const sanitizeUpdates = (updates) => {
+    if (!updates || typeof updates !== 'object') return {};
+    return Object.fromEntries(
+        Object.entries(updates).filter(([key]) => ALLOWED_FIELDS.includes(key))
+    );
 };
 
+/**
+ * updateUserUseCase — Updates user properties in DB and cleanly clears matching Redis caches.
+ */
 export const updateUserUseCase = async (id, updates) => {
     validateRequired(id, 'id');
     const sanitized = sanitizeUpdates(updates);
-    validateUpdateInput(sanitized);
 
-    const user = await findUserById(id);
+    if (Object.keys(sanitized).length === 0) {
+        throw new UserValidationError('No valid fields provided to update');
+    }
 
-    if (sanitized.name !== undefined) user._name = sanitized.name.trim();
-    if (sanitized.email !== undefined) user._email = sanitized.email.toLowerCase();
-    if (sanitized.password !== undefined) user._password = hashPassword(sanitized.password);
-    if (sanitized.role !== undefined) user._role = sanitized.role;
-    user._updatedAt = new Date();
+    if (sanitized.password !== undefined) {
+        validatePasswordStrength(sanitized.password, PASSWORD_MIN);
+        sanitized.password = await hashPassword(sanitized.password);
+    }
 
-    return await updateUser(id, user);
+    // 1. Fetch current domain details before write to catch key associations (like old email string)
+    const oldUserEntity = await userRepo.findUserById(id);
+    const oldEmailKey = CacheKeys.userByEmail(oldUserEntity.email);
+
+    // 2. Execute functional DB mutation state switch
+    const updatedEntity = await userRepo.updateUser(id, (user) => {
+        if (sanitized.name !== undefined)     user.updateProfile({ name: sanitized.name });
+        if (sanitized.password !== undefined) user.changePassword(sanitized.password);
+        if (sanitized.email !== undefined)    user.updateProfile({ name: user.name, email: sanitized.email });
+        
+        if (sanitized.role !== undefined) {
+            if (sanitized.role === 'ADMIN') user.promoteToAdmin();
+            else user.demoteToUser();
+        }
+    });
+
+    // 3. ⚡ CACHE INVALIDATION ⚡
+    // Wipe old keys out of Redis completely. The next read use case will trigger a fresh cache populate.
+    const primaryProfileKey = CacheKeys.userDetail(id);
+    const newEmailKey = CacheKeys.userByEmail(updatedEntity.email);
+
+    await redisDel(primaryProfileKey, oldEmailKey, newEmailKey);
+
+    return toResponseDTO(updatedEntity);
 };
