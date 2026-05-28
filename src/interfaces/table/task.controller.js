@@ -216,3 +216,25 @@ export const aiCheckTaskController = async (req, res, next) => {
         next(err);
     }
 };
+
+export const aiCheckTaskController = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const userId = getUserId(req);
+
+        logger.debug('writingTask.aiCheck called', { requestId: req.id, taskId: id, userId });
+
+        const task = await evaluateWritingUC(id, userId);
+
+        recordAudit(
+            AuditAction.TASK_AI_EVALUATED,
+            userId,
+            { taskId: id, bandScore: task.aiEvaluation?.bandScore }, // Use public getter
+            req
+        );
+
+        return sendSuccess(res, task, HTTP_STATUS.OK);
+    } catch (err) {
+        next(err);
+    }
+};

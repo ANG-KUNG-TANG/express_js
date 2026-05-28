@@ -2,6 +2,7 @@ import { Router }       from 'express';
 import { asyncHandler } from '../async_handler.js';
 import { authenticate, authorizeAdmin } from '../../middleware/authenticate.middelware.js';
 import { requireRole }  from '../../middleware/role.middleware.js';
+import {aiEvaluationRateLimit} from '../../middleware/rate_limit.middleware.js';
 import {
     createWritingTaskController,
     getWritingTaskByIdController,
@@ -18,6 +19,7 @@ import {
     respondAssignmentController,
     aiCheckTaskController,              
 } from '../table/task.controller.js';
+
 
 const router = Router();
 
@@ -50,6 +52,7 @@ router.delete('/:id',          asyncHandler(deleteWritingTaskController));
 // Does NOT affect teacher's bandScore or feedback.
 router.post('/:id/ai-check',
     requireRole('user', 'student'),
+    aiEvaluationRateLimit,           
     asyncHandler(aiCheckTaskController),
 );
 
@@ -60,5 +63,6 @@ router.post('/:taskId/respond-assignment',
     requireRole('user', 'student'),
     asyncHandler(respondAssignmentController),
 );
+
 
 export default router;
