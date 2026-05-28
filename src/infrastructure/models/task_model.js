@@ -1,10 +1,6 @@
-// src/infrastructure/models/task_model.js
-
 import mongoose from 'mongoose';
 import { WritingStatus, TaskType, ExamType } from "../../domain/base/task_enums.js";
 import { TaskSource, AssignmentStatus }      from "../../domain/base/task_enums.js";
-
-// ── AI evaluation subdocument schemas ─────────────────────────────────────────
 
 const criterionSchema = new mongoose.Schema(
     {
@@ -28,11 +24,8 @@ const aiEvaluationSchema = new mongoose.Schema(
     { _id: false }
 );
 
-// ── Main schema ───────────────────────────────────────────────────────────────
-
 const WritingTaskSchema = new mongoose.Schema(
     {
-        // ── Core fields ───────────────────────────────────────────────────────
         title: {
             type:      String,
             required:  true,
@@ -52,13 +45,13 @@ const WritingTaskSchema = new mongoose.Schema(
             default: WritingStatus.ASSIGNED,
         },
         taskType: {
-            type:     String,
-            enum:     Object.values(TaskType),
+            type:    String,
+            enum:    Object.values(TaskType),
             required: true,
         },
         examType: {
-            type:     String,
-            enum:     Object.values(ExamType),
+            type:    String,
+            enum:    Object.values(ExamType),
             required: true,
         },
         questionPrompt: {
@@ -98,8 +91,6 @@ const WritingTaskSchema = new mongoose.Schema(
             ref:      'User',
             required: true,
         },
-
-        // ── Assignment fields ─────────────────────────────────────────────────
         source: {
             type:    String,
             enum:    Object.values(TaskSource),
@@ -136,9 +127,6 @@ const WritingTaskSchema = new mongoose.Schema(
             type:    Date,
             default: null,
         },
-
-        // ── AI evaluation ─────────────────────────────────────────────────────
-        // Stored alongside teacher's bandScore/feedback — never overwrites them.
         aiEvaluation: {
             type:    aiEvaluationSchema,
             default: null,
@@ -150,8 +138,7 @@ const WritingTaskSchema = new mongoose.Schema(
     }
 );
 
-// ── Indexes ───────────────────────────────────────────────────────────────────
-
+// ── Compound Indexes for Fast Workflows ───────────────────────────────────────
 WritingTaskSchema.index({ userId: 1, taskType: 1 });
 WritingTaskSchema.index({ assignedBy: 1, createdAt: -1 });
 WritingTaskSchema.index({ assignedTo: 1, createdAt: -1 });
