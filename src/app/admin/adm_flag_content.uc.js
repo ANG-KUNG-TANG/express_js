@@ -1,31 +1,20 @@
-// src/app/admin/adm_flag_content.uc.js
-import { findTaskByID } from '../../infrastructure/repositories/task_repo.js';
-import { createFlag }   from '../../infrastructure/repositories/content_flag_repo.js';
-import logger           from '../../core/logger/logger.js';
+import * as contentFlagService from '../../core/services/user_service.js';
+import * as taskService from '../../core/services/task_service.js';
+import logger from '../../core/logger/logger.js';
 
-/**
- * Admin flags a student submission.
- *
- * @param {string}                   adminId   — the admin's userId (from JWT)
- * @param {string}                   taskId    — task being flagged
- * @param {string}                   reason    — explanation
- * @param {'low'|'medium'|'high'}    severity
- * @returns {Promise<ContentFlag>}
- */
 export const admFlagContentUC = async (adminId, taskId, reason, severity = 'medium') => {
-    logger.debug('admFlagContentUC', { adminId, taskId, severity });
+    logger.debug('admFlagContentUC: initiating', { adminId, taskId, severity });
 
-    // Verify the task exists before flagging it — throws TaskNotFoundError if missing
-    const task = await findTaskByID(taskId);
+    // 1. Verify existence via Service (Handles Cache)
+    const task = await taskService.getTaskById(taskId);
 
-    const flag = await createFlag({
+    // 2. Delegate creation to Service (Handles Repo + Audit)
+    return await contentFlagService.createFlag(adminId, {
         taskId,
-        taskTitle: task.title ?? null,   // use public getter, not private _title
-        flaggedBy: adminId,
+        taskTitle: task.title,
         reason,
         severity,
     });
-
-    logger.debug('admFlagContentUC: flag created', { flagId: flag.id });
-    return flag;
 };
+
+

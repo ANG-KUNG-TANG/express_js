@@ -1,37 +1,22 @@
-import { findTaskByID } from '../../infrastructure/repositories/task_repo.js';
+// src/app/teacher_uc/teacher_get_task.uc.js
+import * as teacherService from '../../core/services/teacher_service.js';
 import { TaskOwnershipError } from '../../core/errors/task.errors.js';
-import { TaskSource } from '../../domain/base/task_enums.js';
+import { WritingStatus, TaskSource } from '../../domain/base/task_enums.js';
 import logger from '../../core/logger/logger.js';
 
-// Statuses a teacher can access for tasks they ASSIGNED (full lifecycle)
-const ASSIGNED_ALLOWED_STATUSES = ['ASSIGNED', 'WRITING', 'SUBMITTED', 'REVIEWED', 'SCORED'];
+const ASSIGNED_ALLOWED = ['ASSIGNED', 'WRITING', 'SUBMITTED', 'REVIEWED', 'SCORED'];
+const POOL_ALLOWED     = ['SUBMITTED', 'REVIEWED'];
 
-// Statuses a teacher can access for tasks they DID NOT assign (admin review pool)
-const POOL_ALLOWED_STATUSES = ['SUBMITTED', 'REVIEWED'];
-
-/**
- * Fetch a single task for a teacher.
- *
- * - Assigned tasks (task._assignedBy set): teacher sees the full lifecycle
- *   so they can track progress from ASSIGNED → SCORED.
- * - Pool tasks (self-created by student): original behaviour — only SUBMITTED/REVIEWED.
- */
 export const teacherGetTaskUC = async (taskId) => {
     logger.debug('teacherGetTaskUC', { taskId });
-    const task = await findTaskByID(taskId); // throws TaskNotFoundError if missing
+    const task = await teacherService.getTask(taskId);
 
-    // Check both underscore-prefixed (domain entity) and plain (raw object) field names
-    const taskSource   = task._source    ?? task.source;
-    const taskAssignedBy = task._assignedBy ?? task.assignedBy;
-    const isAssigned   = taskSource !== TaskSource.SELF && taskAssignedBy;
-    const allowed    = isAssigned ? ASSIGNED_ALLOWED_STATUSES : POOL_ALLOWED_STATUSES;
+    // fix: use public getters not private _fields
+    const isAssigned = task.source !== TaskSource.SELF && task.assignedBy;
+    const allowed    = isAssigned ? ASSIGNED_ALLOWED : POOL_ALLOWED;
 
-    const taskStatus = task._status ?? task.status;
-    if (!allowed.includes(taskStatus)) {
-        throw new TaskOwnershipError(
-            taskId,
-            `Task status '${taskStatus}' is not accessible to teachers`
-        );
+    if (!allowed.includes(task.status)) {
+        throw new TaskOwnershipError(taskId, `Task status '${task.status}' is not accessible to teachers`);
     }
 
     return task;

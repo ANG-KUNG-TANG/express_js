@@ -1,4 +1,4 @@
-import * as taskService from '../../app/services/task_service.js'; // Ensure path is correct
+import * as taskService from '../../core/services/task_service.js'; // Ensure path is correct
 
 export const getWritingTaskById = async (taskId, requestingUserId = null) => {
     // 1. Fetch via Service (Handles Redis Cache-Aside + Repo fallback)

@@ -1,20 +1,9 @@
-// src/app/admin/adm_list_flags.uc.js
-import { findFlags } from '../../infrastructure/repositories/content_flag_repo.js';
-import logger        from '../../core/logger/logger.js';
+import * as contentFlagService from '../../core/services/content_flag_service.js';
+import logger from '../../core/logger/logger.js';
 
-/**
- * Admin lists content flags with optional filters.
- *
- * @param {object}                      options
- * @param {'open'|'resolved'}           [options.status]
- * @param {'low'|'medium'|'high'}       [options.severity]
- * @param {string}                      [options.taskId]
- * @param {string}                      [options.flaggedBy]
- * @param {number}                      [options.page]
- * @param {number}                      [options.limit]
- * @returns {Promise<ContentFlag[]>}
- */
 export const admListFlagsUC = async (options = {}) => {
-    logger.debug('admListFlagsUC', { options });
-    return findFlags(options);
+    logger.debug('admListFlagsUC: fetching flag records', { options });
+    
+    // Delegate to Service: Orchestrates persistence access
+    return await contentFlagService.listFlags(options);
 };

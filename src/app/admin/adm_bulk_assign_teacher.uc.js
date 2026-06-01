@@ -1,47 +1,28 @@
-// src/app/admin/adm_bulk_assign_teacher.uc.js
-import { findUserById, bulkAssignTeacher } from '../../infrastructure/repositories/user_repo.js';
-import {
-    UserNotFoundError,
-    UserValidationError,
-} from '../../core/errors/user.errors.js';
+import * as userService from '../../core/services/user_service.js';
+import { UserNotFoundError, UserValidationError } from '../../core/errors/user.errors.js';
 
-/**
- * adminBulkAssignTeacherUC(requesterId, { studentIds, teacherId })
- *
- * Reassigns multiple students to a single teacher in one DB call.
- * Returns { assigned: n } — count reflects only student-role users
- * (the repo WHERE clause excludes teacher/admin rows automatically).
- *
- * Guards:
- *  - teacherId must resolve to an existing user with role 'teacher'.
- *  - studentIds must be a non-empty array (max 200 per call).
- *  - Requester's id is stripped from studentIds as a safety measure.
- */
 const MAX_BULK = 200;
 
 export const adminBulkAssignTeacherUC = async (requesterId, { studentIds, teacherId } = {}) => {
-    if (!teacherId) {
-        throw new UserValidationError('teacherId is required');
-    }
+    // 1. Input Validation
+    if (!teacherId) throw new UserValidationError('teacherId is required');
     if (!Array.isArray(studentIds) || studentIds.length === 0) {
         throw new UserValidationError('studentIds must be a non-empty array');
     }
     if (studentIds.length > MAX_BULK) {
-        throw new UserValidationError(`cannot reassign more than ${MAX_BULK} students at once`);
+        throw new UserValidationError(`Limit exceeded: max ${MAX_BULK}`);
     }
 
-    // Verify teacher exists and actually has the teacher role
-    const teacher = await findUserById(teacherId);
-    if (!teacher) throw new UserNotFoundError(teacherId);
-    if (teacher._role !== 'teacher') {
-        throw new UserValidationError(`user ${teacherId} is not a teacher`);
+    // 2. Business Logic: Verify Teacher
+    const teacher = await userService.findUserById(teacherId);
+    if (teacher.role !== 'teacher') {
+        throw new UserValidationError(`User ${teacherId} is not a teacher`);
     }
 
+    // 3. Sanitization
     const safeIds = studentIds.filter(id => id !== requesterId);
+    if (safeIds.length === 0) throw new UserValidationError('No valid student IDs provided');
 
-    if (safeIds.length === 0) {
-        throw new UserValidationError('no valid student ids provided');
-    }
-
-    return await bulkAssignTeacher(safeIds, teacherId);
+    // 4. Delegate to Service (Handles Repo + Audit)
+    return await userService.bulkAssignTeacher(safeIds, teacherId, requesterId);
 };

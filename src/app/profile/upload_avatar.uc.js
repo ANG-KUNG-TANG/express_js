@@ -1,5 +1,5 @@
 import * as userRepo from '../../infrastructure/repositories/user_repo.js';
-import { validateRequired } from '../validators/user_validator.js';
+import { validateRequired } from '../../domain/validators/user_validator.js';
 import {
     UserInvalidAvatarTypeError,
     UserAvatarTooLargeError,

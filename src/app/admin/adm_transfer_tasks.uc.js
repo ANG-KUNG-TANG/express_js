@@ -1,19 +1,19 @@
-import { transferTasks } from '../../infrastructure/repositories/task_repo.js';
-import { findUserById }  from '../../infrastructure/repositories/user_repo.js';
+import * as userService from '../../core/services/user_service.js';
+import * as taskService from '../../core/services/task_service.js';
+import { UserNotFoundError } from '../../core/errors/user.errors.js';
 import logger from '../../core/logger/logger.js';
 
-/**
- * Bulk-transfer all tasks from one user to another.
- * Validates both users exist first — repo handles the rest.
- */
-export const adminTransferTasksUC = async ({ fromUserId, toUserId }) => {
-    logger.debug('adminTransferTasksUC', { fromUserId, toUserId });
+export const adminTransferTasksUC = async ({ fromUserId, toUserId }, requesterId) => {
+    logger.debug('adminTransferTasksUC: initiating transfer', { fromUserId, toUserId });
 
-    // Both throw UserNotFoundError if the user doesn't exist
-    await findUserById(fromUserId);
-    await findUserById(toUserId);
+    // 1. Validation: Use Service for existence checks
+    const sourceUser = await userService.findUserById(fromUserId);
+    const targetUser = await userService.findUserById(toUserId);
 
-    const result = await transferTasks(fromUserId, toUserId);
-    logger.debug('adminTransferTasksUC: done', result);
-    return result;
+    if (!sourceUser || !targetUser) {
+        throw new UserNotFoundError('One or both users could not be found');
+    }
+
+    // 2. Delegate to Service
+    return await taskService.transferTasks(fromUserId, toUserId, requesterId);
 };

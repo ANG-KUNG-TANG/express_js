@@ -1,5 +1,4 @@
 // domain/entities/password_reset_token_entity.js
-// Mirrors user_entity.js: private fields, _initialize(), typed error throws, getters
 
 import { UniqueId } from '../base/id_generator.js';
 import {
@@ -8,49 +7,78 @@ import {
 } from '../../core/errors/password_reset.errors.js';
 
 export class PasswordResetToken {
+    #id;
+    #userId;
+    #tokenHash;
+    #expiresAt;
+    #used;
+    #createdAt;
+
     constructor(props) {
-        this._initialize(props);
+        this.#initialize(props);
     }
 
-    _initialize({ id, userId, tokenHash, expiresAt, used = false, createdAt = new Date() }) {
-        this._validateUserId(userId);
-        this._validateTokenHash(tokenHash);
-        this._validateExpiresAt(expiresAt);
+    #initialize({ id, userId, tokenHash, expiresAt, used = false, createdAt = new Date() }) {
+        PasswordResetToken.#validateUserId(userId);
+        PasswordResetToken.#validateTokenHash(tokenHash);
+        PasswordResetToken.#validateExpiresAt(expiresAt);
 
-        this._id        = id || new UniqueId().generator();
-        this._userId    = userId;
-        this._tokenHash = tokenHash;
-        this._expiresAt = expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
-        this._used      = used;
-        this._createdAt = createdAt;
+        this.#id        = id || new UniqueId().generator();
+        this.#userId    = userId;
+        this.#tokenHash = tokenHash;
+        this.#expiresAt = expiresAt instanceof Date ? expiresAt : new Date(expiresAt);
+        this.#used      = Boolean(used);
+        this.#createdAt = createdAt instanceof Date ? createdAt : new Date(createdAt);
     }
 
-    _validateUserId(userId) {
+    // ── private static validators ─────────────────────────────────────────────
+
+    static #validateUserId(userId) {
         if (!userId) throw new Error('PasswordResetToken: userId is required');
     }
 
-    _validateTokenHash(tokenHash) {
+    static #validateTokenHash(tokenHash) {
         if (!tokenHash) throw new Error('PasswordResetToken: tokenHash is required');
     }
 
-    _validateExpiresAt(expiresAt) {
+    static #validateExpiresAt(expiresAt) {
         if (!expiresAt) throw new Error('PasswordResetToken: expiresAt is required');
     }
 
-    /** Call this before using the token. Throws a typed domain error if invalid. */
+    // ── domain behaviour ──────────────────────────────────────────────────────
+
     assertValid() {
-        if (this._used)                   throw new PasswordResetTokenAlreadyUsedError();
-        if (new Date() > this._expiresAt) throw new PasswordResetTokenExpiredError();
+        if (this.#used)                   throw new PasswordResetTokenAlreadyUsedError();
+        if (new Date() > this.#expiresAt) throw new PasswordResetTokenExpiredError();
     }
 
     markUsed() {
-        this._used = true;
+        if (this.#used) throw new PasswordResetTokenAlreadyUsedError(); // guard double-use
+        this.#used = true;
     }
 
-    get id()        { return this._id; }
-    get userId()    { return this._userId; }
-    get tokenHash() { return this._tokenHash; }
-    get expiresAt() { return this._expiresAt; }
-    get used()      { return this._used; }
-    get createdAt() { return this._createdAt; }
+    get isExpired() { return new Date() > this.#expiresAt; }
+    get isUsed()    { return this.#used; }
+
+    // ── getters ───────────────────────────────────────────────────────────────
+
+    get id()        { return this.#id; }
+    get userId()    { return this.#userId; }
+    get tokenHash() { return this.#tokenHash; }
+    get expiresAt() { return new Date(this.#expiresAt); } // defensive copy
+    get used()      { return this.#used; }
+    get createdAt() { return new Date(this.#createdAt); } // defensive copy
+
+    // ── serialisation ─────────────────────────────────────────────────────────
+
+    toJSON() {
+        return {
+            id:        this.#id,
+            userId:    this.#userId,
+            tokenHash: this.#tokenHash,
+            expiresAt: this.#expiresAt,
+            used:      this.#used,
+            createdAt: this.#createdAt,
+        };
+    }
 }

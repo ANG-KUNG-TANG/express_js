@@ -1,6 +1,6 @@
 import axios from "axios";
 import { VocabularyRuleViolationError, VocabularyNotFoundError } from "../../core/errors/vocab.errors.js";
-import { validateRequired } from "../validators/vocab_validator.js";
+import { validateRequired } from "../../domain/validators/vocab_validator.js";
 
 /**
  * Looks up a single word from the free Dictionary API.

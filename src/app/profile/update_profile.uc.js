@@ -3,7 +3,7 @@ import {
     validateRequired,
     validateStringLength,
     validateEmail,
-} from '../validators/user_validator.js';
+} from '../../domain/validators/user_validator.js';
 import {
     UserBioTooLongError,
 } from '../../core/errors/user.errors.js';

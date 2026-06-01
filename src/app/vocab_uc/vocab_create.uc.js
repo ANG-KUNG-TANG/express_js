@@ -1,6 +1,6 @@
-import { createVocabulary } from "../../domain/entities/vocab_entity.js";
+import { createVocabulary } from "../../domain/base/vocab_enums.js";
 import * as vocabRepo from "../../infrastructure/repositories/vocab_repo.js";
-import { validateRequired, validateTopic } from "../validators/vocab_validator.js";
+import { validateRequired, validateTopic } from "../../domain/validators/vocab_validator.js";
 
 export const createVocabularyUseCase = async ({ topic, word, partOfSpeech }) => {
   validateRequired(topic, "topic");

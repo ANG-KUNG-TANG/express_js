@@ -1,13 +1,9 @@
-import { reviewTask } from '../../infrastructure/repositories/task_repo.js';
+import * as taskService from '../../core/services/task_service.js';
 import logger from '../../core/logger/logger.js';
 
-/**
- * Review a SUBMITTED task — delegates entirely to the repo.
- * repo.reviewTask() validates status, applies feedback, transitions to REVIEWED.
- */
-export const adminReviewTaskUC = async (taskId, { feedback }) => {
-    logger.debug('adminReviewTaskUC', { taskId });
-    const task = await reviewTask(taskId, feedback);
-    logger.debug('adminReviewTaskUC: reviewed', { taskId });
-    return task;
+export const adminReviewTaskUC = async (taskId, { feedback }, requesterId) => {
+    logger.debug('adminReviewTaskUC: initiating review', { taskId, requesterId });
+
+    // Delegate to Service: Handles repo logic, cache, and audit
+    return await taskService.reviewTask(taskId, feedback, requesterId);
 };

@@ -1,7 +1,7 @@
 import * as userRepo from '../../infrastructure/repositories/user_repo.js';
 import { InvalidCredentialsError, EmailNotVerifiedError, AccountSuspendedError } from '../../core/errors/user.errors.js';
-import { validateRequired, validateEmail } from '../validators/user_validator.js';
-import { toResponseDTO } from '../../infrastructure/mappers/user_mapper.js';
+import { validateRequired, validateEmail } from '../../domain/validators/user_validator.js';
+import { toResponseDTO } from '../../infrastructure/mapper/user.mapper.js';
 import { recordAudit, recordFailure } from '../../core/services/audit.service.js';
 import { AuditAction } from '../../domain/base/audit_enums.js';
 

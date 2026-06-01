@@ -11,44 +11,76 @@ export const FlagStatus = Object.freeze({
     RESOLVED: 'resolved',
 });
 
+// Guard token for private constructor
+const _GUARD = Symbol('ContentFlag.constructor.guard');
+
 export class ContentFlag {
-    constructor({
-        id,
-        taskId,
-        taskTitle     = null,
-        flaggedBy,                  // admin userId
-        reason,
-        severity      = FlagSeverity.MEDIUM,
-        status        = FlagStatus.OPEN,
-        resolvedBy    = null,
-        resolvedAt    = null,
-        createdAt     = new Date(),
-        updatedAt     = new Date(),
-    }) {
-        this._id         = id;
-        this._taskId     = taskId;
-        this._taskTitle  = taskTitle;
-        this._flaggedBy  = flaggedBy;
-        this._reason     = reason;
-        this._severity   = severity;
-        this._status     = status;
-        this._resolvedBy = resolvedBy;
-        this._resolvedAt = resolvedAt;
-        this._createdAt  = createdAt;
-        this._updatedAt  = updatedAt;
+    #id;
+    #taskId;
+    #taskTitle;
+    #flaggedBy;
+    #reason;
+    #severity;
+    #status;
+    #resolvedBy;
+    #resolvedAt;
+    #createdAt;
+    #updatedAt;
+
+    constructor(props, guard) {
+        if (guard !== _GUARD) {
+            throw new Error('Use static factory methods to create ContentFlag');
+        }
+
+        this.#id         = props.id;
+        this.#taskId     = props.taskId;
+        this.#taskTitle  = props.taskTitle || null;
+        this.#flaggedBy  = props.flaggedBy;
+        this.#reason     = props.reason;
+        this.#severity   = props.severity || FlagSeverity.MEDIUM;
+        this.#status     = props.status || FlagStatus.OPEN;
+        this.#resolvedBy = props.resolvedBy || null;
+        this.#resolvedAt = props.resolvedAt || null;
+        this.#createdAt  = props.createdAt || new Date();
+        this.#updatedAt  = props.updatedAt || new Date();
     }
 
-    get id()         { return this._id; }
-    get taskId()     { return this._taskId; }
-    get taskTitle()  { return this._taskTitle; }
-    get flaggedBy()  { return this._flaggedBy; }
-    get reason()     { return this._reason; }
-    get severity()   { return this._severity; }
-    get status()     { return this._status; }
-    get resolvedBy() { return this._resolvedBy; }
-    get resolvedAt() { return this._resolvedAt; }
-    get createdAt()  { return this._createdAt; }
-    get updatedAt()  { return this._updatedAt; }
+    // Static Factory for new flags
+    static create({ taskId, flaggedBy, reason, severity }) {
+        if (!taskId || !flaggedBy || !reason) {
+            throw new Error('Missing required fields for ContentFlag');
+        }
+        return new ContentFlag({ taskId, flaggedBy, reason, severity }, _GUARD);
+    }
 
-    isResolved() { return this._status === FlagStatus.RESOLVED; }
+    // Static Factory for DB hydration
+    static reconstitute(props) {
+        return new ContentFlag(props, _GUARD);
+    }
+
+    // Getters
+    get id()         { return this.#id; }
+    get taskId()     { return this.#taskId; }
+    get taskTitle()  { return this.#taskTitle; }
+    get flaggedBy()  { return this.#flaggedBy; }
+    get reason()     { return this.#reason; }
+    get severity()   { return this.#severity; }
+    get status()     { return this.#status; }
+    get resolvedBy() { return this.#resolvedBy; }
+    get resolvedAt() { return this.#resolvedAt; }
+    get createdAt()  { return this.#createdAt; }
+    get updatedAt()  { return this.#updatedAt; }
+
+    // Domain Logic
+    isResolved() { return this.#status === FlagStatus.RESOLVED; }
+
+    resolve(adminId) {
+        if (this.isResolved()) {
+            throw new Error('Flag is already resolved');
+        }
+        this.#status     = FlagStatus.RESOLVED;
+        this.#resolvedBy = adminId;
+        this.#resolvedAt = new Date();
+        this.#updatedAt  = new Date();
+    }
 }

@@ -1,7 +1,7 @@
 services:
   app:
     image: baw1463i/ielts-js:latest
-    container_name: ielts_js_prod
+    container_name: ws_prod
     ports:
       - "3000:3000"
     env_file:
@@ -14,7 +14,7 @@ services:
 
   redis:
     image: redis:7.2-alpine
-    container_name: ielts_js_redis_prod
+    container_name: ws_prod
     volumes:
       - redis_data:/data
     restart: unless-stopped

@@ -1,22 +1,19 @@
-import { findUserById, updateUser } from '../../infrastructure/repositories/user_repo.js';
-import { sanitizeUser } from '../../infrastructure/mapper/user.mapper.js';
-import { UserRole } from '../../domain/base/user_enums.js';
-import { UserAlreadyAdminError } from '../../core/errors/user.errors.js';
+import * as userService from '../../core/services/user_service.js';
+import { UserNotFoundError, UserValidationError } from '../../core/errors/user.errors.js';
 import logger from '../../core/logger/logger.js';
 
-/**
- * Assign the TEACHER role to a user.
- * Guards: cannot demote an existing ADMIN to teacher.
- */
-export const adminAssignTeacherUC = async (userId) => {
-    logger.debug('adminAssignTeacherUC', { userId });
+export const adminAssignTeacherUC = async (userId, requesterId) => {
+    logger.debug('adminAssignTeacherUC: initiating role assignment', { userId });
 
-    const user = await findUserById(userId);
+    // 1. Fetch via Service
+    const user = await userService.findUserById(userId);
+    if (!user) throw new UserNotFoundError(userId);
 
-    if (user._role === UserRole.ADMIN) {
-        throw new UserAlreadyAdminError('Cannot change role of an existing admin');
+    // 2. Business Guards
+    if (user.role === 'admin') {
+        throw new UserValidationError('Cannot change role of an existing admin');
     }
 
-    const updated = await updateUser(userId, { role: UserRole.TEACHER });
-    return sanitizeUser(updated);
+    // 3. Delegate to Service
+    return await userService.assignTeacherRole(userId, requesterId);
 };

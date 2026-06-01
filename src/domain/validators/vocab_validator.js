@@ -1,4 +1,4 @@
-import { TopicEnum } from "../../domain/base/topics_enums.js";
+import { TopicEnum } from "../base/topics_enums.js";
 import { InvalidTopicError } from "../../core/errors/vocab.errors.js";
 
 export const validateRequired = (value, field) => {

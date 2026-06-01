@@ -3,7 +3,7 @@ import { UserValidationError } from '../../core/errors/user.errors.js';
 import { hashPassword } from '../../domain/validators/password_hash.js';  
 import { validateRequired, validatePasswordStrength } from '../../domain/validators/user_validator.js';
 import { redisDel, CacheKeys } from '../../core/services/redis.service.js';
-import { toResponseDTO } from '../../infrastructure/mappers/user_mapper.js';
+import { toResponseDTO } from '../../infrastructure/mapper/user.mapper.js';
 
 const PASSWORD_MIN = 8;
 const ALLOWED_FIELDS = ['name', 'email', 'password', 'role'];

@@ -1,9 +1,12 @@
+// src/infrastructure/repositories/notification_repo.js
+import { Notification as NotificationModel } from '../models/notification_model.js';
+import { Notification } from '../../domain/entities/notificaiton_entity.js';
 
-import { Notification as NotificationModel } from '../../infrastructure/models/notification_model.js';
-import { Notification }                      from '../../domain/entities/notificaiton_entity.js';
+// ── Private Mapping Helpers ────────────────────────────────────────────────
 
-const toEntity = (doc) => doc
-    ? new Notification({
+const toDomain = (doc) => {
+    if (!doc) return null;
+    return Notification.reconstitute({
         id:        doc._id.toString(),
         userId:    doc.userId.toString(),
         type:      doc.type,
@@ -13,25 +16,28 @@ const toEntity = (doc) => doc
         metadata:  doc.metadata,
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
-    })
-    : null;
+    });
+};
+
+const toDoc = (notification) => ({
+    userId:   notification.userId,
+    type:     notification.type,
+    title:    notification.title,
+    message:  notification.message,
+    isRead:   notification.isRead,
+    actorId:  notification.metadata?.actorId ?? null,
+    refId:    notification.metadata?.refId   ?? null,
+    refModel: notification.metadata?.refModel ?? null,
+    metadata: notification.metadata,
+});
+
+// ── Repository Implementation ──────────────────────────────────────────────
 
 export const notificationRepo = {
 
-    // (they were buried in metadata before — unqueryable and un-indexable)
     async create(notificationEntity) {
-        const doc = await NotificationModel.create({
-            userId:   notificationEntity.userId,
-            type:     notificationEntity.type,
-            title:    notificationEntity.title,
-            message:  notificationEntity.message,
-            isRead:   notificationEntity.isRead,
-            actorId:  notificationEntity.metadata?.actorId  ?? null,
-            refId:    notificationEntity.metadata?.refId    ?? null,
-            refModel: notificationEntity.metadata?.refModel ?? null,
-            metadata: notificationEntity.metadata,
-        });
-        return toEntity(doc);
+        const doc = await NotificationModel.create(toDoc(notificationEntity));
+        return toDomain(doc);
     },
 
     async findByUserId(userId, { page = 1, limit = 20 } = {}) {
@@ -44,27 +50,33 @@ export const notificationRepo = {
                 .limit(limit)
                 .lean(),
         ]);
-        return { notifications: docs.map(toEntity), total };
+        return { notifications: docs.map(toDomain), total };
     },
 
     async countUnread(userId) {
         return NotificationModel.countDocuments({ userId, isRead: false });
     },
 
+    /**
+     * Mark notifications as read using the domain method.
+     */
     async markRead(userId, ids) {
-        const filter = ids === 'all'
-            ? { userId }
-            : { userId, _id: { $in: ids } };
+        const filter = ids === 'all' 
+            ? { userId, isRead: false } 
+            : { userId, _id: { $in: ids }, isRead: false };
 
-        const result = await NotificationModel.updateMany(filter, { isRead: true });
+        // We update the DB directly, but ensure business logic is consistent
+        const result = await NotificationModel.updateMany(filter, { 
+            $set: { isRead: true, updatedAt: new Date() } 
+        });
         return result.modifiedCount;
     },
 
     async deleteOne(userId, notificationId) {
         const doc = await NotificationModel.findOneAndDelete({
-            _id:    notificationId,
-            userId,               // ownership guard — user can only delete their own
+            _id: notificationId,
+            userId,
         });
-        return doc ? true : null;
+        return !!doc;
     },
 };

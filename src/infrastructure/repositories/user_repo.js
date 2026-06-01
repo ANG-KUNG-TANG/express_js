@@ -2,7 +2,7 @@ import UserModel from "../models/user_model.js";
 import mongoose from 'mongoose';
 import { User } from '../../domain/entities/user_entity.js';
 import { UserRole } from "../../domain/base/user_enums.js";
-import { toDomain, toPersistence } from './user_mapper.js';
+import { toDomain, toPersistence } from '../mapper/user.mapper.js';
 import {
     UserValidationError,
     UserEmailNotFoundError,
@@ -440,7 +440,7 @@ export const getUserActivitySummary = async (id) => {
         { $match: { _id: objectId } },
         {
             $lookup: {
-                from:         'tasks',
+                from:         'writingtasks',
                 localField:   '_id',
                 foreignField: 'userId',
                 as:           'tasks',
@@ -490,7 +490,6 @@ export const getUserActivitySummary = async (id) => {
         taskScored:    row.taskScored,
     };
 };
-
 export const findById    = findUserById;
 export const findByEmail = findUserByEmail;
 export const create      = createUser;

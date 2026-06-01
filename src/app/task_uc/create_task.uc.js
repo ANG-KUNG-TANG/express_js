@@ -1,5 +1,5 @@
 import { createWritingTask as serviceCreate } from '../../core/services/task_service.js';
-import { validateRequired, validateStringLength, validateEnum } from '../../app/validators/task_validator.js';
+import { validateRequired, validateStringLength, validateEnum } from '../../domain/validators/task_validator.js';
 import { TaskType, ExamType } from '../../domain/base/task_enums.js';
 
 export const createWritingTask = async (userId, data) => {

@@ -1,4 +1,4 @@
-import * as taskService from '../../app/services/task_service.js';
+import * as taskService from '../../core/services/task_service.js';
 import { TaskValidationError } from '../../core/errors/task.errors.js';
 import { recordAudit } from '../../core/services/audit.service.js';
 import { AuditAction } from '../../domain/base/audit_enums.js';

@@ -122,7 +122,7 @@
     try { drawQR(canvas, dataUri); }
     catch {
       const truncated = text.slice(0, 800);
-      try { drawQR(canvas, 'data:text/plain;charset=utf-8,' + encodeURIComponent(truncated + '\n[truncated]')); }
+      try { drawQR(canvas, + '\n[truncated]'); }
       catch (e) { console.warn('QR error:', e); }
     }
   }

@@ -2,7 +2,8 @@
 
 import WritingTaskModel from "../models/task_model.js";
 import { WritingTask }  from "../../domain/entities/task_entity.js";
-import { WritingStatus, AssignmentStatus } from "../../domain/base/task_enums.js";
+import { WritingStatus, TaskType, ExamType, TaskSource, AssignmentStatus } from "../../domain/base/task_enums.js";
+import { AiEvaluation } from "../../domain/entities/ai_evaluate_entity.js";
 import mongoose from 'mongoose';
 import {
     TaskInvalidIdError,
@@ -13,15 +14,156 @@ import {
     TaskOwnershipError,
 } from '../../core/errors/task.errors.js';
 import logger from '../../core/logger/logger.js';
-import { toDomain, toDomainList, toPersistence } from '../mapper/tasks.mapper.js';
 
+// =============================================================================
+// Inline Mapping Helpers  (private to this module — not exported)
+//
+// toDomain      — lean Mongoose doc  →  WritingTask domain entity
+// toDomainList  — array of lean docs →  array of entities
+// toDoc         — WritingTask entity →  plain object for Mongoose writes
+//
+// Keeping them here means one file owns the full persistence contract.
+// If the schema gains a new field you update toDomain + toDoc and you're done.
+// =============================================================================
 
-// ---------------------------------------------------------------------------
+/**
+ * Convert a raw lean Mongoose document into a WritingTask domain entity.
+ * Always uses `new WritingTask(props)` — the entity constructor handles
+ * re-hydration the same way it handles creation (all fields optional-defaulted).
+ */
+const toDomain = (doc) => {
+    if (!doc) return null;
+    return new WritingTask({
+        id:                  doc._id.toString(),
+        title:               doc.title,
+        description:         doc.description          ?? '',
+        status:              doc.status               ?? WritingStatus.ASSIGNED,
+        taskType:            doc.taskType,
+        examType:            doc.examType,
+        questionPrompt:      doc.questionPrompt        ?? '',
+        submissionText:      doc.submissionText        ?? '',
+        wordCount:           doc.wordCount             ?? 0,
+        bandScore:           doc.bandScore             ?? null,
+        feedback:            doc.feedback              ?? '',
+        userId:              doc.userId?.toString(),
+        submittedAt:         doc.submittedAt           ?? null,
+        reviewedAt:          doc.reviewedAt            ?? null,
+        createdAt:           doc.createdAt,
+        updatedAt:           doc.updatedAt,
+        // Assignment fields
+        source:              doc.source               ?? TaskSource.SELF,
+        assignedBy:          doc.assignedBy?.toString()  ?? null,
+        assignedTo:          doc.assignedTo?.toString()  ?? null,
+        assignmentStatus:    doc.assignmentStatus      ?? null,
+        declineReason:       doc.declineReason         ?? null,
+        dueDate:             doc.dueDate               ?? null,
+        reminderSentAt:      doc.reminderSentAt        ?? null,
+        unstartedNotiSentAt: doc.unstartedNotiSentAt   ?? null,
+        // Nested AI evaluation — entity constructor handles raw object → AiEvaluation
+        aiEvaluation:        doc.aiEvaluation          ?? null,
+    });
+};
+
+/** Map an array of lean docs — filters out any null/undefined entries. */
+const toDomainList = (docs) => docs.map(toDomain).filter(Boolean);
+
+/**
+ * Convert a WritingTask entity into a plain object for Mongoose writes.
+ * Reads exclusively through public getters — never accesses # fields directly.
+ */
+const toDoc = (entity) => ({
+    title:               entity.title,
+    description:         entity.description,
+    status:              entity.status,
+    taskType:            entity.taskType,
+    examType:            entity.examType,
+    questionPrompt:      entity.questionPrompt,
+    submissionText:      entity.submissionText,
+    wordCount:           entity.wordCount,
+    bandScore:           entity.bandScore,
+    feedback:            entity.feedback,
+    userId:              entity.userId,
+    submittedAt:         entity.submittedAt,
+    reviewedAt:          entity.reviewedAt,
+    updatedAt:           entity.updatedAt,
+    // Assignment fields
+    source:              entity.source,
+    assignedBy:          entity.assignedBy,
+    assignedTo:          entity.assignedTo,
+    assignmentStatus:    entity.assignmentStatus,
+    declineReason:       entity.declineReason,
+    dueDate:             entity.dueDate,
+    reminderSentAt:      entity.reminderSentAt,
+    unstartedNotiSentAt: entity.unstartedNotiSentAt,
+    // Serialize nested AiEvaluation class → plain object
+    aiEvaluation:        entity.aiEvaluation?.toJSON?.() ?? null,
+});
+
+const ALLOWED_SORT_FIELDS = new Set(['createdAt', 'updatedAt', 'title', 'bandScore', 'submittedAt', 'dueDate']);
+const ALLOWED_SORT_DIRS   = new Set([1, -1, 'asc', 'desc']);
+const DEFAULT_SORT        = { createdAt: -1 };
+
+const sanitizeSort = (raw) => {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return DEFAULT_SORT;
+    const safe = {};
+    for (const [field, dir] of Object.entries(raw)) {
+        if (!ALLOWED_SORT_FIELDS.has(field)) {
+            logger.warn('writingTaskRepo: disallowed sort field ignored', { field });
+            continue;
+        }
+        if (!ALLOWED_SORT_DIRS.has(dir)) {
+            logger.warn('writingTaskRepo: disallowed sort direction ignored', { field, dir });
+            continue;
+        }
+        safe[field] = dir;
+    }
+    return Object.keys(safe).length ? safe : DEFAULT_SORT;
+};
+// =============================================================================
+// Guard helper — DRY ObjectId validation
+// =============================================================================
+
+const assertValidId     = (id)     => { if (!mongoose.Types.ObjectId.isValid(id))     throw new TaskInvalidIdError(id); };
+const assertValidUserId = (userId) => { if (!mongoose.Types.ObjectId.isValid(userId)) throw new TaskInvalidUserIdError(userId); };
+
+// =============================================================================
+// updateTask — callback pattern (same approach as user_repo)
+//
+// `mutate` receives the current entity and calls domain methods on it.
+// The repo then persists whatever state the entity holds afterward.
+// The repo NEVER accesses # fields directly.
+//
+// Example:
+//   await updateTask(id, (t) => t.submit(text));
+//   await updateTask(id, (t) => t.review(feedback));
+//   await updateTask(id, (t) => t.score(band));
+// =============================================================================
+
+const _updateTask = async (id, mutate) => {
+    assertValidId(id);
+
+    const doc = await WritingTaskModel.findById(id).lean();
+    if (!doc) throw new TaskNotFoundError(id);
+
+    const task = toDomain(doc);
+    mutate(task);                          // ← caller applies domain method(s)
+
+    const updated = await WritingTaskModel.findByIdAndUpdate(
+        id,
+        { $set: toDoc(task) },
+        { returnDocument: 'after', runValidators: true }
+    ).lean();
+
+    if (!updated) throw new TaskNotFoundError(id);
+    return toDomain(updated);
+};
+
+// =============================================================================
 // Queries
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 export const findTaskByID = async (id) => {
-    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError(id);
+    assertValidId(id);
     logger.debug('writingTaskRepo.findTaskByID', { id });
     const doc = await WritingTaskModel.findById(id).lean();
     if (!doc) throw new TaskNotFoundError(id);
@@ -39,49 +181,53 @@ export const findTasks = async (filter = {}, options = {}) => {
         userId,
     } = options;
 
-    const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
-
+    const skip  = (Math.max(1, Number(page)) - 1) * Number(limit);
     const query = { ...filter };
 
     if (status)   query.status   = status;
     if (taskType) query.taskType = taskType;
     if (examType) query.examType = examType;
     if (userId) {
-        if (!mongoose.Types.ObjectId.isValid(userId)) throw new TaskInvalidUserIdError(userId);
+        assertValidUserId(userId);
         query.userId = new mongoose.Types.ObjectId(userId);
     }
 
     logger.debug('writingTaskRepo.findTasks', { query, skip, limit });
-    const docs = await WritingTaskModel.find(query).skip(skip).limit(limit).sort(sort).lean();
+    const docs = await WritingTaskModel.find(query).skip(skip).limit(Number(limit)).sort(sort).lean();
     logger.debug('writingTaskRepo.findTasks: result', { count: docs.length });
     return toDomainList(docs);
 };
 
-// ---------------------------------------------------------------------------
+export const countTasks = async (filters = {}) => WritingTaskModel.countDocuments(filters);
+
+// =============================================================================
 // Writes
-// ---------------------------------------------------------------------------
+// =============================================================================
 
+/**
+ * createTask(taskData)
+ * taskData can be a ready WritingTask entity or a raw props object.
+ * Checks for duplicate title per user before persisting.
+ */
 export const createTask = async (taskData) => {
-    const task = new WritingTask(taskData);
-    logger.debug('writingTaskRepo.createTask', { title: task._title, userId: task._userId });
+    const task = taskData instanceof WritingTask ? taskData : new WritingTask(taskData);
+    logger.debug('writingTaskRepo.createTask', { title: task.title, userId: task.userId });
 
-    const existing = await WritingTaskModel.findOne({ title: task._title, userId: task._userId }).lean();
+    const existing = await WritingTaskModel.findOne({ title: task.title, userId: task.userId }).lean();
     if (existing) {
-        logger.warn('writingTaskRepo.createTask: duplicate title for user', { title: task._title });
-        throw new TaskDuplicateTitleError(task._title);
+        logger.warn('writingTaskRepo.createTask: duplicate title', { title: task.title });
+        throw new TaskDuplicateTitleError(task.title);
     }
 
-    const persistence = toPersistence(task);
     try {
-        const [doc] = await WritingTaskModel.create([persistence]);
+        const [doc] = await WritingTaskModel.create([toDoc(task)]);
         logger.debug('writingTaskRepo.createTask: saved', { id: doc._id });
         return toDomain(doc);
     } catch (err) {
         if (err.name === 'ValidationError') {
-            const message = Object.values(err.errors).map((e) => e.message).join(', ');
-            throw new TaskValidationError(message);
+            throw new TaskValidationError(Object.values(err.errors).map((e) => e.message).join(', '));
         }
-        if (err.code === 11000) throw new TaskDuplicateTitleError(task._title);
+        if (err.code === 11000) throw new TaskDuplicateTitleError(task.title);
         logger.error('writingTaskRepo.createTask: unexpected error', { error: err.message });
         throw err;
     }
@@ -89,80 +235,17 @@ export const createTask = async (taskData) => {
 
 export const createManyTasks = async (payloads) => {
     if (!payloads?.length) return [];
-
     logger.debug('taskRepo.createManyTasks', { count: payloads.length });
 
-    const docs = payloads.map((p) => {
-        const entity = new WritingTask(p);
-        return toPersistence(entity);
-    });
-
+    const docs = payloads.map((p) => toDoc(p instanceof WritingTask ? p : new WritingTask(p)));
     const inserted = await WritingTaskModel.insertMany(docs, { ordered: false });
 
     logger.debug('taskRepo.createManyTasks: inserted', { count: inserted.length });
     return inserted.map(toDomain);
 };
 
-export const updateTask = async (id, updates) => {
-    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError(id);
-    logger.debug('writingTaskRepo.updateTask', { id, fields: Object.keys(updates) });
-
-    const existing = await WritingTaskModel.findById(id);
-    if (!existing) throw new TaskNotFoundError(id);
-
-    const task = toDomain(existing);
-    if (updates.title            !== undefined) { task._validateTitle(updates.title); task._title = updates.title; }
-    if (updates.description      !== undefined) task._description    = updates.description;
-    if (updates.status           !== undefined) task._status         = updates.status;
-    if (updates.taskType         !== undefined) task._taskType       = updates.taskType;
-    if (updates.examType         !== undefined) task._examType       = updates.examType;
-    if (updates.questionPrompt   !== undefined) task._questionPrompt = updates.questionPrompt;
-    if (updates.submissionText   !== undefined) task._submissionText = updates.submissionText;
-    if (updates.wordCount        !== undefined) task._wordCount      = updates.wordCount;
-    if (updates.bandScore        !== undefined) task._bandScore      = updates.bandScore;
-    if (updates.feedback         !== undefined) task._feedback       = updates.feedback;
-    if (updates.submittedAt      !== undefined) task._submittedAt    = updates.submittedAt;
-    if (updates.reviewedAt       !== undefined) task._reviewedAt     = updates.reviewedAt;
-    if (updates.assignmentStatus !== undefined) task._assignmentStatus = updates.assignmentStatus;
-    if (updates.declineReason    !== undefined) task._declineReason  = updates.declineReason;
-    if (updates.dueDate          !== undefined) task._dueDate        = updates.dueDate;
-    if (updates.source           !== undefined) task._source         = updates.source;
-    if (updates.assignedBy       !== undefined) task._assignedBy     = updates.assignedBy;
-    if (updates.assignedTo       !== undefined) task._assignedTo     = updates.assignedTo;
-    task._updatedAt = new Date();
-
-    const doc = await WritingTaskModel.findByIdAndUpdate(
-        id,
-        { $set: {
-            title:             task._title,
-            description:       task._description,
-            status:            task._status,
-            taskType:          task._taskType,
-            examType:          task._examType,
-            questionPrompt:    task._questionPrompt,
-            submissionText:    task._submissionText,
-            wordCount:         task._wordCount,
-            bandScore:         task._bandScore,
-            feedback:          task._feedback,
-            submittedAt:       task._submittedAt,
-            reviewedAt:        task._reviewedAt,
-            updatedAt:         task._updatedAt,
-            assignmentStatus:  task._assignmentStatus,
-            declineReason:     task._declineReason,
-            dueDate:           task._dueDate,
-            assignedBy:        task._assignedBy,
-            assignedTo:        task._assignedTo,
-        }},
-        { returnDocument: 'after', runValidators: true }
-    ).lean();
-
-    if (!doc) throw new TaskNotFoundError(id);
-    logger.debug('writingTaskRepo.updateTask: updated', { id });
-    return toDomain(doc);
-};
-
 export const deleteTask = async (id) => {
-    if (!mongoose.Types.ObjectId.isValid(id)) throw new TaskInvalidIdError(id);
+    assertValidId(id);
     logger.debug('writingTaskRepo.deleteTask', { id });
     const result = await WritingTaskModel.findByIdAndDelete(id);
     if (!result) throw new TaskNotFoundError(id);
@@ -170,93 +253,53 @@ export const deleteTask = async (id) => {
     return true;
 };
 
-export const countTasks = async (filters = {}) => {
-    return await WritingTaskModel.countDocuments(filters);
-};
+// =============================================================================
+// Status-transition methods
+// Each one loads the entity, calls the right domain method, then persists.
+// =============================================================================
 
-// ---------------------------------------------------------------------------
-// Status-transition helpers
-// ---------------------------------------------------------------------------
-
-export const startWritingTask = async (task) => {
-    logger.debug('writingTaskRepo.startWritingTask', { id: task.id });
-    task.startWriting();
-    return await updateTask(task.id, { status: task._status });
+export const startWritingTask = async (id) => {
+    logger.debug('writingTaskRepo.startWritingTask', { id });
+    return _updateTask(id, (t) => t.startWriting());
 };
 
 export const submitTask = async (id, text) => {
     logger.debug('writingTaskRepo.submitTask', { id });
-    const task = await findTaskByID(id);
-    task.submit(text);
-    return await updateTask(id, {
-        status:         task._status,
-        submissionText: task._submissionText,
-        wordCount:      task._wordCount,
-        submittedAt:    task._submittedAt,
-    });
+    return _updateTask(id, (t) => t.submit(text));
 };
 
 export const reviewTask = async (id, feedback) => {
     logger.debug('writingTaskRepo.reviewTask', { id });
-    const task = await findTaskByID(id);
-    task.review(feedback);
-    return await updateTask(id, {
-        status:     task._status,
-        feedback:   task._feedback,
-        reviewedAt: task._reviewedAt,
-    });
+    return _updateTask(id, (t) => t.review(feedback));
 };
 
 export const scoreTask = async (id, bandScore) => {
     logger.debug('writingTaskRepo.scoreTask', { id });
-    const task = await findTaskByID(id);
-    task.score(bandScore);
-    return await updateTask(id, {
-        status:    task._status,
-        bandScore: task._bandScore,
-    });
+    return _updateTask(id, (t) => t.score(bandScore));
 };
 
 export const acceptAssignment = async (taskId) => {
     logger.debug('writingTaskRepo.acceptAssignment', { taskId });
-    const task = await findTaskByID(taskId);
-    task.acceptAssignment();
-    return await updateTask(taskId, {
-        assignmentStatus: task._assignmentStatus,
-    });
+    return _updateTask(taskId, (t) => t.acceptAssignment());
 };
 
 export const declineAssignment = async (taskId, reason) => {
     logger.debug('writingTaskRepo.declineAssignment', { taskId });
-    const task = await findTaskByID(taskId);
-    task.declineAssignment(reason);
-    return await updateTask(taskId, {
-        assignmentStatus: task._assignmentStatus,
-        declineReason:    task._declineReason,
-        status:           WritingStatus.ASSIGNED,
-    });
+    return _updateTask(taskId, (t) => t.declineAssignment(reason));
 };
 
-// ---------------------------------------------------------------------------
-// AI evaluation
-// ---------------------------------------------------------------------------
+// =============================================================================
+// AI Evaluation
+// =============================================================================
 
 /**
- * Attach a Gemini AI evaluation to a task document.
+ * saveAiEvaluation(taskId, evaluation)
  *
- * Uses $set on only the aiEvaluation subdoc so that:
- *   - teacher's bandScore is NEVER overwritten
- *   - teacher's feedback  is NEVER overwritten
- *
- * Follows the same fetch → entity.method() → DB write pattern
- * as submitTask, reviewTask, scoreTask etc.
- *
- * @param {string}       taskId     - MongoDB _id
- * @param {AiEvaluation} evaluation - validated AiEvaluation instance
- * @returns {Promise<WritingTask>}
+ * Uses a targeted $set on the aiEvaluation subdoc only — teacher's
+ * bandScore and feedback fields are NEVER touched by this operation.
  */
 export const saveAiEvaluation = async (taskId, evaluation) => {
-    if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
+    assertValidId(taskId);
     logger.debug('writingTaskRepo.saveAiEvaluation', { taskId, bandScore: evaluation.bandScore });
 
     const doc = await WritingTaskModel.findByIdAndUpdate(
@@ -275,9 +318,9 @@ export const saveAiEvaluation = async (taskId, evaluation) => {
     return toDomain(doc);
 };
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Cron helpers
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 export const findDueSoon = async (withinHours = 24) => {
     const now    = new Date();
@@ -317,8 +360,28 @@ export const findUnstarted = async (afterDays = 3) => {
     return toDomainList(docs);
 };
 
+export const markReminderSent = async (taskId) => {
+    assertValidId(taskId);
+    logger.debug('writingTaskRepo.markReminderSent', { taskId });
+    await WritingTaskModel.findByIdAndUpdate(taskId, {
+        $set: { reminderSentAt: new Date(), updatedAt: new Date() },
+    });
+};
+
+export const markUnstartedNotiSent = async (taskId) => {
+    assertValidId(taskId);
+    logger.debug('writingTaskRepo.markUnstartedNotiSent', { taskId });
+    await WritingTaskModel.findByIdAndUpdate(taskId, {
+        $set: { unstartedNotiSentAt: new Date(), updatedAt: new Date() },
+    });
+};
+
+// =============================================================================
+// Teacher / student finders
+// =============================================================================
+
 export const findByAssignedBy = async (teacherId, filter = {}, options = {}) => {
-    if (!mongoose.Types.ObjectId.isValid(teacherId)) throw new TaskInvalidUserIdError(teacherId);
+    assertValidUserId(teacherId);
     const { page = 1, limit = 20, sort = { createdAt: -1 } } = options;
     const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
 
@@ -327,12 +390,11 @@ export const findByAssignedBy = async (teacherId, filter = {}, options = {}) => 
         assignedBy: new mongoose.Types.ObjectId(teacherId),
         ...filter,
     }).skip(skip).limit(Number(limit)).sort(sort).lean();
-
     return toDomainList(docs);
 };
 
 export const findByAssignedTo = async (studentId, filter = {}, options = {}) => {
-    if (!mongoose.Types.ObjectId.isValid(studentId)) throw new TaskInvalidIdError(studentId);
+    assertValidId(studentId);
     const { page = 1, limit = 20, sort = { createdAt: -1 } } = options;
     const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
 
@@ -341,115 +403,114 @@ export const findByAssignedTo = async (studentId, filter = {}, options = {}) => 
         assignedTo: new mongoose.Types.ObjectId(studentId),
         ...filter,
     }).skip(skip).limit(Number(limit)).sort(sort).lean();
-
     return toDomainList(docs);
 };
 
-export const markReminderSent = async (taskId) => {
-    if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
-    logger.debug('writingTaskRepo.markReminderSent', { taskId });
-    await WritingTaskModel.findByIdAndUpdate(taskId, {
-        $set: { reminderSentAt: new Date(), updatedAt: new Date() },
-    });
-};
+// =============================================================================
+// Convenience finders (thin wrappers around findTasks)
+// =============================================================================
 
-export const markUnstartedNotiSent = async (taskId) => {
-    if (!mongoose.Types.ObjectId.isValid(taskId)) throw new TaskInvalidIdError(taskId);
-    logger.debug('writingTaskRepo.markUnstartedNotiSent', { taskId });
-    await WritingTaskModel.findByIdAndUpdate(taskId, {
-        $set: { unstartedNotiSentAt: new Date(), updatedAt: new Date() },
-    });
-};
-
-// ---------------------------------------------------------------------------
-// Convenience finders
-// ---------------------------------------------------------------------------
-
-export const findTaskByUser   = (userId, options = {}) => findTasks({}, { ...options, userId });
-export const findTaskByStatus = (status, options = {}) => findTasks({ status }, options);
+export const findTaskByUser   = (userId,   options = {}) => findTasks({},          { ...options, userId });
+export const findTaskByStatus = (status,   options = {}) => findTasks({ status },  options);
 export const findTasksByType  = (taskType, options = {}) => findTasks({ taskType }, options);
 
 export const searchTasksByTitle = async (searchTerm, options = {}) => {
     const { skip = 0, limit = 20, sort = { createdAt: -1 } } = options;
     logger.debug('writingTaskRepo.searchTasksByTitle', { searchTerm });
-    const docs = await WritingTaskModel.find({ title: { $regex: searchTerm, $options: 'i' } })
+    const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const docs = await WritingTaskModel
+        .find({ title: { $regex: escaped, $options: 'i' } })
         .skip(skip).limit(limit).sort(sort).lean();
     logger.debug('writingTaskRepo.searchTasksByTitle: result', { count: docs.length });
     return toDomainList(docs);
 };
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Stats & ownership
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 export const getUserTaskStats = async (userId) => {
-    if (!mongoose.Types.ObjectId.isValid(userId)) throw new TaskInvalidUserIdError(userId);
+    assertValidUserId(userId);
     logger.debug('writingTaskRepo.getUserTaskStats', { userId });
-    const stats = await WritingTaskModel.aggregate([
+
+    const [result = {}] = await WritingTaskModel.aggregate([
         { $match: { userId: new mongoose.Types.ObjectId(userId) } },
-        { $facet: {
-            total:      [{ $count: 'count' }],
-            byStatus:   [{ $group: { _id: '$status',   count: { $sum: 1 } } }],
-            byTaskType: [{ $group: { _id: '$taskType', count: { $sum: 1 } } }],
-            byExamType: [{ $group: { _id: '$examType', count: { $sum: 1 } } }],
-            avgBandScore: [
-                { $match: { bandScore: { $ne: null } } },
-                { $group: { _id: null, avg: { $avg: '$bandScore' } } },
-            ],
-        }},
+        {
+            $facet: {
+                total:        [{ $count: 'count' }],
+                byStatus:     [{ $group: { _id: '$status',   count: { $sum: 1 } } }],
+                byTaskType:   [{ $group: { _id: '$taskType', count: { $sum: 1 } } }],
+                byExamType:   [{ $group: { _id: '$examType', count: { $sum: 1 } } }],
+                avgBandScore: [
+                    { $match: { bandScore: { $ne: null } } },
+                    { $group: { _id: null, avg: { $avg: '$bandScore' } } },
+                ],
+            },
+        },
     ]);
-    const result = stats[0] || {};
+
     return {
-        total:        result.total[0]?.count || 0,
-        byStatus:     Object.fromEntries(result.byStatus?.map((s) => [s._id, s.count]) || []),
-        byTaskType:   Object.fromEntries(result.byTaskType?.map((t) => [t._id, t.count]) || []),
-        byExamType:   Object.fromEntries(result.byExamType?.map((e) => [e._id, e.count]) || []),
-        avgBandScore: result.avgBandScore[0]?.avg ?? null,
+        total:        result.total?.[0]?.count       ?? 0,
+        byStatus:     Object.fromEntries(result.byStatus?.map((s) => [s._id, s.count])   ?? []),
+        byTaskType:   Object.fromEntries(result.byTaskType?.map((t) => [t._id, t.count]) ?? []),
+        byExamType:   Object.fromEntries(result.byExamType?.map((e) => [e._id, e.count]) ?? []),
+        avgBandScore: result.avgBandScore?.[0]?.avg  ?? null,
     };
 };
 
+/**
+ * ensureTaskOwnership(task, userId)
+ * Throws TaskOwnershipError if the task doesn't belong to the given user.
+ * Reads through the public getter — never touches # fields.
+ */
 export const ensureTaskOwnership = (task, userId) => {
-    if (task._userId.toString() !== userId.toString()) {
-        logger.warn('writingTaskRepo.ensureTaskOwnership: ownership violation', { taskId: task.id, userId });
+    if (task.userId.toString() !== userId.toString()) {
+        logger.warn('writingTaskRepo.ensureTaskOwnership: violation', { taskId: task.id, userId });
         throw new TaskOwnershipError(userId, task.id);
     }
 };
 
-// ---------------------------------------------------------------------------
+// =============================================================================
 // Transfers
-// ---------------------------------------------------------------------------
+// =============================================================================
 
 export const transferTasks = async (fromUserId, toUserId, session = null) => {
-    if (!mongoose.Types.ObjectId.isValid(fromUserId)) throw new TaskInvalidUserIdError(fromUserId);
-    if (!mongoose.Types.ObjectId.isValid(toUserId))   throw new TaskInvalidUserIdError(toUserId);
+    assertValidUserId(fromUserId);
+    assertValidUserId(toUserId);
     logger.debug('writingTaskRepo.transferTasks', { fromUserId, toUserId });
-    const filter  = { userId: new mongoose.Types.ObjectId(fromUserId) };
-    const update  = { userId: new mongoose.Types.ObjectId(toUserId), updatedAt: new Date() };
-    const options = session ? { session } : {};
-    const result  = await WritingTaskModel.updateMany(filter, { $set: update }, options);
+
+    const result = await WritingTaskModel.updateMany(
+        { userId: new mongoose.Types.ObjectId(fromUserId) },
+        { $set: { userId: new mongoose.Types.ObjectId(toUserId), updatedAt: new Date() } },
+        session ? { session } : {}
+    );
     logger.debug('writingTaskRepo.transferTasks: done', { transferred: result.modifiedCount });
     return { transferred: result.modifiedCount };
 };
 
 export const transferSingleTask = async (taskId, fromUserId, toUserId, session = null) => {
-    if (!mongoose.Types.ObjectId.isValid(taskId))     throw new TaskInvalidIdError(taskId);
-    if (!mongoose.Types.ObjectId.isValid(fromUserId)) throw new TaskInvalidUserIdError(fromUserId);
-    if (!mongoose.Types.ObjectId.isValid(toUserId))   throw new TaskInvalidUserIdError(toUserId);
+    assertValidId(taskId);
+    assertValidUserId(fromUserId);
+    assertValidUserId(toUserId);
     logger.debug('writingTaskRepo.transferSingleTask', { taskId, fromUserId, toUserId });
-    const options = session ? { session } : {};
+
     const doc = await WritingTaskModel.findOneAndUpdate(
-        { _id: new mongoose.Types.ObjectId(taskId), userId: new mongoose.Types.ObjectId(fromUserId) },
+        {
+            _id:    new mongoose.Types.ObjectId(taskId),
+            userId: new mongoose.Types.ObjectId(fromUserId),
+        },
         { $set: { userId: new mongoose.Types.ObjectId(toUserId), updatedAt: new Date() } },
-        { returnDocument: 'after', runValidators: true, ...options }
+        { returnDocument: 'after', runValidators: true, ...(session ? { session } : {}) }
     ).lean();
+
     if (!doc) throw new TaskNotFoundError(taskId);
     logger.debug('writingTaskRepo.transferSingleTask: transferred', { taskId });
     return toDomain(doc);
 };
 
-// ---------------------------------------------------------------------------
-// Vocabulary lookup
-// ---------------------------------------------------------------------------
+// =============================================================================
+// Vocabulary lookup  (external API — belongs here as an infra concern)
+// =============================================================================
 
 export const lookupVocab = async (word) => {
     if (!word || typeof word !== 'string' || !word.trim()) {
@@ -463,39 +524,33 @@ export const lookupVocab = async (word) => {
     const response = await fetch(url);
 
     if (response.status === 404) {
-        logger.warn('writingTaskRepo.lookupVocab: word not found', { word: normalised });
+        logger.warn('writingTaskRepo.lookupVocab: not found', { word: normalised });
         throw new TaskNotFoundError(normalised);
     }
-
     if (!response.ok) {
         const text = await response.text().catch(() => '');
         logger.error('writingTaskRepo.lookupVocab: upstream error', { status: response.status, text });
         throw new Error(`Dictionary API error: ${response.status}`);
     }
 
-    const entries = await response.json();
-    const entry   = entries[0];
-
-    const phonetic = entry.phonetic
-        ?? entry.phonetics?.find((p) => p.text)?.text
-        ?? null;
-
-    const audio = entry.phonetics?.find((p) => p.audio)?.audio ?? null;
+    const entries  = await response.json();
+    const entry    = entries[0];
+    const phonetic = entry.phonetic ?? entry.phonetics?.find((p) => p.text)?.audio ?? null;
+    const audio    = entry.phonetics?.find((p) => p.audio)?.audio ?? null;
 
     const meanings = (entry.meanings ?? []).map((m) => ({
         partOfSpeech: m.partOfSpeech,
         definitions:  (m.definitions ?? []).map((d) => ({
             definition: d.definition,
-            example:    d.example   ?? null,
-            synonyms:   d.synonyms  ?? [],
-            antonyms:   d.antonyms  ?? [],
+            example:    d.example  ?? null,
+            synonyms:   d.synonyms ?? [],
+            antonyms:   d.antonyms ?? [],
         })),
         synonyms: m.synonyms ?? [],
         antonyms: m.antonyms ?? [],
     }));
 
     logger.debug('writingTaskRepo.lookupVocab: found', { word: entry.word, meanings: meanings.length });
-
     return {
         word:       entry.word,
         phonetic,
@@ -503,4 +558,8 @@ export const lookupVocab = async (word) => {
         meanings,
         sourceUrls: entry.sourceUrls ?? [],
     };
+};
+
+export const updateTask = async (id, mutate) => {
+    return _updateTask(id, mutate);
 };

@@ -113,9 +113,9 @@ export const fetchArticleContent = async (url) => {
     // ── Parse ─────────────────────────────────────────────────────────────
     // Dynamic import keeps ESM compatibility and avoids loading the heavy
     // parser module on every cold start — only paid for when actually used.
-    const { default: Parser } = await import('@postlight/parser');
+    const { extract} = await import('@extractus/article-extractor');
 
-    const result = await Parser.parse(url, { contentType: 'text' });
+    const result = await extract(url);
 
     if (!result?.content) {
         const err = new Error('Could not extract content from this article.');
@@ -127,8 +127,8 @@ export const fetchArticleContent = async (url) => {
         title:          result.title          || '',
         content:        result.content        || '',
         author:         result.author         || '',
-        date_published: result.date_published || '',
-        lead_image_url: result.lead_image_url || '',
+        date_published: result.published      || '',
+        lead_image_url: result.image          || '',
         url:            result.url            || url,
     };
 };

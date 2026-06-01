@@ -1,5 +1,5 @@
-import * as taskService from '../../app/services/task_service.js';
-import { validateStringLength, validateEnum } from '../../app/validators/task_validator.js';
+import * as taskService from '../../core/services/task_service.js';
+import { validateStringLength, validateEnum } from '../../domain/validators/task_validator.js';
 import { TaskType, ExamType } from '../../domain/base/task_enums.js';
 
 export const updateWritingTask = async (taskId, updates, userId) => {

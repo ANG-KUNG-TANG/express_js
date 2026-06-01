@@ -1,5 +1,5 @@
 // infrastructure/repositories/password_reset_token_repo.js
-
+import crypto from 'crypto';
 import { PasswordResetTokenModel } from '../models/password_reset_token_model.js';
 import { PasswordResetToken }      from '../../domain/entities/password_reset_token_entity.js';
 
@@ -42,21 +42,27 @@ export const passwordResetTokenRepo = {
     },
 
     async deleteByUserId(userId){
-        await PasswordResetTokenModel.deleteMany({useId});
+        await PasswordResetTokenModel.deleteMany({userId});
     },
 
 
     async save(tokenEntity) {
         await PasswordResetTokenModel.updateOne(
             { _id: tokenEntity.id },
-            { used: tokenEntity.used }
+            { 
+                $set:{
+                used: tokenEntity.used,
+                expiresAt: tokenEntity.expiresAt,
+                tokenHash: tokenEntity.tokenHash,
+                }
+            }
         );
     },
 
     async invalidateAllForUser(userId) {
         await PasswordResetTokenModel.updateMany(
             { userId, used: false },
-            { used: true }
+            { $set: {used: true} }
         );
     },
 };
