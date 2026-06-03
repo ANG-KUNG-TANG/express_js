@@ -1,14 +1,12 @@
 import crypto                                     from 'crypto';
 import * as userRepo                              from '../../infrastructure/repositories/user_repo.js';
-import { passwordResetTokenRepo as tokenRepo }    from '../../infrastructure/repositories/password_reset_token_repo.js';
-import { PasswordResetToken }                     from '../../domain/entities/password_reset_token_entity.js';
 import { emailService }                           from '../../core/services/email.service.js';
 import { User }                                   from '../../domain/entities/user_entity.js';
 import { hashPassword }                           from '../../domain/validators/password_hash.js';
 import { validatePasswordStrength }               from '../../domain/validators/user_validator.js';
 import { ConflictError }                          from '../../core/errors/base.errors.js';
 import { EMAIL_VERIFY_TTL_MS }                    from '../../domain/base/token_ttl.js';
-import { UniqueId }                               from '../../domain/base/id_generator.js';
+import { redisSet }                               from '../../core/services/redis.service.js';
 
 const PASSWORD_MIN = 8;
 
@@ -41,7 +39,7 @@ export const createUserUsecase = async ({ name, email, password, role, provider 
         userEntity = User.create({
             name,
             email: normalizedEmail,
-            password: hashedPassword, // Pass pre-hashed string
+            password: hashedPassword,
             role
         });
     } else {
@@ -49,7 +47,7 @@ export const createUserUsecase = async ({ name, email, password, role, provider 
             name,
             email: normalizedEmail,
             provider,
-            providerId: null, // Pass incoming third-party ID if available
+            providerId: null,
             role
         });
     }
@@ -57,38 +55,24 @@ export const createUserUsecase = async ({ name, email, password, role, provider 
     // 4. Save entity to database via your repository bridge
     const created = await userRepo.createUser(userEntity);
 
-    // ── Email verification token ─────────────────────────────────────────────
-    const rawToken  = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-    const expiresAt = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
+    // ── Email verification token (Redis only — matched by verify_email_uc.js) ──
+    if (isLocal) {
+        const rawToken  = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        const ttlSeconds = Math.floor(EMAIL_VERIFY_TTL_MS / 1000);
 
-    // Ensure your Token entity uses its correct constructor pattern or factory
-    const tokenEntity = PasswordResetToken.reconstitute ? 
-        PasswordResetToken.reconstitute({
-            id:        new UniqueId().generator(),
-            userId:    created.id,
-            tokenHash,
-            expiresAt,
-            used:      false,
-        }) : 
-        new PasswordResetToken({
-            id:        new UniqueId().generator(),
-            userId:    created.id,
-            tokenHash,
-            expiresAt,
-            used:      false,
+        // Store hash → userId so verify UC can look it up in O(1)
+        await redisSet(`token:verify:${tokenHash}`, created.id, ttlSeconds);
+
+        // ── Fire-and-forget verification email ───────────────────────────────
+        emailService.sendVerificationEmail({
+            toEmail:  normalizedEmail,
+            userName: created.name,
+            rawToken,
+        }).catch((err) => {
+            console.error('[createUserUsecase] failed to send verification email:', err.message);
         });
-
-    await tokenRepo.create(tokenEntity);
-
-    // ── Fire-and-forget verification email ───────────────────────────────────
-    emailService.sendVerificationEmail({
-        toEmail:  normalizedEmail,
-        userName: created.name,
-        rawToken,
-    }).catch((err) => {
-        console.error('[createUserUsecase] failed to send verification email:', err.message);
-    });
+    }
 
     return created;
 };

@@ -4,6 +4,7 @@ import { validateRequired, validateEmail } from '../../domain/validators/user_va
 import { toResponseDTO } from '../../infrastructure/mapper/user.mapper.js';
 import { recordAudit, recordFailure } from '../../core/services/audit.service.js';
 import { AuditAction } from '../../domain/base/audit_enums.js';
+import { UserRole } from '../../domain/base/user_enums.js';
 
 const validateAuthInput = ({ email, password }) => {
     validateRequired(email, 'email');
@@ -36,7 +37,7 @@ export const authenticateUserUseCase = async ({ email, password }, req = null) =
     // 2. State-Based Business Rule Guards (Checked safely via clean Entity properties)
     
     // Exception: Admins are exempt from email verification checks
-    const isAdmin = userEntity.role === 'ADMIN'; 
+    const isAdmin = userEntity.role === UserRole.ADMIN;
     if (!isAdmin && !userEntity.isVerified) {
         recordFailure(AuditAction.AUTH_LOGIN, userEntity.id, {
             email: normalizedEmail,

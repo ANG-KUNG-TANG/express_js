@@ -33,6 +33,14 @@ export const findUserById = async (id) => {
     return toDomain(doc);
 };
 
+// Internal-only: includes password so updateUser toPersistence never writes null over the existing hash
+const findUserByIdWithPassword = async (id) => {
+    assertValidId(id);
+    const doc = await UserModel.findById(id).lean();
+    if (!doc) throw new UserNotFoundError(id);
+    return toDomain(doc);
+};
+
 export const findUserByEmail = async (email) => {
     const doc = await UserModel.findOne({ email: email.toLowerCase() }).select('-password').lean();
     if (!doc) throw new UserEmailNotFoundError(email);
@@ -107,13 +115,6 @@ export const findStudentByIdForTeacher = async (teacherId, studentId) => {
 export const createUser = async (user) => {
     const entity = user instanceof User ? user : User.create(user);
 
-    const existing = await UserModel.findOne({ email: entity.email });
-    if (existing) {
-        // KEEP: Warn log protects against malicious/automated double sign-up collisions
-        logger.warn('userRepo.createUser: Registration conflict', { email: entity.email });
-        throw new UserEmailAlreadyExistsError(entity.email);
-    }
-
     const [doc] = await UserModel.create([toPersistence(entity)]);
     return toDomain(doc);
 };
@@ -121,7 +122,7 @@ export const createUser = async (user) => {
 export const updateUser = async (id, mutate) => {
     assertValidId(id);
 
-    const user = await findUserById(id);
+    const user = await findUserByIdWithPassword(id);
 
     // Run custom, domain-driven operations inside functional hook
     mutate(user);
@@ -204,7 +205,7 @@ export const authenticateUser = async (email, password) => {
     }
 
     try {
-        if (!verifyPassword(password, doc.password)) throw new InvalidCredentialsError();
+        if (!await verifyPassword(password, doc.password)) throw new InvalidCredentialsError();
     } catch (err) {
         if (err instanceof InvalidCredentialsError) throw err;
         // KEEP: Security log to track algorithmic failures or key injection attempts

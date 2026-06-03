@@ -71,9 +71,10 @@ export const getUserByEamil = catchAsync(async (req, res) => {
 export const listUsers = catchAsync(async (req, res) => {
     logger.debug('user.listUsers called', { requestId: req.id });
 
-    const users = await listAllUsersUseCase();
+    const { q, role, isActive, from, to, page, limit } = req.query;
+    const users = await listAllUsersUseCase({ q, role, isActive, from, to, page, limit });
 
-    logger.debug('user.listUsers: returned results', { requestId: req.id, count: users.length });
+    logger.debug('user.listUsers: returned results', { requestId: req.id, count: users.data?.length });
 
     return sendSuccess(res, users, HTTP_STATUS.OK);
 });

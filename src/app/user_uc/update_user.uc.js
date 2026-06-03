@@ -31,28 +31,25 @@ export const updateUserUseCase = async (id, updates) => {
         sanitized.password = await hashPassword(sanitized.password);
     }
 
-    // 1. Fetch current domain details before write to catch key associations (like old email string)
-    const oldUserEntity = await userRepo.findUserById(id);
-    const oldEmailKey = CacheKeys.userByEmail(oldUserEntity.email);
-
-    // 2. Execute functional DB mutation state switch
+    // Execute functional DB mutation state switch
     const updatedEntity = await userRepo.updateUser(id, (user) => {
-        if (sanitized.name !== undefined)     user.updateProfile({ name: sanitized.name });
+        if (sanitized.name     !== undefined) user.updateProfile({ name: sanitized.name });
+        if (sanitized.email    !== undefined) user.updateEmail(sanitized.email);
         if (sanitized.password !== undefined) user.changePassword(sanitized.password);
-        if (sanitized.email !== undefined)    user.updateProfile({ name: user.name, email: sanitized.email });
-        
-        if (sanitized.role !== undefined) {
+        if (sanitized.role     !== undefined) {
             if (sanitized.role === 'ADMIN') user.promoteToAdmin();
             else user.demoteToUser();
         }
     });
 
-    // 3. ⚡ CACHE INVALIDATION ⚡
-    // Wipe old keys out of Redis completely. The next read use case will trigger a fresh cache populate.
-    const primaryProfileKey = CacheKeys.userDetail(id);
-    const newEmailKey = CacheKeys.userByEmail(updatedEntity.email);
-
-    await redisDel(primaryProfileKey, oldEmailKey, newEmailKey);
+    // ⚡ CACHE INVALIDATION ⚡
+    // Always wipe by id. If email changed, also wipe the new email key
+    // (old email key will naturally expire; we don't have it without a pre-fetch).
+    const keysToDelete = [CacheKeys.userDetail(id)];
+    if (sanitized.email !== undefined) {
+        keysToDelete.push(CacheKeys.userByEmail(sanitized.email));
+    }
+    await redisDel(...keysToDelete);
 
     return toResponseDTO(updatedEntity);
 };

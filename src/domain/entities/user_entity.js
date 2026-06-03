@@ -207,6 +207,12 @@ export class User {
         this.#updatedAt = new Date();
     }
 
+    updateEmail(email) {
+        if (!email) throw new UserValidationError('Email is required');
+        this.#email     = validateEmail(email);
+        this.#updatedAt = new Date();
+    }
+
     changePassword(hashedPassword) {
         if (!hashedPassword) throw new UserValidationError('Password hash is required');
         validatePasswordStrength(hashedPassword, 8);
