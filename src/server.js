@@ -42,6 +42,10 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
     : ['http://localhost:3000'];
 
+// Always allow the app's own Render URL regardless of env var
+const RENDER_URL = 'https://express-js-2kxb.onrender.com';
+if (!ALLOWED_ORIGINS.includes(RENDER_URL)) ALLOWED_ORIGINS.push(RENDER_URL);
+
 // ── Static (before CORS so same-origin asset requests are never blocked) ────
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
