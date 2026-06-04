@@ -17,6 +17,6 @@ export const teacherListAssignedTasksUC = async (teacher, filters = {}) => {
     if (status)           filter.status           = status;
     if (assignmentStatus) filter.assignmentStatus = assignmentStatus;
 
-    const tasks = await teacherService.listAssignedTasks(teacher.id, filter, { page, limit });
+    const tasks = await teacherService.listAssignedTasks(String(teacher.id ?? teacher._id), filter, { page, limit });
     return { tasks, page: Number(page), limit: Number(limit) };
 };

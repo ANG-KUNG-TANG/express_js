@@ -46,7 +46,7 @@ const sanitizeSort = (raw) => {
 
 const toDomain = (doc) => {
     if (!doc) return null;
-    return new ContentFlag({
+    return ContentFlag.reconstitute({
         id:          doc._id.toString(),
         taskId:      doc.taskId    ? doc.taskId.toString()    : null,
         taskTitle:   doc.taskTitle ?? null,
@@ -169,7 +169,7 @@ export const createFlag = async ({
 
     logger.debug('contentFlagRepo.createFlag', { taskId, flaggedBy, severity });
 
-    const flag = new ContentFlag({
+    const flag = ContentFlag.create({
         taskId,
         taskTitle,
         flaggedBy,

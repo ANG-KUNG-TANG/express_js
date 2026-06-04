@@ -193,10 +193,13 @@ export class WritingTask {
         this.#updatedAt        = new Date();
     }
 
-    updateDetails(title, description) {
-        this.#title = title;
-        this.#description = description;
-        this.#updatedAt = new Date();
+    updateDetails(title, description, questionPrompt, taskType, examType) {
+        this.#title          = title;
+        this.#description    = description;
+        this.#questionPrompt = questionPrompt ?? this.#questionPrompt;
+        this.#taskType       = taskType       ?? this.#taskType;
+        this.#examType       = examType       ?? this.#examType;
+        this.#updatedAt      = new Date();
     }
 
     // ── Pure Read-Only Getters ────────────────────────────────────────────────

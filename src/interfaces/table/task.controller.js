@@ -131,7 +131,7 @@ export const scoreTaskController = async (req, res) => {
     const { bandScore } = req.body;
     logger.debug('writingTask.score called', { requestId: req.id, taskId: id, scorerId });
     const task = await scoreTask(id, scorerId, bandScore);
-    recordAudit(AuditAction.TASK_SCORED_USER, scorerId, { taskId: id, bandScore: task._bandScore }, req);
+    recordAudit(AuditAction.TASK_SCORED_USER, scorerId, { taskId: id, bandScore: task.bandScore }, req);
     return sendSuccess(res, task, HTTP_STATUS.OK);
 };
 
@@ -207,7 +207,7 @@ export const aiCheckTaskController = async (req, res, next) => {
         recordAudit(
             AuditAction.TASK_AI_EVALUATED,
             userId,
-            { taskId: id, bandScore: task._aiEvaluation?.bandScore },
+            { taskId: id, bandScore: task.aiEvaluation?.bandScore },
             req
         );
 
@@ -216,4 +216,3 @@ export const aiCheckTaskController = async (req, res, next) => {
         next(err);
     }
 };
-

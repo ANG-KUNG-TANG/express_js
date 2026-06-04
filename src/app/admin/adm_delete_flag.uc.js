@@ -1,10 +1,7 @@
-import * as taskService from '../../app/services/task_service.js';
+import * as userService from '../../core/services/user_service.js';
 import logger from '../../core/logger/logger.js';
 
-export const admDeleteContentUC = async (taskId, requesterId) => {
-    logger.debug('admDeleteContentUC: initiating soft-delete', { taskId, requesterId });
-
-    // Delegate to Service: It handles the status transition, 
-    // persistence, cache invalidation, and auditing.
-    return await taskService.softDeleteTask(taskId, requesterId);
+export const admDeleteFlagUC = async (taskId, requesterId) => {
+    logger.debug('admDeleteFlagUC: initiating soft-delete', { taskId, requesterId });
+    return await userService.softDeleteTask(taskId, requesterId);
 };

@@ -49,12 +49,11 @@ export const passwordResetTokenRepo = {
     async save(tokenEntity) {
         await PasswordResetTokenModel.updateOne(
             { _id: tokenEntity.id },
-            { 
-                $set:{
-                used: tokenEntity.used,
-                expiresAt: tokenEntity.expiresAt,
-                tokenHash: tokenEntity.tokenHash,
-                }
+            {
+                $set: {
+                    used:      tokenEntity.used,
+                    expiresAt: tokenEntity.expiresAt,
+                },
             }
         );
     },

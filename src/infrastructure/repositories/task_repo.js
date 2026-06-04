@@ -241,7 +241,7 @@ export const createManyTasks = async (payloads) => {
     const inserted = await WritingTaskModel.insertMany(docs, { ordered: false });
 
     logger.debug('taskRepo.createManyTasks: inserted', { count: inserted.length });
-    return inserted.map(toDomain);
+    return inserted.map((d) => toDomain(d.toObject ? d.toObject() : d));
 };
 
 export const deleteTask = async (id) => {
@@ -415,11 +415,16 @@ export const findTaskByStatus = (status,   options = {}) => findTasks({ status }
 export const findTasksByType  = (taskType, options = {}) => findTasks({ taskType }, options);
 
 export const searchTasksByTitle = async (searchTerm, options = {}) => {
-    const { skip = 0, limit = 20, sort = { createdAt: -1 } } = options;
-    logger.debug('writingTaskRepo.searchTasksByTitle', { searchTerm });
+    const { skip = 0, limit = 20, sort = { createdAt: -1 }, userId } = options;
+    logger.debug('writingTaskRepo.searchTasksByTitle', { searchTerm, userId });
     const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const query = { title: { $regex: escaped, $options: 'i' } };
+    if (userId) {
+        assertValidUserId(userId);
+        query.userId = new mongoose.Types.ObjectId(userId);
+    }
     const docs = await WritingTaskModel
-        .find({ title: { $regex: escaped, $options: 'i' } })
+        .find(query)
         .skip(skip).limit(limit).sort(sort).lean();
     logger.debug('writingTaskRepo.searchTasksByTitle: result', { count: docs.length });
     return toDomainList(docs);
@@ -535,7 +540,7 @@ export const lookupVocab = async (word) => {
 
     const entries  = await response.json();
     const entry    = entries[0];
-    const phonetic = entry.phonetic ?? entry.phonetics?.find((p) => p.text)?.audio ?? null;
+    const phonetic = entry.phonetic ?? entry.phonetics?.find((p) => p.text)?.text ?? null;
     const audio    = entry.phonetics?.find((p) => p.audio)?.audio ?? null;
 
     const meanings = (entry.meanings ?? []).map((m) => ({

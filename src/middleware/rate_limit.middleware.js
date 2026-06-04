@@ -5,6 +5,11 @@ import logger from '../core/logger/logger.js';
 
 const skipHealthCheck = (req) => req.path === '/health' || req.path === '/ping';
 
+// Auth routes have dedicated limiters; skip them in apiLimiter to prevent
+// ERR_ERL_DOUBLE_COUNT (same key incremented twice for the same request).
+const skipAuthRoutes = (req) =>
+    req.path.startsWith('/api/auth') || skipHealthCheck(req);
+
 const makeStore = (prefix) => {
     let store = null;
     let warned = false;
@@ -146,6 +151,7 @@ export const apiLimiter = rateLimit({
     max: Number(process.env.RATE_LIMIT_API_MAX ?? 300),
     standardHeaders: true,
     legacyHeaders:   false,
+    skip:            skipAuthRoutes,
     store:           makeStore('rl:api:'),
     handler,
     message: 'Too many requests. Please try again later.',
@@ -174,5 +180,5 @@ export const aiEvaluationRateLimit = rateLimit({
     handler,
     message: 'AI evaluation limit reached (5/day). Try again tomorrow.',
     // IMPORTANT: keyGenerator should be user ID, not IP, for this specific feature
-    keyGenerator: (req) => req.user?.id ?? req.ip, 
+    keyGenerator: (req) => req.user?.id ?? ipKeyGenerator(req),
 });

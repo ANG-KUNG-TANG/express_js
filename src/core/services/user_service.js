@@ -1,39 +1,47 @@
-// src/core/services/user_service.js
 import * as auditLogRepo from '../../infrastructure/repositories/audit_log_repo.js';
 import * as userRepo from '../../infrastructure/repositories/user_repo.js';
 import * as taskRepo from '../../infrastructure/repositories/task_repo.js';
 import { recordAudit } from '../../core/services/audit.service.js';
 import { AuditAction } from '../../domain/base/audit_enums.js';
 import { WritingStatus } from '../../domain/base/task_enums.js';
-import { toResponseDTO } from '../../infrastructure/mapper/user.mapper.js'; // Bug 1 fix
+import { toResponseDTO } from '../../infrastructure/mapper/user.mapper.js';
 import * as contentFlagRepo from '../../infrastructure/repositories/content_flag_repo.js';
 import { NotificationService } from '../../core/services/notification.service.js';
-import { redisGet, redisSet, redisDel, CacheKeys, TTL } from '../../core/services/redis.service.js'; // Bug 2 fix
+import { redisGet, redisSet, redisDel, CacheKeys, TTL } from '../../core/services/redis.service.js';
 import UserModel from '../../infrastructure/models/user_model.js';
 import { UserRole } from '../../domain/base/user_enums.js';
 
 // ── User management ───────────────────────────────────────────────────────────
 
+export const findUserById = async (id) => {
+    const user = await userRepo.findUserById(id);
+    return toResponseDTO(user);
+};
+
 export const promoteUser = async (adminId, targetUserId) => {
     const updated = await userRepo.promoteToAdmin(targetUserId);
+    await redisDel(CacheKeys.userDetail(targetUserId), `user:${targetUserId}:activity`);
     await recordAudit(AuditAction.USER_PROMOTED, adminId, { targetUserId });
     return updated;
 };
 
 export const demoteUser = async (targetId, requesterId) => {
     const result = await userRepo.demoteToStudent(targetId);
+    await redisDel(CacheKeys.userDetail(targetId), `user:${targetId}:activity`);
     await recordAudit(AuditAction.USER_DEMOTED, requesterId, { targetUserId: targetId });
     return result;
 };
 
 export const deleteUser = async (userId, requesterId) => {
     const result = await userRepo.deleteUser(userId);
+    await redisDel(CacheKeys.userDetail(userId), `user:${userId}:activity`);
     await recordAudit(AuditAction.USER_DELETED, requesterId, { targetUserId: userId });
     return result;
 };
 
 export const reactivateUser = async (targetId, requesterId) => {
     const result = await userRepo.reactivateUser(targetId);
+    await redisDel(CacheKeys.userDetail(targetId), `user:${targetId}:activity`);
     await recordAudit(AuditAction.USER_REACTIVATED, requesterId, { targetUserId: targetId });
     return result;
 };
@@ -46,17 +54,17 @@ export const forcePasswordReset = async (targetId, requesterId) => {
 
 export const assignTeacherRole = async (userId, requesterId) => {
     const updated = await userRepo.updateUser(userId, (u) => u.promoteToTeacher());
-    await redisDel(CacheKeys.userDetail(userId)); // Bug 2 fix
+    await redisDel(CacheKeys.userDetail(userId), `user:${userId}:activity`);
     await recordAudit(AuditAction.USER_ROLE_ASSIGNED, requesterId, {
         targetUserId: userId,
         newRole: 'teacher',
     });
-    return toResponseDTO(updated); // Bug 1 fix
+    return toResponseDTO(updated);
 };
 
-// Bug 3 fix: suspendUser — userRepo has deactivateUser, not suspendUser
 export const suspendUser = async (targetId, requesterId) => {
     const result = await userRepo.deactivateUser(targetId);
+    await redisDel(CacheKeys.userDetail(targetId), `user:${targetId}:activity`);
     await recordAudit(AuditAction.USER_SUSPENDED, requesterId, { targetUserId: targetId });
     return result;
 };
@@ -85,7 +93,6 @@ export const linkStudentToTeacher = async (adminId, studentId, teacherId) => {
 
     const updated = await userRepo.updateUser(studentId, (u) => u.assignTeacher(teacherId));
 
-    // Bug 2 + 5 fix: use CacheKeys instead of undefined studentListKey()
     await redisDel(CacheKeys.userDetail(studentId));
     if (oldTeacherId) await redisDel(CacheKeys.userDetail(oldTeacherId));
 
@@ -100,7 +107,7 @@ export const linkStudentToTeacher = async (adminId, studentId, teacherId) => {
         refModel:    'User',
     });
 
-    return toResponseDTO(updated); // Bug 1 fix
+    return toResponseDTO(updated);
 };
 
 // ── Bulk operations ───────────────────────────────────────────────────────────
@@ -117,7 +124,6 @@ export const bulkDeleteUsers = async (ids, requesterId) => {
     return result;
 };
 
-// Bug 3 fix: bulkSuspendUsers — no such repo method, use bulkDeactivateUsers
 export const bulkSuspendUsers = async (ids, requesterId) => {
     const result = await userRepo.bulkDeactivateUsers(ids);
     await recordAudit(AuditAction.USERS_SUSPENDED, requesterId, { count: ids.length });
@@ -139,30 +145,29 @@ export const bulkAssignTeacher = async (studentIds, teacherId, requesterId) => {
 export const deleteTask = async (taskId, requesterId) => {
     await taskRepo.findTaskByID(taskId);
     await taskRepo.deleteTask(taskId);
-    await redisDel(CacheKeys.taskDetail(taskId)); // Bug 2 fix
+    await redisDel(CacheKeys.taskDetail(taskId));
     await recordAudit(AuditAction.TASK_DELETED, requesterId, { taskId });
     return { deleted: true, taskId };
 };
 
-// Bug 4 fix: pass a callback to updateTask, not a plain object
 export const softDeleteTask = async (taskId, requesterId) => {
     await taskRepo.findTaskByID(taskId);
     const updated = await taskRepo.updateTask(taskId, (t) => t.softDelete?.() ?? t);
-    await redisDel(CacheKeys.taskDetail(taskId)); // Bug 2 fix
+    await redisDel(CacheKeys.taskDetail(taskId));
     await recordAudit(AuditAction.TASK_DELETED, requesterId, { taskId, action: 'soft-delete' });
     return updated;
 };
 
 export const reviewTask = async (taskId, feedback, requesterId) => {
     const updatedTask = await taskRepo.reviewTask(taskId, feedback);
-    await redisDel(CacheKeys.taskDetail(taskId)); // Bug 2 fix
+    await redisDel(CacheKeys.taskDetail(taskId));
     await recordAudit(AuditAction.TASK_REVIEWED, requesterId, { taskId });
     return updatedTask;
 };
 
 export const scoreTask = async (taskId, bandScore, requesterId) => {
     const updatedTask = await taskRepo.scoreTask(taskId, bandScore);
-    await redisDel(CacheKeys.taskDetail(taskId)); // Bug 2 fix
+    await redisDel(CacheKeys.taskDetail(taskId));
     await recordAudit(AuditAction.TASK_SCORED, requesterId, { taskId, bandScore });
     return updatedTask;
 };
@@ -172,7 +177,7 @@ export const transferTasks = async (fromUserId, toUserId, requesterId) => {
     await recordAudit(AuditAction.TASKS_TRANSFERRED, requesterId, {
         fromUserId,
         toUserId,
-        count: result.transferred, // Bug 7 fix: was result.modifiedCount
+        count: result.transferred,
     });
     return result;
 };
@@ -207,7 +212,6 @@ export const getTeacherWorkloads = async () => {
 export const getUserActivitySummary = async (targetId) => {
     const cacheKey = `user:${targetId}:activity`;
 
-    // Bug 2 + 8 fix: use redis.service helpers instead of raw redisClient
     const cached = await redisGet(cacheKey);
     if (cached) return cached;
 
@@ -216,7 +220,6 @@ export const getUserActivitySummary = async (targetId) => {
     return activity;
 };
 
-// Bug 6 fix: findRecentTasks doesn't exist — use findTasks with limit
 export const getAdminStats = async () => {
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -230,7 +233,7 @@ export const getAdminStats = async () => {
             },
         }]),
         taskRepo.findTasks({}, {}),
-        taskRepo.findTasks({}, { limit: 10, sort: { createdAt: -1 } }), // Bug 6 fix
+        taskRepo.findTasks({}, { limit: 10, sort: { createdAt: -1 } }),
     ]);
 
     return formatDashboardData(userAgg, allTasks, recentTasks);

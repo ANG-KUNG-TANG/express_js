@@ -19,9 +19,9 @@
 //       refModel:    'Task',
 //   });
 
-import { redisDel, CacheKeys }      from './redis.service.js';
-import { sendNotificationUseCase }  from '../../app/notification/send_noti.uc.js';
-import { NotificationType } from '../../domain/base/noti_enums.js';
+import { redisDel, redisDelPattern, CacheKeys } from './redis.service.js';
+import { sendNotificationUseCase }              from '../../app/notification/send_noti.uc.js';
+import { NotificationType }                     from '../../domain/entities/notificaiton_entity.js';
 
 // ── Core send function ────────────────────────────────────────────────────────
 
@@ -60,10 +60,11 @@ const send = async ({ recipientId, actorId, type, title, message, refId, refMode
         });
 
         // 2. Bust Redis cache so the next REST poll picks up the new entry.
-        await redisDel(
-            CacheKeys.userNotifications(String(recipientId)),
-            CacheKeys.unreadCount(String(recipientId)),
-        );
+        //    Must use redisDelPattern because get_noti.uc.js stores keys as
+        //    `userNotifications(userId):p{page}:l{limit}` — the base key alone
+        //    never matches any stored entry.
+        await redisDelPattern(`${CacheKeys.userNotifications(String(recipientId))}:*`);
+        await redisDel(CacheKeys.unreadCount(String(recipientId)));
 
         return notification;
     } catch (err) {

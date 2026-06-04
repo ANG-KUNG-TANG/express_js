@@ -7,11 +7,7 @@ export const startWritingTask = async (id, userId) => {
     // 2. Ownership check
     taskService.ensureTaskOwnership(task, userId);
 
-    // 3. Domain Logic: trigger the status transition
-    // Note: ensure your entity has a startWriting() method
-    task.startWriting();
-
-    // 4. Delegate mutation to Service
+    // 3. Delegate mutation to Service — the callback is the sole mutator
     // The service will save to DB and clear the cache
     return await taskService.updateTask(id, (t) => t.startWriting());
 };

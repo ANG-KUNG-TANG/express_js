@@ -143,7 +143,10 @@ export const findLogs = async (options = {}) => {
     const query    = {};
 
     if (action)            query.action = action;
-    else if (actionPrefix) query.action = { $regex: `^${actionPrefix}`, $options: 'i' };
+    else if (actionPrefix) {
+            const escaped = actionPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            query.action  = { $regex: `^${escaped}`, $options: 'i' };
+        }
 
     if (outcome) query.outcome = outcome;
 

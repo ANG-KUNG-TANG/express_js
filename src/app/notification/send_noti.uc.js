@@ -11,6 +11,7 @@ export const sendNotificationUseCase = async ({
     message,
     ctaText,
     ctaUrl,
+    emailSubject,   // destructured here; wire into emailService when ready
     metadata = {},
 }) => {
     // 1. Build entity for validation only (type, userId, title, message guards).

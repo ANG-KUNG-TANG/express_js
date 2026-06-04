@@ -18,12 +18,13 @@ export const updateWritingTask = async (taskId, updates, userId) => {
     if (updates.examType !== undefined) validatedUpdates.examType = validateEnum(updates.examType, ExamType, 'examType');
 
     // 4. Delegate to Service (Handles Repo + Cache Invalidation)
-    // We pass a mutate callback to allow the Entity to handle the logic
     return await taskService.updateTask(taskId, (t) => {
         t.updateDetails(
-            validatedUpdates.title ?? t.title,
-            validatedUpdates.description ?? t.description,
-            // ... map other fields as needed
+            validatedUpdates.title          ?? t.title,
+            validatedUpdates.description    ?? t.description,
+            validatedUpdates.questionPrompt ?? t.questionPrompt,
+            validatedUpdates.taskType       ?? t.taskType,
+            validatedUpdates.examType       ?? t.examType,
         );
     });
 };

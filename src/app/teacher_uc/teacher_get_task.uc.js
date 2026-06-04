@@ -1,11 +1,11 @@
 // src/app/teacher_uc/teacher_get_task.uc.js
 import * as teacherService from '../../core/services/teacher_service.js';
-import { TaskOwnershipError } from '../../core/errors/task.errors.js';
+import { ForbiddenError } from '../../core/errors/base.errors.js';
 import { WritingStatus, TaskSource } from '../../domain/base/task_enums.js';
 import logger from '../../core/logger/logger.js';
 
 const ASSIGNED_ALLOWED = ['ASSIGNED', 'WRITING', 'SUBMITTED', 'REVIEWED', 'SCORED'];
-const POOL_ALLOWED     = ['SUBMITTED', 'REVIEWED'];
+const POOL_ALLOWED     = ['SUBMITTED', 'REVIEWED', 'SCORED'];
 
 export const teacherGetTaskUC = async (taskId) => {
     logger.debug('teacherGetTaskUC', { taskId });
@@ -16,7 +16,7 @@ export const teacherGetTaskUC = async (taskId) => {
     const allowed    = isAssigned ? ASSIGNED_ALLOWED : POOL_ALLOWED;
 
     if (!allowed.includes(task.status)) {
-        throw new TaskOwnershipError(taskId, `Task status '${task.status}' is not accessible to teachers`);
+        throw new ForbiddenError(`Task status '${task.status}' is not accessible to teachers`);
     }
 
     return task;

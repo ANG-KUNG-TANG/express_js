@@ -25,9 +25,6 @@ const toDoc = (notification) => ({
     title:    notification.title,
     message:  notification.message,
     isRead:   notification.isRead,
-    actorId:  notification.metadata?.actorId ?? null,
-    refId:    notification.metadata?.refId   ?? null,
-    refModel: notification.metadata?.refModel ?? null,
     metadata: notification.metadata,
 });
 

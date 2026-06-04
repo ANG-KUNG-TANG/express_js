@@ -34,7 +34,7 @@ export class AuditLog {
 
     // ── private static validation ─────────────────────────────────────────────
 
-    static #VALID_OUTCOMES = Object.freeze(['success', 'failure', 'error']);
+    static #VALID_OUTCOMES = Object.freeze(['success', 'failure']);
 
     static #validate({ action, outcome }) {
         if (!action || typeof action !== 'string') {

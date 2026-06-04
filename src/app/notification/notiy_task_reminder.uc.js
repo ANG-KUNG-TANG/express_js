@@ -1,4 +1,5 @@
 // app/notification_uc/notify_exam_reminder.uc.js
+// NOTE: rename file from notiy_task_reminder_uc.js → notify_exam_reminder.uc.js
 // Call this from a scheduler or whenever an exam is confirmed
 
 import { sendNotificationUseCase } from './send_noti.uc.js';

@@ -6,5 +6,5 @@ export const teacherListTasksUC = async ({ teacherId, status, page = 1, limit = 
     const filter = status && Object.values(WritingStatus).includes(status)
         ? { status }
         : {};
-    return await teacherService.listAssignedTasks(teacherId, filter, { page, limit, status });
+    return await teacherService.listAssignedTasks(teacherId, filter, { page, limit });
 };

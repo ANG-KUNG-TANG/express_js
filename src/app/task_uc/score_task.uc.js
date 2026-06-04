@@ -12,7 +12,10 @@ export const scoreTask = async (taskId, scorerId, bandScore) => {
     // 2. Fetch via Service (Handles Redis Cache)
     const task = await taskService.getTaskById(taskId);
 
-    // 3. Score via Service (Handles Repo mutation + Cache Invalidation)
+    // 3. Ownership check
+    taskService.ensureTaskOwnership(task, scorerId);
+
+    // 4. Score via Service (Handles Repo mutation + Cache Invalidation)
     const scored = await taskService.scoreTask(taskId, score);
 
     // 4. Notify Student (Use public getters)

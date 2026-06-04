@@ -99,7 +99,7 @@ export const teacherAssignTaskUC = async (teacher, body, req = null) => {
         const student = await userRepo.findUserById(studentId);
         if (!student) fail('Student not found.', HTTP_STATUS.NOT_FOUND);
 
-        if (String(student.assignedTeacher) !== teacherId) {
+        if (!student.assignedTeacher || student.assignedTeacher.toString() !== teacherId) {
             recordFailure(AuditAction.TEACHER_TASK_ASSIGNED, teacherId,
                 { reason: 'student not linked to this teacher', studentId }, req);
             fail('This student is not assigned to you.', HTTP_STATUS.FORBIDDEN);

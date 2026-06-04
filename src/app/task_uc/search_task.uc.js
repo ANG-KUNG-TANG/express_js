@@ -7,17 +7,6 @@ export const searchWritingTasks = async (searchTerm, options = {}, userId = null
         throw new TaskValidationError("Search term must be a non-empty string");
     }
 
-    // 2. Delegate to Service
-    // The service handles calling the repository
-    const tasks = await taskService.searchTasksByTitle(searchTerm, options);
-
-    // 3. Ownership Filtering
-    // Note: If you want this to be high-performance, filtering should ideally 
-    // happen in the Repository query (using userId in the search), 
-    // but filtering here is acceptable for domain-layer logic.
-    if (userId) {
-        return tasks.filter(task => task.userId === userId.toString());
-    }
-
-    return tasks;
+    // 2. Delegate to Service — pass userId so the repo filters at the DB level
+    return await taskService.searchTasksByTitle(searchTerm, { ...options, userId });
 };

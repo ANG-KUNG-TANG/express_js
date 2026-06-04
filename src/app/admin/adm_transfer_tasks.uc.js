@@ -1,5 +1,4 @@
 import * as userService from '../../core/services/user_service.js';
-import * as taskService from '../../core/services/task_service.js';
 import { UserNotFoundError } from '../../core/errors/user.errors.js';
 import logger from '../../core/logger/logger.js';
 
@@ -15,5 +14,5 @@ export const adminTransferTasksUC = async ({ fromUserId, toUserId }, requesterId
     }
 
     // 2. Delegate to Service
-    return await taskService.transferTasks(fromUserId, toUserId, requesterId);
+    return await userService.transferTasks(fromUserId, toUserId, requesterId);
 };

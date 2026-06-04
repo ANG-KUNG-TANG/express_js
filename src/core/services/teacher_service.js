@@ -2,7 +2,8 @@
 
 import * as taskRepo   from '../../infrastructure/repositories/task_repo.js';
 import * as userRepo   from '../../infrastructure/repositories/user_repo.js';
-import { toResponseDTO } from '../../infrastructure/mapper/user.mapper.js'; // fix: was sanitizeUser
+import { UserRole }    from '../../domain/base/user_enums.js';
+import { toResponseDTO } from '../../infrastructure/mapper/user.mapper.js';
 import {
     redisGet, redisSet, redisDel,
     CacheKeys, TTL,
@@ -43,8 +44,8 @@ export const listStudents = async (teacherId) => {
     }
 
     const allLinked = await userRepo.findAll({ assignedTeacher: teacherId });
-    const students  = allLinked.filter((s) => s.role !== 'teacher' && s.role !== 'admin');
-    const plain     = students.map(toResponseDTO); // fix: was sanitizeUser
+    const students  = allLinked.filter((s) => s.role !== UserRole.TEACHER && s.role !== UserRole.ADMIN);
+    const plain     = students.map(toResponseDTO);
 
     await redisSet(cacheKey, plain, TTL.TASK_LIST);
     logger.debug('teacherService.listStudents: cache miss, stored', { count: plain.length });
@@ -54,7 +55,7 @@ export const listStudents = async (teacherId) => {
 export const listStudentsWithStats = async (teacherId) => {
     // Always live — never cached (stats must be fresh)
     const allLinked = await userRepo.findAll({ assignedTeacher: teacherId });
-    const students  = allLinked.filter((s) => s.role !== 'teacher' && s.role !== 'admin');
+    const students  = allLinked.filter((s) => s.role !== UserRole.TEACHER && s.role !== UserRole.ADMIN);
 
     return await Promise.all(
         students.map(async (student) => {
@@ -104,7 +105,7 @@ export const getTask = async (taskId) => {
 
 export const searchTasks = async (teacherId, q) => {
     const filter = q?.trim()
-        ? { title: { $regex: q.trim(), $options: 'i' } }
+        ? { title: { $regex: q.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' } }
         : {};
     return await taskRepo.findByAssignedBy(teacherId, filter);
 };

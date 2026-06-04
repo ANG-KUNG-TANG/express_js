@@ -1,9 +1,7 @@
-import * as taskService from '../../core/services/task_service.js';
+import * as userService from '../../core/services/user_service.js';
 import logger from '../../core/logger/logger.js';
 
 export const adminReviewTaskUC = async (taskId, { feedback }, requesterId) => {
     logger.debug('adminReviewTaskUC: initiating review', { taskId, requesterId });
-
-    // Delegate to Service: Handles repo logic, cache, and audit
-    return await taskService.reviewTask(taskId, feedback, requesterId);
+    return await userService.reviewTask(taskId, feedback, requesterId);
 };

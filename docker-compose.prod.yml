@@ -14,7 +14,7 @@ services:
 
   redis:
     image: redis:7.2-alpine
-    container_name: ws_prod
+    container_name: ws_prod_redis
     volumes:
       - redis_data:/data
     restart: unless-stopped

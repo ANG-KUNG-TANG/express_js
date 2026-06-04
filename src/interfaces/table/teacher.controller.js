@@ -70,10 +70,12 @@ export const reviewTask = async (req, res) => {
 
 // POST /api/teacher/assign
 export const assignTask = async (req, res) => {
-    const teacher = asTeacher(req.user);
-    const task    = await teacherAssignTaskUC(teacher, req.body, req);
+    const teacher  = asTeacher(req.user);
+    const result   = await teacherAssignTaskUC(teacher, req.body, req);
     // Note: recordAudit is called inside teacherAssignTaskUC — do not duplicate here
-    return sendSuccess(res, task, HTTP_STATUS.CREATED);
+    // Bulk assignments return { assigned, tasks } — not a single created resource
+    const isBulk   = result && typeof result.assigned === 'number';
+    return sendSuccess(res, result, isBulk ? HTTP_STATUS.OK : HTTP_STATUS.CREATED);
 };
 
 // GET /api/teacher/students?stats=true

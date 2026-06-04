@@ -7,10 +7,9 @@ import * as userRepo                   from '../../infrastructure/repositories/u
 import { emailService }                from '../../core/services/email.service.js';
 import { recordAudit, recordFailure }  from '../../core/services/audit.service.js';
 import { AuditAction }                 from '../../domain/base/audit_enums.js';
-import { PASSWORD_RESET_TTL_MS } from '../../domain/base/token_ttl.js';
-import { revokeAllForUser } from '../../core/services/token_store.service.js';
-
-
+import { PASSWORD_RESET_TTL_MS }       from '../../domain/base/token_ttl.js';
+// FIX: removed unused import — revokeAllForUser is not called in this UC
+// (session revocation happens in reset_password.uc.js, not here)
 
 // req passed from controller so IP is captured in the audit log
 export const requestPasswordResetUseCase = async ({ email }, req = null) => {
@@ -38,7 +37,8 @@ export const requestPasswordResetUseCase = async ({ email }, req = null) => {
     // Raw token goes in the email link; only its hash is stored
     const rawToken  = crypto.randomBytes(32).toString('hex');
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-    const expiresAt = new Date(Date.now() + TOKEN_EXPIRY_MINUTES * 60 * 1000);
+    // FIX: was referencing undefined TOKEN_EXPIRY_MINUTES — use the imported PASSWORD_RESET_TTL_MS
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
 
     const tokenEntity = new PasswordResetToken({ userId, tokenHash, expiresAt });
     await passwordResetTokenRepo.create(tokenEntity);
