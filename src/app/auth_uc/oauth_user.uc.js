@@ -52,16 +52,13 @@ export const findOrCreateOAuthUser = (userRepo) => async (profile, req = null) =
     // ── New OAuth user ────────────────────────────────────────────────────────
     // NOTE: password is a random hex string — OAuth users never use it, but
     //       the schema requires a value when provider is not yet saved.
-    const userEntity = new User({
+    const userEntity = User.createOAuth({
         name:       normalized.name,
         email:      normalized.email.toLowerCase(),
-        password:   crypto.randomBytes(32).toString('hex'),
-        role:       UserRole.USER,
         provider:   normalized.provider,
         providerId: normalized.providerId,
         avatarUrl:  normalized.avatarUrl ?? null,
-        isVerified: false,
-        isActive:   true,
+        role:       UserRole.USER,
     });
 
     const created = await userRepo.create(userEntity);
