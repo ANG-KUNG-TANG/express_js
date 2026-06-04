@@ -25,8 +25,6 @@ import path                                from 'path';
 import fs                                  from 'fs';
 import { notificationRouter }              from './interfaces/routes/notification.router.js';
 import { passwordResetRouter }             from './interfaces/routes/password_reset.router.js';
-// FIX: removed unused `authenticate` import — it was imported but never used,
-//      which caused a lint warning and obscured the middleware chain.
 import { initSocket }                      from './core/services/socket.service.js';
 import { connectRedis, disconnectRedis }   from './core/services/redis.service.js';
 import cookieParser                        from 'cookie-parser';
@@ -42,13 +40,10 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
     : ['http://localhost:3000'];
 
-// Always allow the app's own Render URL regardless of env var
-const RENDER_URL = 'https://express-js-2kxb.onrender.com';
-if (!ALLOWED_ORIGINS.includes(RENDER_URL)) ALLOWED_ORIGINS.push(RENDER_URL);
-
 // ── Static (before CORS so same-origin asset requests are never blocked) ────
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
 app.use('/uploads', express.static(uploadsDir));
 app.use(express.static(path.join(__dirname, 'public')));
 
