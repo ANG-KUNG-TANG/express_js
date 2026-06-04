@@ -12,7 +12,8 @@ import { recordAudit, recordFailure }  from '../../core/services/audit.service.j
 import { AuditAction }                 from '../../domain/base/audit_enums.js';
 import { EMAIL_VERIFY_TTL_MS }         from '../../domain/base/token_ttl.js';
 import { emailService }                from '../../core/services/email.service.js';
-import * as tokenRepo                  from '../../infrastructure/repositories/password_reset_token_repo.js';
+import { passwordResetTokenRepo }      from '../../infrastructure/repositories/password_reset_token_repo.js';
+import { PasswordResetToken }          from '../../domain/entities/password_reset_token_entity.js';
 
 export const findOrCreateOAuthUser = (userRepo) => async (profile, req = null) => {
     let normalized;
@@ -65,14 +66,11 @@ export const findOrCreateOAuthUser = (userRepo) => async (profile, req = null) =
     const userId  = created.id ?? created._id;
 
     // Send verification email
-    const rawToken  = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
-    await tokenRepo.create({
-        userId,
-        token: rawToken,
-        type:  'email_verification',
-        expiresAt,
-    });
+    const rawToken   = crypto.randomBytes(32).toString('hex');
+    const tokenHash  = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt  = new Date(Date.now() + EMAIL_VERIFY_TTL_MS);
+    const tokenEntity = new PasswordResetToken({ userId, tokenHash, expiresAt });
+    await passwordResetTokenRepo.create(tokenEntity);
 
     // Fire-and-forget
     emailService.sendVerificationEmail({

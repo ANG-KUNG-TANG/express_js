@@ -42,6 +42,12 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
     : ['http://localhost:3000'];
 
+// ── Static (before CORS so same-origin asset requests are never blocked) ────
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
+app.use(express.static(path.join(__dirname, 'public')));
+
 // ── Core middleware ───────────────────────────────────────────────────────────
 app.use(cors({
     origin: (origin, callback) => {
@@ -73,8 +79,9 @@ app.use(helmet({
                 `'self'`,
                 'ws://localhost:3000',
                 'wss://localhost:3000',
+                'wss://express-js-2kxb.onrender.com',
+                'https://express-js-2kxb.onrender.com',
                 'https://cdn.socket.io',
-                //         blocking it produced the second CSP error in the console
                 'https://cdnjs.cloudflare.com',
             ],
             'img-src': [`'self'`, 'data:', 'https:']
@@ -86,13 +93,6 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLoggerMiddleware);
-
-// ── Static ────────────────────────────────────────────────────────────────────
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-app.use('/uploads', express.static(uploadsDir));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Rate limiter + CSRF come after static so assets are never throttled
 app.use(apiLimiter);
