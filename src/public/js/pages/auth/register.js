@@ -1,6 +1,6 @@
 import { requireGuest } from "../../core/router.js";
 import { apiFetch }     from "../../core/api.js";
-import { toast }        from "../../core/toast.js";
+import { toast }        from "../../utils/toast.js";
 
 requireGuest();
 

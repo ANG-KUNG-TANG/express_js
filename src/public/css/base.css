@@ -919,10 +919,154 @@ body:not(.auth-page):not(.write-page) { padding-top: var(--nav-h); }
 
 /* ═══════════════════════════════════════════════════════════════════════
    21. RESPONSIVE
+   Breakpoints:
+     ≤ 768px  — tablet / large phone (sidebar hidden, hamburger shown)
+     ≤ 480px  — small phone (further tightening)
 ═══════════════════════════════════════════════════════════════════════ */
 
+/* ── Hamburger toggle button — hidden on desktop ─────────────────────── */
+.sidebar-toggle {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  border-radius: var(--r-md);
+  color: var(--text2);
+  cursor: pointer;
+  transition: background var(--t), color var(--t);
+  flex-shrink: 0;
+}
+.sidebar-toggle:hover { background: var(--surface3); color: var(--text); }
+.sidebar-toggle svg { width: 18px; height: 18px; }
+
+/* ── Sidebar overlay (shown when sidebar is open on mobile) ──────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 498;
+  opacity: 0;
+  transition: opacity .25s ease;
+}
+.sidebar-overlay.visible {
+  display: block;
+  opacity: 1;
+}
+
+/* ── Shell layout — wraps sidebar + main content ─────────────────────── */
+/* Your admin/teacher pages likely use a flex row: sidebar + .main-content */
+.shell { display: flex; min-height: calc(100vh - var(--nav-h)); }
+.main-content { flex: 1; min-width: 0; overflow-x: hidden; }
+
 @media (max-width: 768px) {
-  .stats-bar  { grid-template-columns: repeat(2, 1fr); }
+
+  /* ── Grid layouts ── */
+  .stats-bar, .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .two-col   { grid-template-columns: 1fr; }
+  .three-col { grid-template-columns: 1fr; }
+
+  /* ── Page padding ── */
   .admin-layout { padding: 18px 16px 48px; }
-  .page-body  { padding: 24px 16px; }
+  .page-body    { padding: 20px 16px 48px; }
+  .review-layout { padding: 16px 16px 48px; }
+
+  /* ── Sidebar: slide in from left ── */
+  .sidebar {
+    position: fixed;
+    left: -260px;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    width: 240px;
+    z-index: 499;
+    transition: left .28s cubic-bezier(.16,1,.3,1);
+    box-shadow: none;
+  }
+  .sidebar.open {
+    left: 0;
+    box-shadow: var(--sh-lg);
+  }
+
+  /* ── Show hamburger in topnav ── */
+  .sidebar-toggle { display: inline-flex; }
+
+  /* ── Topnav adjustments ── */
+  .topnav { padding: 0 14px; }
+  .topnav-tabs { display: none; }          /* hide nav tabs — use sidebar instead */
+  .user-info    { display: none; }          /* hide name/role text next to avatar */
+  .topnav-user  { padding: 5px 6px; }      /* tighten avatar button */
+  .brand-name   { font-size: .9rem; }
+
+  /* ── Notification panel: full-width on mobile ── */
+  .noti-panel {
+    right: 0; left: 0; width: auto;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    top: var(--nav-h);
+  }
+
+  /* ── Profile menu: full-width ── */
+  .profile-menu {
+    right: 0; left: auto;
+    width: 200px;
+  }
+
+  /* ── Admin header ── */
+  .admin-header { flex-wrap: wrap; gap: 8px; }
+  .admin-header__badge { margin-left: 0; }
+
+  /* ── Admin panel controls stack vertically ── */
+  .admin-panel__header { flex-direction: column; align-items: flex-start; }
+  .admin-panel__controls { width: 100%; }
+
+  /* ── Data table: horizontal scroll ── */
+  .data-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .data-table { min-width: 580px; }
+  .actions-cell { flex-wrap: nowrap; }
+
+  /* ── Stat cards ── */
+  .stat-card { padding: 16px 18px; }
+  .stat-card__value,
+  .stat-card__number { font-size: 26px; }
+
+  /* ── Buttons ── */
+  .btn--full-mobile { width: 100%; }
+  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .page-header .btn { align-self: flex-start; }
+
+  /* ── Section header ── */
+  .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+  /* ── Toast container ── */
+  #toast-container { right: 12px; bottom: 16px; left: 12px; }
+  .toast { max-width: 100%; }
+
+  /* ── Queue rows ── */
+  .queue-row { padding: 12px 14px; gap: 10px; }
+
+  /* ── Review card body ── */
+  .review-card__body { padding: 16px; }
+  .review-prose { max-height: 260px; }
+}
+
+@media (max-width: 480px) {
+
+  /* ── Tighten stats further on small phones ── */
+  .stats-bar, .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ── Topnav brand: hide text on very small screens ── */
+  .brand-name { display: none; }
+
+  /* ── Admin layout ── */
+  .admin-layout { padding: 14px 12px 40px; }
+  .page-body    { padding: 16px 12px 40px; }
+
+  /* ── Cards ── */
+  .card__body { padding: 12px; }
+  .card__actions { gap: 6px; }
+
+  /* ── Buttons: sm on small screens ── */
+  .btn { font-size: .82rem; padding: 0 13px; }
+
+  /* ── Notification panel: full height ── */
+  .noti-panel { max-height: calc(100vh - var(--nav-h)); }
 }
