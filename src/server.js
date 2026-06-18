@@ -138,6 +138,21 @@ app.get('/health', (req, res) => {
 //     res.redirect('/pages/auth/login.html');
 // });
 
+// TEMP: remove after testing
+app.get('/test-smtp', async (req, res) => {
+    try {
+        const { emailService } = await import('./core/services/email.service.js');
+        await emailService.verifyConnection();
+        await emailService.sendVerificationEmail({
+            toEmail:  'kuku1463kbu@gmail.com',
+            userName: 'Test',
+            rawToken: 'test-token-123',
+        });
+        res.json({ status: 'Email sent OK' });
+    } catch (err) {
+        res.json({ status: 'FAILED', error: err.message });
+    }
+});
 app.get('/', (req, res) => {
     res.json({status: "API running"})
 })
