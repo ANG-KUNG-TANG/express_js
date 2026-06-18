@@ -77,7 +77,7 @@ export const loginRateLimit = rateLimit({
     handler,
     skipSuccessfulRequests: true,
     message: 'Too many failed login attempts. Please wait 15 minutes before trying again.',
-    keyGenerator: (req) => ipKeyGenerator(req),
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
 });
 
 // ── Register ──────────────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ export const registerRateLimit = rateLimit({
     store:           makeStore('rl:register:'),
     handler,
     message: 'Too many accounts created from this IP. Please try again in an hour.',
-    keyGenerator: (req) => ipKeyGenerator(req),
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
 });
 
 // ── Token refresh ─────────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ export const refreshRateLimit = rateLimit({
     store:           makeStore('rl:refresh:'),
     handler,
     message: 'Too many token refresh attempts.',
-    keyGenerator: (req) => ipKeyGenerator(req),
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
 });
 
 // ── Password reset request ────────────────────────────────────────────────────
@@ -116,7 +116,7 @@ export const passwordResetRateLimit = rateLimit({
     store:           makeStore('rl:pwreset:'),
     handler,
     message: 'Too many password reset requests. Please wait an hour before trying again.',
-    keyGenerator: (req) => ipKeyGenerator(req),
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
 });
 
 // ── Email verification resend ─────────────────────────────────────────────────
@@ -129,7 +129,7 @@ export const emailVerifyRateLimit = rateLimit({
     store:           makeStore('rl:emailverify:'),
     handler,
     message: 'Too many verification emails requested. Please wait an hour.',
-    keyGenerator: (req) => ipKeyGenerator(req),
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
 });
 
 // ── OAuth ─────────────────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ export const oauthRateLimit = rateLimit({
     store:           makeStore('rl:oauth:'),
     handler,
     message: 'Too many OAuth attempts. Please wait 15 minutes.',
-    keyGenerator: (req) => ipKeyGenerator(req),
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
 });
 
 // ── General API ───────────────────────────────────────────────────────────────
@@ -155,7 +155,7 @@ export const apiLimiter = rateLimit({
     store:           makeStore('rl:api:'),
     handler,
     message: 'Too many requests. Please try again later.',
-    keyGenerator: (req) => ipKeyGenerator(req),
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
 });
 
 // ── Auth general ──────────────────────────────────────────────────────────────
@@ -167,7 +167,7 @@ export const authLimiter = rateLimit({
     store:           makeStore('rl:auth:'),
     handler,
     message: 'Too many authentication attempts. Please try again in 15 minutes.',
-    keyGenerator: (req) => ipKeyGenerator(req),
+    keyGenerator: (req) => ipKeyGenerator(req.ip),
 });
 
 //---Ai Evaluate Rate Limit
@@ -180,5 +180,5 @@ export const aiEvaluationRateLimit = rateLimit({
     handler,
     message: 'AI evaluation limit reached (5/day). Try again tomorrow.',
     // IMPORTANT: keyGenerator should be user ID, not IP, for this specific feature
-    keyGenerator: (req) => req.user?.id ?? ipKeyGenerator(req),
+    keyGenerator: (req) => req.user?.id ?? ipKeyGenerator(req.ip),
 });

@@ -36,6 +36,13 @@ const __dirname  = path.dirname(__filename);
 
 const app = express();
 
+// Render sits in front of this app as a reverse proxy. Without this, req.ip
+// resolves to Render's internal proxy address (same for every request) instead
+// of the real client IP — which breaks anything keyed on IP, like rate limiting.
+// `1` trusts exactly one hop (Render's proxy) rather than the full forwarded
+// chain, so a client can't spoof their own IP via X-Forwarded-For.
+app.set('trust proxy', 1);
+
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
     : ['http://localhost:3000'];
