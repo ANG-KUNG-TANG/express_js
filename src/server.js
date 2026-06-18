@@ -51,8 +51,10 @@ const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
+// app.use('/uploads', express.static(uploadsDir));
+// app.use(express.static(path.join(__dirname, 'public')));
+
 app.use('/uploads', express.static(uploadsDir));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Core middleware ───────────────────────────────────────────────────────────
 app.use(cors({
@@ -131,9 +133,13 @@ app.get('/health', (req, res) => {
 });
 
 // ── Root ──────────────────────────────────────────────────────────────────────
+// app.get('/', (req, res) => {
+//     res.redirect('/pages/auth/login.html');
+// });
+
 app.get('/', (req, res) => {
-    res.redirect('/pages/auth/login.html');
-});
+    res.json({status: "API running"})
+})
 
 // browsers request this automatically on every page load.
 //         Without this handler the request fell through to the JSON 404 catch-all,
