@@ -4,6 +4,7 @@ import express from 'express';
 import helmet from 'helmet';
 import http from 'http';
 import { startReminderJobs }               from './core/job/task_remainder.job.js';
+import { emailService }                    from './core/services/email.service.js';
 import { initPassport }                    from './config/passport.config.js';
 import { connectDB, disconnectDB }         from './infrastructure/repositories/db.js';
 import userRouter                          from './interfaces/routes/user.router.js';
@@ -161,6 +162,9 @@ const PORT = process.env.PORT || 3000;
 
 connectDB().then(async () => {
     await connectRedis();
+    emailService.verityConnection().catch(err => {
+        console.error(" SMTP connection failed: ", err.message)
+    })
     startReminderJobs();
 
     const httpServer = http.createServer(app);
