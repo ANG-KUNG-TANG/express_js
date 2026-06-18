@@ -3,5 +3,5 @@ import logger from '../../core/logger/logger.js';
 
 export const adminListUsersUC = async () => {
     logger.debug('adminListUsersUC: fetching users');
-    return await userService.searchUsers();
+    return await userService.listAllUsers();
 };
