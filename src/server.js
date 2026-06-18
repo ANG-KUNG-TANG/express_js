@@ -87,6 +87,7 @@ app.use(helmet({
                 'wss://localhost:3000',
                 'wss://express-js-2kxb.onrender.com',
                 'https://express-js-2kxb.onrender.com',
+                'https://writing-test-app.vercel.app',
                 'https://cdn.socket.io',
                 'https://cdnjs.cloudflare.com',
             ],
