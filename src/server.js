@@ -162,7 +162,7 @@ const PORT = process.env.PORT || 3000;
 
 connectDB().then(async () => {
     await connectRedis();
-    emailService.verityConnection().catch(err => {
+    emailService.verifyConnection().catch(err => {
         console.error(" SMTP connection failed: ", err.message)
     })
     startReminderJobs();
